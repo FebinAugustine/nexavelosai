@@ -12,6 +12,7 @@ This document outlines the detailed tasks required to implement the NexaVelosAI 
 - **Dependencies**: None
 - **Acceptance Criteria**: NestJS app runs, MongoDB connected, basic modules created.
 - **Status**: Completed
+- **Status**: Completed
 
 ### 1.2 Frontend Setup
 
@@ -21,6 +22,7 @@ This document outlines the detailed tasks required to implement the NexaVelosAI 
 - **Dependencies**: None
 - **Acceptance Criteria**: Next.js app runs, Tailwind styles applied, basic pages render.
 - **Status**: Completed
+- **Status**: Completed
 
 ### 1.3 Security and Middleware Setup
 
@@ -29,6 +31,7 @@ This document outlines the detailed tasks required to implement the NexaVelosAI 
 - **Effort**: 3 days
 - **Dependencies**: Backend setup
 - **Acceptance Criteria**: Security headers applied, rate limiting functional.
+- **Status**: Completed
 - **Status**: Completed
 
 ## Phase 2: Authentication and User Management
@@ -40,6 +43,42 @@ This document outlines the detailed tasks required to implement the NexaVelosAI 
 - **Effort**: 1 day
 - **Dependencies**: Backend setup
 - **Acceptance Criteria**: User schema defined, migrations applied.
+- **Status**: Completed
+
+### 2.2 Registration and Email Verification
+
+- **Task**: Implement user registration with email verification.
+- **Description**: Create registration endpoint, generate verification codes, integrate nodemailer for email sending.
+- **Effort**: 3 days
+- **Dependencies**: User model, nodemailer setup
+- **Acceptance Criteria**: Users can register, receive verification email, verify account.
+- **Status**: Completed
+
+### 2.3 Login and JWT Implementation
+
+- **Task**: Implement login functionality with JWT tokens.
+- **Description**: Create login endpoint, generate access/refresh tokens, handle token rotation.
+- **Effort**: 3 days
+- **Dependencies**: User model
+- **Acceptance Criteria**: Users can login, receive JWT tokens, access protected routes.
+- **Status**: Completed
+
+### 2.4 Forgot Password
+
+- **Task**: Implement password reset via email.
+- **Description**: Create forgot password endpoint, send reset codes/links, allow password update.
+- **Effort**: 2 days
+- **Dependencies**: Email service
+- **Acceptance Criteria**: Users can request reset, receive email, update password.
+- **Status**: Completed
+
+### 2.5 Frontend Authentication Pages
+
+- **Task**: Build registration, login, verification, and forgot password pages.
+- **Description**: Create responsive forms using Next.js and Tailwind, integrate with backend APIs.
+- **Effort**: 4 days
+- **Dependencies**: Frontend setup, backend auth endpoints
+- **Acceptance Criteria**: All auth pages functional, form validation implemented.
 - **Status**: Completed
 
 ### 2.2 Registration and Email Verification
@@ -173,6 +212,15 @@ This document outlines the detailed tasks required to implement the NexaVelosAI 
 - **Effort**: 3 days
 - **Dependencies**: Frontend setup
 - **Acceptance Criteria**: Home page responsive and engaging.
+- **Status**: Completed
+
+### 6.3 Email Service Setup
+
+- **Task**: Configure nodemailer and BullMQ for emails.
+- **Description**: Set up SMTP, queue emails for verification and resets.
+- **Effort**: 2 days
+- **Dependencies**: Backend setup
+- **Acceptance Criteria**: Emails sent reliably.
 - **Status**: Completed
 
 ### 6.3 Email Service Setup
