@@ -3,10 +3,13 @@ import {
   BadRequestException,
   NotFoundException,
   UnauthorizedException,
+  Inject,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { User, UserDocument } from '../users/users.schema';
@@ -18,6 +21,7 @@ export class AuthService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private mailService: MailService,
     private jwtService: JwtService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async register(email: string, password: string): Promise<void> {
@@ -100,7 +104,8 @@ export class AuthService {
     if (!user.isVerified) {
       throw new UnauthorizedException('Please verify your email first');
     }
-    const payload = { email: user.email, sub: user._id };
+    const payload = { email: user.email, sub: user._id.toString() };
+    console.log('Login payload:', payload);
     return {
       access_token: this.jwtService.sign(payload),
     };
@@ -134,5 +139,35 @@ export class AuthService {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
+  }
+
+  async getProfile(userId: string): Promise<UserDocument> {
+    console.log('Getting profile for userId:', userId);
+    const cacheKey = `user:${userId}`;
+    const cachedUser = await this.cacheManager.get<UserDocument>(cacheKey);
+    if (cachedUser) {
+      console.log('User found in cache:', cachedUser.email);
+      return cachedUser;
+    }
+    const user = await this.userModel.findById(userId);
+    console.log('User found in DB:', user ? user.email : 'null');
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    await this.cacheManager.set(cacheKey, user, 300000); // 5 minutes
+    return user;
+  }
+
+  async updateProfile(userId: string, updateData: any): Promise<UserDocument> {
+    const user = await this.userModel.findByIdAndUpdate(userId, updateData, {
+      new: true,
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    // Invalidate cache
+    const cacheKey = `user:${userId}`;
+    await this.cacheManager.del(cacheKey);
+    return user;
   }
 }

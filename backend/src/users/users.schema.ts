@@ -23,7 +23,7 @@ export class User {
   @Prop({ default: 'regular' }) // regular, special, agency
   plan: string;
 
-  @Prop({ default: 0 })
+  @Prop({ default: 5 })
   agentLimit: number;
 
   @Prop({ default: [] })
