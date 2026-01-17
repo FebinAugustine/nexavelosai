@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AgentsService } from './agents.service';
@@ -13,7 +13,7 @@ import { EventsModule } from '../events/events.module';
     CacheModule.register(),
     MongooseModule.forFeature([{ name: Agent.name, schema: AgentSchema }]),
     UsersModule,
-    AuthModule,
+    forwardRef(() => AuthModule),
     EventsModule,
   ],
   providers: [AgentsService],

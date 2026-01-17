@@ -65,6 +65,12 @@ export default function Dashboard() {
   const [agentProvider, setAgentProvider] = useState("gemini");
   const [agentDomain, setAgentDomain] = useState("");
   const [createAgentLoading, setCreateAgentLoading] = useState(false);
+  // Account settings state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [accountSettingsLoading, setAccountSettingsLoading] = useState(false);
   const router = useRouter();
   const socket = useSocket();
 
@@ -277,6 +283,53 @@ export default function Dashboard() {
       toast.error(error.response?.data?.message || "Failed to create agent");
     } finally {
       setCreateAgentLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords don't match");
+      return;
+    }
+    setAccountSettingsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.patch(
+        "http://localhost:5000/auth/change-password",
+        { currentPassword, newPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Password changed successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to change password");
+    } finally {
+      setAccountSettingsLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== "DELETE") {
+      toast.error("Please type 'DELETE' to confirm");
+      return;
+    }
+    setAccountSettingsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete("http://localhost:5000/auth/account", {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { confirmation: deleteConfirmation }
+      });
+      toast.success("Account deleted successfully!");
+      localStorage.removeItem("token");
+      router.push("/");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to delete account");
+    } finally {
+      setAccountSettingsLoading(false);
     }
   };
 
@@ -677,67 +730,322 @@ export default function Dashboard() {
         );
       case "account":
         return (
-          <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
+          <>
+            <div className="mb-8">
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+                Account Settings
+              </h2>
+              <p className="text-lg text-gray-600">
+                Manage your account details, security, and preferences.
+              </p>
+            </div>
+
+            <div className="space-y-8">
+              {/* Profile Information */}
+              <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-white">
+                      Profile Information
+                    </h3>
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-white">
-                  Account Settings
-                </h3>
+                <div className="px-6 py-8 sm:p-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Email Address
+                      </label>
+                      <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 font-medium">
+                        {user?.email}
+                      </div>
+                      <p className="mt-2 text-sm text-gray-500">
+                        Email cannot be changed. Contact support if needed.
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Account Status
+                      </label>
+                      <div className="px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-green-800 font-medium flex items-center">
+                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Active
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Change Password */}
+              <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-white">
+                      Change Password
+                    </h3>
+                  </div>
+                </div>
+                <div className="px-6 py-8 sm:p-8">
+                  <form onSubmit={handleChangePassword} className="space-y-6">
+                    <div>
+                      <label
+                        htmlFor="currentPassword"
+                        className="block text-sm font-semibold text-gray-700 mb-2"
+                      >
+                        Current Password
+                      </label>
+                      <input
+                        type="password"
+                        id="currentPassword"
+                        required
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                        placeholder="Enter your current password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label
+                          htmlFor="newPassword"
+                          className="block text-sm font-semibold text-gray-700 mb-2"
+                        >
+                          New Password
+                        </label>
+                        <input
+                          type="password"
+                          id="newPassword"
+                          required
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                          placeholder="Enter new password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="confirmPassword"
+                          className="block text-sm font-semibold text-gray-700 mb-2"
+                        >
+                          Confirm New Password
+                        </label>
+                        <input
+                          type="password"
+                          id="confirmPassword"
+                          required
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                          placeholder="Confirm new password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={accountSettingsLoading}
+                        className="inline-flex items-center px-8 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
+                      >
+                        {accountSettingsLoading ? (
+                          <>
+                            <svg
+                              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                            Changing Password...
+                          </>
+                        ) : (
+                          <>
+                            <svg
+                              className="w-4 h-4 mr-2"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                              />
+                            </svg>
+                            Change Password
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              {/* Delete Account */}
+              <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-red-200/50">
+                <div className="bg-gradient-to-r from-red-500 to-red-600 p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-white">
+                      Delete Account
+                    </h3>
+                  </div>
+                </div>
+                <div className="px-6 py-8 sm:p-8">
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
+                    <div className="flex items-start space-x-3">
+                      <svg
+                        className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
+                      </svg>
+                      <div>
+                        <h4 className="text-lg font-semibold text-red-800 mb-2">
+                          Danger Zone
+                        </h4>
+                        <p className="text-red-700 text-sm">
+                          Deleting your account is permanent and cannot be undone. All your agents, data, and billing history will be permanently removed.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label
+                        htmlFor="deleteConfirmation"
+                        className="block text-sm font-semibold text-gray-700 mb-2"
+                      >
+                        Type "DELETE" to confirm
+                      </label>
+                      <input
+                        type="text"
+                        id="deleteConfirmation"
+                        className="block w-full px-4 py-3 border border-red-300 rounded-xl shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                        placeholder="Type DELETE to confirm"
+                        value={deleteConfirmation}
+                        onChange={(e) => setDeleteConfirmation(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={handleDeleteAccount}
+                        disabled={accountSettingsLoading || deleteConfirmation !== "DELETE"}
+                        className="inline-flex items-center px-8 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
+                      >
+                        {accountSettingsLoading ? (
+                          <>
+                            <svg
+                              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                            Deleting Account...
+                          </>
+                        ) : (
+                          <>
+                            <svg
+                              className="w-4 h-4 mr-2"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                            Delete Account
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="px-6 py-8 sm:p-8">
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg
-                    className="w-8 h-8 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                </div>
-                <p className="text-gray-600 text-lg font-medium mb-2">
-                  Account settings coming soon
-                </p>
-                <p className="text-gray-500">
-                  Advanced account management and preferences will be available here.
-                </p>
-              </div>
-            </div>
-          </div>
+          </>
         );
       case "create-agent":
         return (

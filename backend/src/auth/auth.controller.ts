@@ -4,9 +4,11 @@ import {
   Get,
   Body,
   Patch,
+  Delete,
   UseGuards,
   ValidationPipe,
   Request,
+  BadRequestException,
 } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -65,5 +67,22 @@ export class AuthController {
   @Patch('profile')
   updateProfile(@Body() updateData: any, @Request() req) {
     return this.authService.updateProfile(req.user.sub, updateData);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('change-password')
+  async changePassword(@Body() body: { currentPassword: string; newPassword: string }, @Request() req) {
+    await this.authService.changePassword(req.user.sub, body.currentPassword, body.newPassword);
+    return { message: 'Password changed successfully.' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('account')
+  async deleteAccount(@Body() body: { confirmation: string }, @Request() req) {
+    if (body.confirmation !== 'DELETE') {
+      throw new BadRequestException('Invalid confirmation text');
+    }
+    await this.authService.deleteAccount(req.user.sub);
+    return { message: 'Account deleted successfully.' };
   }
 }

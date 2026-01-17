@@ -112,6 +112,13 @@ export class AgentsService {
     await this.cacheManager.del(cacheKey);
   }
 
+  async removeAllByUserId(userId: string): Promise<void> {
+    await this.agentModel.deleteMany({ userId: userId }).exec();
+    // Invalidate cache
+    const cacheKey = `agents:${userId}`;
+    await this.cacheManager.del(cacheKey);
+  }
+
   async generateSnippet(agent: AgentDocument, type: string = 'js'): Promise<string> {
     if (type === 'react') {
       // Generate React/NextJs component snippet

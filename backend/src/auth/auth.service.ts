@@ -14,6 +14,7 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { User, UserDocument } from '../users/users.schema';
 import { MailService } from '../mail/mail.service';
+import { AgentsService } from '../agents/agents.service';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +23,7 @@ export class AuthService {
     private mailService: MailService,
     private jwtService: JwtService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private agentsService: AgentsService,
   ) {}
 
   async register(email: string, password: string): Promise<void> {
@@ -169,5 +171,41 @@ export class AuthService {
     const cacheKey = `user:${userId}`;
     await this.cacheManager.del(cacheKey);
     return user;
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedNewPassword;
+    await user.save();
+
+    // Invalidate cache
+    const cacheKey = `user:${userId}`;
+    await this.cacheManager.del(cacheKey);
+  }
+
+  async deleteAccount(userId: string): Promise<void> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Delete all agents associated with this user
+    await this.userModel.findByIdAndDelete(userId);
+
+    // Invalidate cache
+    const cacheKey = `user:${userId}`;
+    await this.cacheManager.del(cacheKey);
   }
 }

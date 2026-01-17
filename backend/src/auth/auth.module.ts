@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -8,12 +8,14 @@ import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
+import { AgentsModule } from '../agents/agents.module';
 
 @Module({
   imports: [
     CacheModule.register(),
     UsersModule,
     MailModule,
+    forwardRef(() => AgentsModule),
     PassportModule,
     JwtModule.register({
       secret: 'test-secret',
