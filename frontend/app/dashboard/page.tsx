@@ -58,6 +58,13 @@ export default function Dashboard() {
   const [editDomain, setEditDomain] = useState("");
   const [snippetModalOpen, setSnippetModalOpen] = useState(false);
   const [selectedAgentForSnippet, setSelectedAgentForSnippet] = useState<Agent | null>(null);
+  // Create Agent form state
+  const [agentName, setAgentName] = useState("");
+  const [agentDescription, setAgentDescription] = useState("");
+  const [agentApiKey, setAgentApiKey] = useState("");
+  const [agentProvider, setAgentProvider] = useState("gemini");
+  const [agentDomain, setAgentDomain] = useState("");
+  const [createAgentLoading, setCreateAgentLoading] = useState(false);
   const router = useRouter();
   const socket = useSocket();
 
@@ -237,6 +244,42 @@ export default function Dashboard() {
     }
   };
 
+  const handleCreateAgent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateAgentLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      await axios.post(
+        "http://localhost:5000/agents",
+        { name: agentName, description: agentDescription, apiKey: agentApiKey, provider: agentProvider, domain: agentDomain },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Agent created successfully!");
+      // Reset form
+      setAgentName("");
+      setAgentDescription("");
+      setAgentApiKey("");
+      setAgentProvider("gemini");
+      setAgentDomain("");
+      // Switch back to dashboard
+      setActiveSection("dashboard");
+      // Refresh agents list
+      const agentsResponse = await axios.get("http://localhost:5000/agents", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAgents(agentsResponse.data);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to create agent");
+    } finally {
+      setCreateAgentLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -336,38 +379,25 @@ export default function Dashboard() {
             {/* Agents Overview */}
             <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
               <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                      <svg
-                        className="w-6 h-6 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-semibold text-white">
-                      AI Agents ({agents.length})
-                    </h3>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                      />
+                    </svg>
                   </div>
-                  <button
-                    onClick={() => router.push("/dashboard/create-agent")}
-                    className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-xl hover:bg-white/30 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      <span>Create Agent</span>
-                    </div>
-                  </button>
+                  <h3 className="text-xl font-semibold text-white">
+                    AI Agents ({agents.length})
+                  </h3>
                 </div>
               </div>
               <div className="px-6 py-8 sm:p-8">
@@ -709,6 +739,485 @@ export default function Dashboard() {
             </div>
           </div>
         );
+      case "create-agent":
+        return (
+          <>
+            <div className="mb-8">
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+                Create Your AI Agent
+              </h2>
+              <p className="text-lg text-gray-600">
+                Build and deploy intelligent chatbots powered by advanced AI
+              </p>
+            </div>
+
+            <div className="bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-200/50 overflow-hidden">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">
+                    Agent Configuration
+                  </h3>
+                </div>
+              </div>
+              <div className="px-6 py-8 sm:p-8">
+                <form onSubmit={handleCreateAgent} className="space-y-8">
+                  <div className="space-y-6">
+                    <div>
+                      <label
+                        htmlFor="agentName"
+                        className="flex items-center text-sm font-semibold text-gray-700 mb-2"
+                      >
+                        <svg
+                          className="w-5 h-5 mr-2 text-indigo-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                        Agent Name
+                      </label>
+                      <input
+                        type="text"
+                        id="agentName"
+                        required
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                        placeholder="Enter a unique name for your agent"
+                        value={agentName}
+                        onChange={(e) => setAgentName(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="agentDescription"
+                        className="flex items-center text-sm font-semibold text-gray-700 mb-2"
+                      >
+                        <svg
+                          className="w-5 h-5 mr-2 text-indigo-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        Description
+                      </label>
+                      <textarea
+                        id="agentDescription"
+                        rows={4}
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400 resize-none"
+                        placeholder="Describe what your agent does and its capabilities"
+                        value={agentDescription}
+                        onChange={(e) => setAgentDescription(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="agentProvider"
+                        className="flex items-center text-sm font-semibold text-gray-700 mb-2"
+                      >
+                        <svg
+                          className="w-5 h-5 mr-2 text-indigo-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                          />
+                        </svg>
+                        AI Provider
+                      </label>
+                      <select
+                        id="agentProvider"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900"
+                        value={agentProvider}
+                        onChange={(e) => setAgentProvider(e.target.value)}
+                      >
+                        <option value="gemini">🤖 Google Gemini</option>
+                        <option value="chatgpt">🧠 OpenAI ChatGPT</option>
+                        <option value="openrouter">🌐 OpenRouter</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="agentDomain"
+                        className="flex items-center text-sm font-semibold text-gray-700 mb-2"
+                      >
+                        <svg
+                          className="w-5 h-5 mr-2 text-indigo-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3"
+                          />
+                        </svg>
+                        Domain (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        id="agentDomain"
+                        placeholder="e.g., example.com"
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                        value={agentDomain}
+                        onChange={(e) => setAgentDomain(e.target.value)}
+                      />
+                      <p className="mt-2 text-sm text-gray-500 flex items-center">
+                        <svg
+                          className="w-4 h-4 mr-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        Restrict agent usage to specific domains for security
+                      </p>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="agentApiKey"
+                        className="flex items-center text-sm font-semibold text-gray-700 mb-2"
+                      >
+                        <svg
+                          className="w-5 h-5 mr-2 text-indigo-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                          />
+                        </svg>
+                        API Key
+                      </label>
+                      <input
+                        type="password"
+                        id="agentApiKey"
+                        required
+                        className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                        placeholder="Enter your API key securely"
+                        value={agentApiKey}
+                        onChange={(e) => setAgentApiKey(e.target.value)}
+                      />
+                      <p className="mt-2 text-sm text-gray-500 flex items-center">
+                        <svg
+                          className="w-4 h-4 mr-1 text-green-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        Encrypted and stored securely with enterprise-grade
+                        protection
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection("dashboard")}
+                      className="inline-flex items-center px-6 py-3 border border-gray-300 rounded-xl shadow-sm text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 hover:shadow-md"
+                    >
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                        />
+                      </svg>
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={createAgentLoading}
+                      className="inline-flex items-center px-8 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
+                    >
+                      {createAgentLoading ? (
+                        <>
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Creating Agent...
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            className="w-4 h-4 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 10V3L4 14h7v7l9-11h-7z"
+                            />
+                          </svg>
+                          Create Agent
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </>
+        );
+      case "billing":
+        return (
+          <>
+            <div className="mb-8">
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+                Billing & Plans
+              </h2>
+              <p className="text-lg text-gray-600">
+                Choose the plan that fits your needs and start building AI agents.
+              </p>
+            </div>
+
+            {/* Current Plan */}
+            <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">
+                    Current Plan
+                  </h3>
+                </div>
+              </div>
+              <div className="px-6 py-8 sm:p-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-xl border border-indigo-200/50">
+                    <h4 className="text-sm font-semibold text-indigo-700 mb-2">Plan</h4>
+                    <p className="text-2xl font-bold text-indigo-900 capitalize">{user?.plan}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200/50">
+                    <h4 className="text-sm font-semibold text-green-700 mb-2">Agent Limit</h4>
+                    <p className="text-2xl font-bold text-green-900">{user?.agentLimit === -1 ? "Unlimited" : user?.agentLimit}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200/50">
+                    <h4 className="text-sm font-semibold text-blue-700 mb-2">Status</h4>
+                    <p className="text-2xl font-bold text-blue-900">Active</p>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <button
+                    onClick={() => router.push("/dashboard/billing-history")}
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <span>View Billing History</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Plans */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                {
+                  id: "regular",
+                  name: "Regular",
+                  price: 599,
+                  currency: "USD",
+                  interval: "month",
+                  agents: 2,
+                  features: ["2 AI Agents", "Basic Analytics", "Email Support"],
+                },
+                {
+                  id: "special",
+                  name: "Special",
+                  price: 899,
+                  currency: "USD",
+                  interval: "month",
+                  agents: 5,
+                  features: ["5 AI Agents", "Advanced Analytics", "Priority Support"],
+                },
+                {
+                  id: "agency",
+                  name: "Agency",
+                  price: 0,
+                  currency: "USD",
+                  interval: "month",
+                  agents: "Unlimited" as string | number,
+                  features: [
+                    "Unlimited AI Agents",
+                    "Custom Analytics",
+                    "Dedicated Support",
+                  ],
+                },
+              ].map((plan) => (
+                <div
+                  key={plan.id}
+                  className={`bg-white/70 backdrop-blur-md shadow-xl rounded-2xl border border-gray-200/50 overflow-hidden ${
+                    user?.plan === plan.id ? "ring-2 ring-indigo-500" : ""
+                  }`}
+                >
+                  <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+                    <div className="text-center">
+                      <h3 className="text-2xl font-bold text-white mb-2">
+                        {plan.name}
+                      </h3>
+                      {plan.price > 0 ? (
+                        <p className="text-4xl font-bold text-white">
+                          ${plan.price}
+                          <span className="text-lg font-normal text-indigo-100">
+                            /{plan.interval}
+                          </span>
+                        </p>
+                      ) : (
+                        <p className="text-xl font-bold text-white">
+                          Contact for pricing
+                        </p>
+                      )}
+                      <p className="mt-2 text-indigo-100">
+                        {plan.agents}{" "}
+                        {typeof plan.agents === "number" ? "Agents" : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <ul className="space-y-3 mb-8">
+                      {plan.features.map((feature, index) => (
+                        <li key={index} className="flex items-center">
+                          <svg
+                            className="w-5 h-5 text-green-500 mr-3 flex-shrink-0"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span className="text-gray-700">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {user?.plan === plan.id ? (
+                      <button
+                        disabled
+                        className="w-full bg-gray-300 text-gray-500 px-4 py-3 rounded-xl cursor-not-allowed font-medium"
+                      >
+                        Current Plan
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          if (plan.id === "agency") {
+                            window.location.href =
+                              "mailto:support@nexavelosai.com?subject=Agency Plan Inquiry";
+                          } else {
+                            // Handle subscription logic here
+                            toast("Subscription functionality will be implemented");
+                          }
+                        }}
+                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                      >
+                        {plan.id === "agency" ? "Contact Us" : "Subscribe"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        );
       default:
         return null;
     }
@@ -747,8 +1256,15 @@ export default function Dashboard() {
               </div>
             </button>
             <button
-              onClick={() => router.push("/dashboard/create-agent")}
-              className="w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
+              onClick={() => {
+                setActiveSection("create-agent");
+                setSidebarOpen(false);
+              }}
+              className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
+                activeSection === "create-agent"
+                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                  : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
+              }`}
             >
               <div className="flex items-center space-x-3">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -776,8 +1292,15 @@ export default function Dashboard() {
               </div>
             </button>
             <button
-              onClick={() => router.push("/dashboard/billing")}
-              className="w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
+              onClick={() => {
+                setActiveSection("billing");
+                setSidebarOpen(false);
+              }}
+              className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
+                activeSection === "billing"
+                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                  : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
+              }`}
             >
               <div className="flex items-center space-x-3">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
