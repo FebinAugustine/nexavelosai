@@ -171,6 +171,7 @@ export default function Profile() {
                       }
                       className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                     >
+                      <option value="free">Free</option>
                       <option value="regular">Regular</option>
                       <option value="special">Special</option>
                       <option value="agency">Agency</option>

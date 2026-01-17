@@ -20,10 +20,10 @@ export class User {
   @Prop()
   verificationCodeExpires?: Date;
 
-  @Prop({ default: 'regular' }) // regular, special, agency
+  @Prop({ default: 'free' }) // free, regular, special, agency
   plan: string;
 
-  @Prop({ default: 5 })
+  @Prop({ default: 1 })
   agentLimit: number;
 
   @Prop({ default: [] })

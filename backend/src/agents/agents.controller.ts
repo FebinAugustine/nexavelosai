@@ -23,7 +23,7 @@ export class AgentsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body(ValidationPipe) createAgentDto: CreateAgentDto, @Request() req) {
-    return this.agentsService.create(createAgentDto, req.user.sub.toString());
+    return this.agentsService.create(createAgentDto, req.user._id.toString());
   }
 
   @UseGuards(JwtAuthGuard)
@@ -43,7 +43,7 @@ export class AgentsController {
   @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
-    return this.agentsService.findOne(id, req.user.sub.toString());
+    return this.agentsService.findOne(id, req.user._id.toString());
   }
 
   @Patch(':id')

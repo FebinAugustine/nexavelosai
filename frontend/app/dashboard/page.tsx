@@ -1129,6 +1129,72 @@ export default function Dashboard() {
           </>
         );
       case "create-agent":
+        if (user?.plan === 'free' && agents.length > 0) {
+          return (
+            <>
+              <div className="mb-8">
+                <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+                  Upgrade Your Plan
+                </h2>
+                <p className="text-lg text-gray-600">
+                  Unlock the ability to create more AI agents and access advanced features
+                </p>
+              </div>
+
+              <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg
+                        className="w-8 h-8 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      Upgrade to Create More Agents
+                    </h3>
+                    <p className="text-indigo-100">
+                      Your current Free plan allows you to create and manage your existing agents, but to create additional AI agents, please upgrade to a paid plan.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-8">
+                  <div className="text-center">
+                    <p className="text-gray-600 mb-8">
+                      Choose from our flexible plans designed to scale with your business needs.
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row justify-center gap-4">
+                      <button
+                        onClick={() => setActiveSection("billing")}
+                        className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                      >
+                        View Plans & Upgrade
+                      </button>
+                      <button
+                        onClick={() => setActiveSection("dashboard")}
+                        className="bg-white/70 backdrop-blur-md border border-gray-200/50 text-gray-700 px-8 py-3 rounded-xl hover:bg-white/90 transition-all duration-200 shadow-lg hover:shadow-xl"
+                      >
+                        Back to Dashboard
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          );
+        }
+
         return (
           <>
             <div className="mb-8">
