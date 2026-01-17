@@ -250,40 +250,82 @@ export default function Dashboard() {
       case "dashboard":
         return (
           <>
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h2>
+            <div className="mb-8">
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+                Dashboard
+              </h2>
+              <p className="text-lg text-gray-600">
+                Welcome back! Here's an overview of your AI agents.
+              </p>
+            </div>
 
             {/* User Info */}
-            <div className="bg-white overflow-hidden shadow rounded-lg mb-6">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                  Account Information
-                </h3>
-                <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+            <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">
+                    Account Information
+                  </h3>
+                </div>
+              </div>
+              <div className="px-6 py-8 sm:p-8">
+                <dl className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
                   <div className="sm:col-span-1">
-                    <dt className="text-sm font-medium text-gray-500">Email</dt>
-                    <dd className="mt-1 text-sm text-gray-900">
+                    <dt className="text-sm font-semibold text-gray-700 flex items-center mb-2">
+                      <svg className="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Email
+                    </dt>
+                    <dd className="text-sm text-gray-900 font-medium">
                       {user?.email}
                     </dd>
                   </div>
                   <div className="sm:col-span-1">
-                    <dt className="text-sm font-medium text-gray-500">Plan</dt>
-                    <dd className="mt-1 text-sm text-gray-900 capitalize">
+                    <dt className="text-sm font-semibold text-gray-700 flex items-center mb-2">
+                      <svg className="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </svg>
+                      Plan
+                    </dt>
+                    <dd className="text-sm text-gray-900 font-medium capitalize">
                       {user?.plan}
                     </dd>
                   </div>
                   <div className="sm:col-span-1">
-                    <dt className="text-sm font-medium text-gray-500">
+                    <dt className="text-sm font-semibold text-gray-700 flex items-center mb-2">
+                      <svg className="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
                       Agent Limit
                     </dt>
-                    <dd className="mt-1 text-sm text-gray-900">
+                    <dd className="text-sm text-gray-900 font-medium">
                       {user?.agentLimit}
                     </dd>
                   </div>
                   <div className="sm:col-span-1">
-                    <dt className="text-sm font-medium text-gray-500">
+                    <dt className="text-sm font-semibold text-gray-700 flex items-center mb-2">
+                      <svg className="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3" />
+                      </svg>
                       Domains
                     </dt>
-                    <dd className="mt-1 text-sm text-gray-900">
+                    <dd className="text-sm text-gray-900 font-medium">
                       {user?.domains.length ? user.domains.join(", ") : "None"}
                     </dd>
                   </div>
@@ -292,69 +334,150 @@ export default function Dashboard() {
             </div>
 
             {/* Agents Overview */}
-            <div className="bg-white overflow-hidden shadow rounded-lg mb-6">
-              <div className="px-4 py-5 sm:p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">
-                    AI Agents ({agents.length})
-                  </h3>
+            <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-white">
+                      AI Agents ({agents.length})
+                    </h3>
+                  </div>
                   <button
                     onClick={() => router.push("/dashboard/create-agent")}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+                    className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-xl hover:bg-white/30 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
                   >
-                    Create Agent
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      <span>Create Agent</span>
+                    </div>
                   </button>
                 </div>
+              </div>
+              <div className="px-6 py-8 sm:p-8">
                 {agents.length === 0 ? (
-                  <p className="text-gray-600">
-                    You have no AI agents created. Create your first agent to
-                    get started.
-                  </p>
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg
+                        className="w-8 h-8 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-gray-600 text-lg font-medium mb-2">
+                      No AI agents yet
+                    </p>
+                    <p className="text-gray-500 mb-6">
+                      Create your first AI agent to get started with intelligent chatbots.
+                    </p>
+                    <button
+                      onClick={() => router.push("/dashboard/create-agent")}
+                      className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                    >
+                      Create Your First Agent
+                    </button>
+                  </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {agents.map((agent) => (
-                      <div key={agent._id} className="border rounded-lg p-4">
+                      <div key={agent._id} className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200">
                         <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="text-md font-medium text-gray-900">
-                              {agent.name}
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              {agent.description}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              Provider: {agent.provider}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              Domain: {agent.domain || "Not set"}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              Chats: {agent.chatCount} | Interactions:{" "}
-                              {agent.totalInteractions}
-                            </p>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-3">
+                              <div className="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
+                                <svg
+                                  className="w-6 h-6 text-indigo-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                                  />
+                                </svg>
+                              </div>
+                              <div>
+                                <h4 className="text-lg font-semibold text-gray-900">
+                                  {agent.name}
+                                </h4>
+                                <p className="text-sm text-gray-600">
+                                  {agent.description}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                              <div className="flex items-center space-x-2">
+                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                </svg>
+                                <span className="text-gray-600">Provider:</span>
+                                <span className="font-medium text-gray-900">{agent.provider}</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3" />
+                                </svg>
+                                <span className="text-gray-600">Domain:</span>
+                                <span className="font-medium text-gray-900">{agent.domain || "Not set"}</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                                <span className="text-gray-600">Chats:</span>
+                                <span className="font-medium text-gray-900">{agent.chatCount} | Interactions: {agent.totalInteractions}</span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex space-x-2">
+                          <div className="flex flex-wrap gap-2 ml-4">
                             <button
                               onClick={() => handleTestAgent(agent)}
-                              className="text-blue-600 hover:text-blue-800"
+                              className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors duration-200 font-medium text-sm"
                             >
                               Test Agent
                             </button>
                             <button
                               onClick={() => handleGetSnippet(agent)}
-                              className="text-green-600 hover:text-green-800"
+                              className="bg-green-50 text-green-700 px-4 py-2 rounded-lg hover:bg-green-100 transition-colors duration-200 font-medium text-sm"
                             >
                               Get Snippet
                             </button>
                             <button
                               onClick={() => handleEditAgent(agent)}
-                              className="text-indigo-600 hover:text-indigo-800"
+                              className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg hover:bg-indigo-100 transition-colors duration-200 font-medium text-sm"
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => handleDeleteAgent(agent._id)}
-                              className="text-red-600 hover:text-red-800"
+                              className="bg-red-50 text-red-700 px-4 py-2 rounded-lg hover:bg-red-100 transition-colors duration-200 font-medium text-sm"
                             >
                               Delete
                             </button>
@@ -370,53 +493,127 @@ export default function Dashboard() {
         );
       case "analytics":
         return (
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                Analytics
-              </h3>
+          <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-white">
+                  Analytics Overview
+                </h3>
+              </div>
+            </div>
+            <div className="px-6 py-8 sm:p-8">
               {analytics ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-indigo-50 p-4 rounded-lg">
-                      <h4 className="text-sm font-medium text-indigo-600">
-                        Total Agents
-                      </h4>
-                      <p className="text-2xl font-bold text-indigo-900">
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-2xl border border-indigo-200/50 shadow-lg">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-indigo-700">
+                            Total Agents
+                          </h4>
+                        </div>
+                      </div>
+                      <p className="text-3xl font-bold text-indigo-900">
                         {analytics.totalAgents}
                       </p>
                     </div>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <h4 className="text-sm font-medium text-green-600">
-                        Total Chats
-                      </h4>
-                      <p className="text-2xl font-bold text-green-900">
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-2xl border border-green-200/50 shadow-lg">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-green-700">
+                            Total Chats
+                          </h4>
+                        </div>
+                      </div>
+                      <p className="text-3xl font-bold text-green-900">
                         {analytics.totalChats}
                       </p>
                     </div>
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <h4 className="text-sm font-medium text-blue-600">
-                        Total Interactions
-                      </h4>
-                      <p className="text-2xl font-bold text-blue-900">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl border border-blue-200/50 shadow-lg">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-9 0V1m10 3V1m0 3l1 1v16a2 2 0 01-2 2H6a2 2 0 01-2-2V5l1-1z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-blue-700">
+                            Total Interactions
+                          </h4>
+                        </div>
+                      </div>
+                      <p className="text-3xl font-bold text-blue-900">
                         {analytics.totalInteractions}
                       </p>
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">
+                    <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                      <svg className="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
                       Agent Performance
                     </h4>
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                       {analytics.agents.map((agent) => (
                         <div
                           key={agent.id}
-                          className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                          className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200"
                         >
-                          <span className="font-medium">{agent.name}</span>
-                          <div className="text-sm text-gray-600">
-                            Chats: {agent.chatCount} | Interactions:{" "}
-                            {agent.totalInteractions}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
+                                <svg
+                                  className="w-6 h-6 text-indigo-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                                  />
+                                </svg>
+                              </div>
+                              <div>
+                                <span className="font-semibold text-gray-900 text-lg">{agent.name}</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm text-gray-600 mb-1">
+                                <span className="font-medium">Chats:</span> {agent.chatCount}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                <span className="font-medium">Interactions:</span> {agent.totalInteractions}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -424,21 +621,91 @@ export default function Dashboard() {
                   </div>
                 </div>
               ) : (
-                <p className="text-gray-600">Loading analytics...</p>
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 animate-spin">
+                    <svg
+                      className="w-8 h-8 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-gray-600 text-lg font-medium">
+                    Loading analytics...
+                  </p>
+                </div>
               )}
             </div>
           </div>
         );
       case "account":
         return (
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                Account Settings
-              </h3>
-              <p className="text-gray-600">
-                Account settings and preferences will be available here.
-              </p>
+          <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-white">
+                  Account Settings
+                </h3>
+              </div>
+            </div>
+            <div className="px-6 py-8 sm:p-8">
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-8 h-8 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                </div>
+                <p className="text-gray-600 text-lg font-medium mb-2">
+                  Account settings coming soon
+                </p>
+                <p className="text-gray-500">
+                  Advanced account management and preferences will be available here.
+                </p>
+              </div>
             </div>
           </div>
         );
@@ -448,15 +715,15 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex">
       {/* Sidebar */}
       <div
-        className={`bg-white shadow-lg ${
+        className={`bg-white/80 backdrop-blur-md shadow-xl border-r border-gray-200/50 ${
           sidebarOpen ? "block" : "hidden"
         } md:block w-64 min-h-screen fixed md:static inset-y-0 left-0 z-50`}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-center h-16 bg-indigo-600">
+          <div className="flex items-center justify-center h-16 bg-gradient-to-r from-indigo-600 to-purple-600">
             <h1 className="text-xl font-bold text-white">NexaVelosAI</h1>
           </div>
           <nav className="flex-1 px-4 py-6 space-y-2">
@@ -465,59 +732,90 @@ export default function Dashboard() {
                 setActiveSection("dashboard");
                 setSidebarOpen(false);
               }}
-              className={`w-full text-left px-4 py-2 rounded-md ${
+              className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
                 activeSection === "dashboard"
-                  ? "bg-indigo-100 text-indigo-700"
-                  : "text-gray-700 hover:bg-gray-100"
+                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                  : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
               }`}
             >
-              Dashboard
+              <div className="flex items-center space-x-3">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
+                </svg>
+                <span>Dashboard</span>
+              </div>
             </button>
             <button
               onClick={() => router.push("/dashboard/create-agent")}
-              className="w-full text-left px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100"
+              className="w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
             >
-              Create Agent
+              <div className="flex items-center space-x-3">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>Create Agent</span>
+              </div>
             </button>
             <button
               onClick={() => {
                 setActiveSection("analytics");
                 setSidebarOpen(false);
               }}
-              className={`w-full text-left px-4 py-2 rounded-md ${
+              className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
                 activeSection === "analytics"
-                  ? "bg-indigo-100 text-indigo-700"
-                  : "text-gray-700 hover:bg-gray-100"
+                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                  : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
               }`}
             >
-              Analytics
+              <div className="flex items-center space-x-3">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span>Analytics</span>
+              </div>
             </button>
             <button
               onClick={() => router.push("/dashboard/billing")}
-              className="w-full text-left px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100"
+              className="w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
             >
-              Billing
+              <div className="flex items-center space-x-3">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                <span>Billing</span>
+              </div>
             </button>
             <button
               onClick={() => {
                 setActiveSection("account");
                 setSidebarOpen(false);
               }}
-              className={`w-full text-left px-4 py-2 rounded-md ${
+              className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
                 activeSection === "account"
-                  ? "bg-indigo-100 text-indigo-700"
-                  : "text-gray-700 hover:bg-gray-100"
+                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                  : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
               }`}
             >
-              Account
+              <div className="flex items-center space-x-3">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span>Account</span>
+              </div>
             </button>
           </nav>
           <div className="p-4">
             <button
               onClick={handleLogout}
-              className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+              className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-3 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
             >
-              Logout
+              <div className="flex items-center justify-center space-x-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Logout</span>
+              </div>
             </button>
           </div>
         </div>
@@ -526,7 +824,7 @@ export default function Dashboard() {
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setSidebarOpen(false)}
         ></div>
       )}
@@ -534,13 +832,13 @@ export default function Dashboard() {
       {/* Main Content */}
       <div className="flex-1 md:ml-0">
         {/* Top Navigation */}
-        <nav className="bg-white shadow-sm md:hidden">
+        <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200/50 md:hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
               <div className="flex items-center">
                 <button
                   onClick={() => setSidebarOpen(true)}
-                  className="text-gray-700 hover:text-indigo-600"
+                  className="text-gray-700 hover:text-indigo-600 p-2 rounded-lg hover:bg-white/60 transition-all duration-200"
                 >
                   <svg
                     className="w-6 h-6"
@@ -558,13 +856,13 @@ export default function Dashboard() {
                 </button>
               </div>
               <div className="flex items-center space-x-4">
-                <span className="text-gray-700">Welcome, {user?.email}</span>
+                <span className="text-gray-700 font-medium">Welcome, {user?.email}</span>
               </div>
             </div>
           </div>
         </nav>
 
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <main className="flex-1 max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">{renderContent()}</div>
         </main>
       </div>
