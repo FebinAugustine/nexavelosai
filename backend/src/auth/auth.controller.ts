@@ -74,7 +74,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Patch('change-password')
   async changePassword(@Body(ValidationPipe) changePasswordDto: ChangePasswordDto, @Request() req) {
-    await this.authService.changePassword(req.user.sub, changePasswordDto.currentPassword, changePasswordDto.newPassword);
+    console.log('changePassword called, user:', req.user);
+    await this.authService.changePassword(req.user._id.toString(), changePasswordDto.currentPassword, changePasswordDto.newPassword);
     return { message: 'Password changed successfully.' };
   }
 

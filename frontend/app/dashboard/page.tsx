@@ -569,7 +569,7 @@ export default function Dashboard() {
                   <div className="space-y-6">
                     {agents.map((agent) => (
                       <div key={agent._id} className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200">
-                        <div className="flex justify-between items-start">
+                        <div className="flex flex-col justify-between items-start gap-4">
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-3">
                               <div className="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
@@ -611,11 +611,11 @@ export default function Dashboard() {
                                 <span className="text-gray-600">Domain:</span>
                                 <span className="font-medium text-gray-900">{agent.domain || "Not set"}</span>
                               </div>
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center space-x-2 md:ml-10">
                                 <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                 </svg>
-                                <span className="text-gray-600">Chats:</span>
+                                <span className="text-gray-600">Chats:</span> <br />
                                 <span className="font-medium text-gray-900">{agent.chatCount} | Interactions: {agent.totalInteractions}</span>
                               </div>
                             </div>
