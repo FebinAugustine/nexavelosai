@@ -12,7 +12,7 @@ import {
   countWords,
   isValidAgentName,
   isValidDomain,
-  isValidPassword
+  isValidPassword,
 } from "../../lib/sanitization";
 
 interface User {
@@ -65,7 +65,8 @@ export default function Dashboard() {
   const [editDescription, setEditDescription] = useState("");
   const [editDomain, setEditDomain] = useState("");
   const [snippetModalOpen, setSnippetModalOpen] = useState(false);
-  const [selectedAgentForSnippet, setSelectedAgentForSnippet] = useState<Agent | null>(null);
+  const [selectedAgentForSnippet, setSelectedAgentForSnippet] =
+    useState<Agent | null>(null);
   // Create Agent form state
   const [agentName, setAgentName] = useState("");
   const [agentDescription, setAgentDescription] = useState("");
@@ -175,7 +176,7 @@ export default function Dashboard() {
         },
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
       const agentMessage = {
         role: "agent" as const,
@@ -211,13 +212,13 @@ export default function Dashboard() {
         },
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
       toast.success("Agent updated successfully!");
       setAgents(
         agents.map((agent) =>
-          agent._id === selectedAgentForEdit._id ? response.data : agent
-        )
+          agent._id === selectedAgentForEdit._id ? response.data : agent,
+        ),
       );
       setEditModalOpen(false);
     } catch (error: any) {
@@ -239,7 +240,7 @@ export default function Dashboard() {
         `http://localhost:5000/agents/${selectedAgentForSnippet._id}/snippet?type=${type}`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
       const snippet = response.data.snippet;
       // Copy to clipboard or show in alert
@@ -262,18 +263,26 @@ export default function Dashboard() {
     e.preventDefault();
 
     // Sanitize and validate inputs
-    const sanitizedName = sanitizeAndValidateInput(agentName, { maxLength: 100, fieldName: 'Agent name' });
+    const sanitizedName = sanitizeAndValidateInput(agentName, {
+      maxLength: 100,
+      fieldName: "Agent name",
+    });
     if (!sanitizedName.isValid) {
       toast.error(sanitizedName.error!);
       return;
     }
 
     if (!isValidAgentName(sanitizedName.sanitized)) {
-      toast.error("Agent name can only contain letters, numbers, spaces, hyphens, and underscores");
+      toast.error(
+        "Agent name can only contain letters, numbers, spaces, hyphens, and underscores",
+      );
       return;
     }
 
-    const sanitizedDescription = sanitizeAndValidateInput(agentDescription, { maxLength: 50000, fieldName: 'Description' });
+    const sanitizedDescription = sanitizeAndValidateInput(agentDescription, {
+      maxLength: 50000,
+      fieldName: "Description",
+    });
     if (!sanitizedDescription.isValid) {
       toast.error(sanitizedDescription.error!);
       return;
@@ -285,13 +294,18 @@ export default function Dashboard() {
       return;
     }
 
-    const sanitizedApiKey = sanitizeAndValidateInput(agentApiKey, { maxLength: 1000, fieldName: 'API key' });
+    const sanitizedApiKey = sanitizeAndValidateInput(agentApiKey, {
+      maxLength: 1000,
+      fieldName: "API key",
+    });
     if (!sanitizedApiKey.isValid) {
       toast.error(sanitizedApiKey.error!);
       return;
     }
 
-    const sanitizedDomain = agentDomain ? sanitizeTextInput(agentDomain).toLowerCase() : '';
+    const sanitizedDomain = agentDomain
+      ? sanitizeTextInput(agentDomain).toLowerCase()
+      : "";
     if (sanitizedDomain && !isValidDomain(sanitizedDomain)) {
       toast.error("Please enter a valid domain format");
       return;
@@ -312,9 +326,9 @@ export default function Dashboard() {
           description: sanitizedDescription.sanitized,
           apiKey: sanitizedApiKey.sanitized,
           provider: agentProvider,
-          domain: sanitizedDomain || undefined
+          domain: sanitizedDomain || undefined,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       toast.success("Agent created successfully!");
       // Reset form
@@ -352,7 +366,9 @@ export default function Dashboard() {
     }
 
     if (!isValidPassword(sanitizedNewPassword)) {
-      toast.error("New password must be at least 6 characters long and contain both letters and numbers");
+      toast.error(
+        "New password must be at least 6 characters long and contain both letters and numbers",
+      );
       return;
     }
 
@@ -373,9 +389,9 @@ export default function Dashboard() {
         "http://localhost:5000/auth/change-password",
         {
           currentPassword: sanitizedCurrentPassword,
-          newPassword: sanitizedNewPassword
+          newPassword: sanitizedNewPassword,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       toast.success("Password changed successfully!");
       setCurrentPassword("");
@@ -390,7 +406,8 @@ export default function Dashboard() {
 
   const handleDeleteAccount = async () => {
     // Sanitize confirmation input
-    const sanitizedConfirmation = sanitizeTextInput(deleteConfirmation).toUpperCase();
+    const sanitizedConfirmation =
+      sanitizeTextInput(deleteConfirmation).toUpperCase();
 
     if (sanitizedConfirmation !== "DELETE") {
       toast.error("Please type 'DELETE' to confirm account deletion");
@@ -402,7 +419,7 @@ export default function Dashboard() {
       const token = localStorage.getItem("token");
       await axios.delete("http://localhost:5000/auth/account", {
         headers: { Authorization: `Bearer ${token}` },
-        data: { confirmation: sanitizedConfirmation }
+        data: { confirmation: sanitizedConfirmation },
       });
       toast.success("Account deleted successfully!");
       localStorage.removeItem("token");
@@ -464,8 +481,18 @@ export default function Dashboard() {
                 <dl className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
                   <div className="sm:col-span-1">
                     <dt className="text-sm font-semibold text-gray-700 flex items-center mb-2">
-                      <svg className="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      <svg
+                        className="w-4 h-4 mr-2 text-indigo-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
                       </svg>
                       Email
                     </dt>
@@ -475,8 +502,18 @@ export default function Dashboard() {
                   </div>
                   <div className="sm:col-span-1">
                     <dt className="text-sm font-semibold text-gray-700 flex items-center mb-2">
-                      <svg className="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      <svg
+                        className="w-4 h-4 mr-2 text-indigo-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                        />
                       </svg>
                       Plan
                     </dt>
@@ -486,8 +523,18 @@ export default function Dashboard() {
                   </div>
                   <div className="sm:col-span-1">
                     <dt className="text-sm font-semibold text-gray-700 flex items-center mb-2">
-                      <svg className="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      <svg
+                        className="w-4 h-4 mr-2 text-indigo-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
                       </svg>
                       Agent Limit
                     </dt>
@@ -497,8 +544,18 @@ export default function Dashboard() {
                   </div>
                   <div className="sm:col-span-1">
                     <dt className="text-sm font-semibold text-gray-700 flex items-center mb-2">
-                      <svg className="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3" />
+                      <svg
+                        className="w-4 h-4 mr-2 text-indigo-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3"
+                        />
                       </svg>
                       Domains
                     </dt>
@@ -556,7 +613,8 @@ export default function Dashboard() {
                       No AI agents yet
                     </p>
                     <p className="text-gray-500 mb-6">
-                      Create your first AI agent to get started with intelligent chatbots.
+                      Create your first AI agent to get started with intelligent
+                      chatbots.
                     </p>
                     <button
                       onClick={() => router.push("/dashboard/create-agent")}
@@ -568,7 +626,10 @@ export default function Dashboard() {
                 ) : (
                   <div className="space-y-6">
                     {agents.map((agent) => (
-                      <div key={agent._id} className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200">
+                      <div
+                        key={agent._id}
+                        className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200"
+                      >
                         <div className="flex flex-col justify-between items-start gap-4">
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-3">
@@ -598,25 +659,63 @@ export default function Dashboard() {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                               <div className="flex items-center space-x-2">
-                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                <svg
+                                  className="w-4 h-4 text-indigo-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                                  />
                                 </svg>
                                 <span className="text-gray-600">Provider:</span>
-                                <span className="font-medium text-gray-900">{agent.provider}</span>
+                                <span className="font-medium text-gray-900">
+                                  {agent.provider}
+                                </span>
                               </div>
                               <div className="flex items-center space-x-2">
-                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3" />
+                                <svg
+                                  className="w-4 h-4 text-indigo-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3"
+                                  />
                                 </svg>
                                 <span className="text-gray-600">Domain:</span>
-                                <span className="font-medium text-gray-900">{agent.domain || "Not set"}</span>
+                                <span className="font-medium text-gray-900">
+                                  {agent.domain || "Not set"}
+                                </span>
                               </div>
                               <div className="flex items-center space-x-2 md:ml-10">
-                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                <svg
+                                  className="w-4 h-4 text-indigo-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                  />
                                 </svg>
-                                <span className="text-gray-600">Chats:</span> <br />
-                                <span className="font-medium text-gray-900">{agent.chatCount} | Interactions: {agent.totalInteractions}</span>
+                                <span className="text-gray-600">Chats:</span>{" "}
+                                <br />
+                                <span className="font-medium text-gray-900">
+                                  {agent.chatCount} | Interactions:{" "}
+                                  {agent.totalInteractions}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -687,8 +786,18 @@ export default function Dashboard() {
                     <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-2xl border border-indigo-200/50 shadow-lg">
                       <div className="flex items-center space-x-3 mb-4">
                         <div className="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center">
-                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                          <svg
+                            className="w-6 h-6 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                            />
                           </svg>
                         </div>
                         <div>
@@ -704,8 +813,18 @@ export default function Dashboard() {
                     <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-2xl border border-green-200/50 shadow-lg">
                       <div className="flex items-center space-x-3 mb-4">
                         <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
-                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          <svg
+                            className="w-6 h-6 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                            />
                           </svg>
                         </div>
                         <div>
@@ -721,8 +840,18 @@ export default function Dashboard() {
                     <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl border border-blue-200/50 shadow-lg">
                       <div className="flex items-center space-x-3 mb-4">
                         <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
-                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-9 0V1m10 3V1m0 3l1 1v16a2 2 0 01-2 2H6a2 2 0 01-2-2V5l1-1z" />
+                          <svg
+                            className="w-6 h-6 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-9 0V1m10 3V1m0 3l1 1v16a2 2 0 01-2 2H6a2 2 0 01-2-2V5l1-1z"
+                            />
                           </svg>
                         </div>
                         <div>
@@ -736,10 +865,21 @@ export default function Dashboard() {
                       </p>
                     </div>
                   </div>
+
                   <div>
                     <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                      <svg className="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      <svg
+                        className="w-5 h-5 mr-2 text-indigo-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                        />
                       </svg>
                       Agent Performance
                     </h4>
@@ -767,15 +907,21 @@ export default function Dashboard() {
                                 </svg>
                               </div>
                               <div>
-                                <span className="font-semibold text-gray-900 text-lg">{agent.name}</span>
+                                <span className="font-semibold text-gray-900 text-lg">
+                                  {agent.name}
+                                </span>
                               </div>
                             </div>
                             <div className="text-right">
                               <div className="text-sm text-gray-600 mb-1">
-                                <span className="font-medium">Chats:</span> {agent.chatCount}
+                                <span className="font-medium">Chats:</span>{" "}
+                                {agent.chatCount}
                               </div>
                               <div className="text-sm text-gray-600">
-                                <span className="font-medium">Interactions:</span> {agent.totalInteractions}
+                                <span className="font-medium">
+                                  Interactions:
+                                </span>{" "}
+                                {agent.totalInteractions}
                               </div>
                             </div>
                           </div>
@@ -864,8 +1010,16 @@ export default function Dashboard() {
                         Account Status
                       </label>
                       <div className="px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-green-800 font-medium flex items-center">
-                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        <svg
+                          className="w-4 h-4 mr-2"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                         Active
                       </div>
@@ -1051,7 +1205,9 @@ export default function Dashboard() {
                           Danger Zone
                         </h4>
                         <p className="text-red-700 text-sm">
-                          Deleting your account is permanent and cannot be undone. All your agents, data, and billing history will be permanently removed.
+                          Deleting your account is permanent and cannot be
+                          undone. All your agents, data, and billing history
+                          will be permanently removed.
                         </p>
                       </div>
                     </div>
@@ -1076,7 +1232,10 @@ export default function Dashboard() {
                     <div className="flex justify-end">
                       <button
                         onClick={handleDeleteAccount}
-                        disabled={accountSettingsLoading || deleteConfirmation !== "DELETE"}
+                        disabled={
+                          accountSettingsLoading ||
+                          deleteConfirmation !== "DELETE"
+                        }
                         className="inline-flex items-center px-8 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
                       >
                         {accountSettingsLoading ? (
@@ -1129,7 +1288,7 @@ export default function Dashboard() {
           </>
         );
       case "create-agent":
-        if (user?.plan === 'free' && agents.length > 0) {
+        if (user?.plan === "free" && agents.length > 0) {
           return (
             <>
               <div className="mb-8">
@@ -1137,7 +1296,8 @@ export default function Dashboard() {
                   Upgrade Your Plan
                 </h2>
                 <p className="text-lg text-gray-600">
-                  Unlock the ability to create more AI agents and access advanced features
+                  Unlock the ability to create more AI agents and access
+                  advanced features
                 </p>
               </div>
 
@@ -1163,7 +1323,9 @@ export default function Dashboard() {
                       Upgrade to Create More Agents
                     </h3>
                     <p className="text-indigo-100">
-                      Your current Free plan allows you to create and manage your existing agents, but to create additional AI agents, please upgrade to a paid plan.
+                      Your current Free plan allows you to create and manage
+                      your existing agents, but to create additional AI agents,
+                      please upgrade to a paid plan.
                     </p>
                   </div>
                 </div>
@@ -1171,7 +1333,8 @@ export default function Dashboard() {
                 <div className="p-8">
                   <div className="text-center">
                     <p className="text-gray-600 mb-8">
-                      Choose from our flexible plans designed to scale with your business needs.
+                      Choose from our flexible plans designed to scale with your
+                      business needs.
                     </p>
 
                     <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -1294,7 +1457,9 @@ export default function Dashboard() {
                       />
                       <div className="mt-2 flex justify-between text-sm text-gray-500">
                         <span>{countWords(agentDescription)} / 1000 words</span>
-                        <span>{agentDescription.length} / 50000 characters</span>
+                        <span>
+                          {agentDescription.length} / 50000 characters
+                        </span>
                       </div>
                     </div>
 
@@ -1507,7 +1672,8 @@ export default function Dashboard() {
                 Billing & Plans
               </h2>
               <p className="text-lg text-gray-600">
-                Choose the plan that fits your needs and start building AI agents.
+                Choose the plan that fits your needs and start building AI
+                agents.
               </p>
             </div>
 
@@ -1538,15 +1704,25 @@ export default function Dashboard() {
               <div className="px-6 py-8 sm:p-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-xl border border-indigo-200/50">
-                    <h4 className="text-sm font-semibold text-indigo-700 mb-2">Plan</h4>
-                    <p className="text-2xl font-bold text-indigo-900 capitalize">{user?.plan}</p>
+                    <h4 className="text-sm font-semibold text-indigo-700 mb-2">
+                      Plan
+                    </h4>
+                    <p className="text-2xl font-bold text-indigo-900 capitalize">
+                      {user?.plan}
+                    </p>
                   </div>
                   <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200/50">
-                    <h4 className="text-sm font-semibold text-green-700 mb-2">Agent Limit</h4>
-                    <p className="text-2xl font-bold text-green-900">{user?.agentLimit === -1 ? "Unlimited" : user?.agentLimit}</p>
+                    <h4 className="text-sm font-semibold text-green-700 mb-2">
+                      Agent Limit
+                    </h4>
+                    <p className="text-2xl font-bold text-green-900">
+                      {user?.agentLimit === -1 ? "Unlimited" : user?.agentLimit}
+                    </p>
                   </div>
                   <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200/50">
-                    <h4 className="text-sm font-semibold text-blue-700 mb-2">Status</h4>
+                    <h4 className="text-sm font-semibold text-blue-700 mb-2">
+                      Status
+                    </h4>
                     <p className="text-2xl font-bold text-blue-900">Active</p>
                   </div>
                 </div>
@@ -1556,8 +1732,18 @@ export default function Dashboard() {
                     className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
                   >
                     <div className="flex items-center space-x-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        />
                       </svg>
                       <span>View Billing History</span>
                     </div>
@@ -1585,7 +1771,11 @@ export default function Dashboard() {
                   currency: "USD",
                   interval: "month",
                   agents: 5,
-                  features: ["5 AI Agents", "Advanced Analytics", "Priority Support"],
+                  features: [
+                    "5 AI Agents",
+                    "Advanced Analytics",
+                    "Priority Support",
+                  ],
                 },
                 {
                   id: "agency",
@@ -1664,7 +1854,9 @@ export default function Dashboard() {
                               "mailto:support@nexavelosai.com?subject=Agency Plan Inquiry";
                           } else {
                             // Handle subscription logic here
-                            toast("Subscription functionality will be implemented");
+                            toast(
+                              "Subscription functionality will be implemented",
+                            );
                           }
                         }}
                         className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
@@ -1708,9 +1900,24 @@ export default function Dashboard() {
               }`}
             >
               <div className="flex items-center space-x-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z"
+                  />
                 </svg>
                 <span>Dashboard</span>
               </div>
@@ -1727,8 +1934,18 @@ export default function Dashboard() {
               }`}
             >
               <div className="flex items-center space-x-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
                 </svg>
                 <span>Create Agent</span>
               </div>
@@ -1745,8 +1962,18 @@ export default function Dashboard() {
               }`}
             >
               <div className="flex items-center space-x-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
                 </svg>
                 <span>Analytics</span>
               </div>
@@ -1763,8 +1990,18 @@ export default function Dashboard() {
               }`}
             >
               <div className="flex items-center space-x-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                  />
                 </svg>
                 <span>Billing</span>
               </div>
@@ -1781,8 +2018,18 @@ export default function Dashboard() {
               }`}
             >
               <div className="flex items-center space-x-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
                 </svg>
                 <span>Account</span>
               </div>
@@ -1794,8 +2041,18 @@ export default function Dashboard() {
               className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-3 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
             >
               <div className="flex items-center justify-center space-x-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
                 </svg>
                 <span>Logout</span>
               </div>
@@ -1839,7 +2096,9 @@ export default function Dashboard() {
                 </button>
               </div>
               <div className="flex items-center space-x-4">
-                <span className="text-gray-700 font-medium">Welcome, {user?.email}</span>
+                <span className="text-gray-700 font-medium">
+                  Welcome, {user?.email}
+                </span>
               </div>
             </div>
           </div>
@@ -2361,7 +2620,7 @@ export default function Dashboard() {
               </p>
               <div className="space-y-3">
                 <button
-                  onClick={() => handleCopySnippet('js')}
+                  onClick={() => handleCopySnippet("js")}
                   className="w-full p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200 text-left"
                 >
                   <div className="flex items-center space-x-3">
@@ -2381,7 +2640,9 @@ export default function Dashboard() {
                       </svg>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">JavaScript</h4>
+                      <h4 className="font-semibold text-gray-900">
+                        JavaScript
+                      </h4>
                       <p className="text-sm text-gray-600">
                         Embeddable script for any website
                       </p>
@@ -2389,7 +2650,7 @@ export default function Dashboard() {
                   </div>
                 </button>
                 <button
-                  onClick={() => handleCopySnippet('react')}
+                  onClick={() => handleCopySnippet("react")}
                   className="w-full p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200 text-left"
                 >
                   <div className="flex items-center space-x-3">
@@ -2409,7 +2670,9 @@ export default function Dashboard() {
                       </svg>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">React/Next.js</h4>
+                      <h4 className="font-semibold text-gray-900">
+                        React/Next.js
+                      </h4>
                       <p className="text-sm text-gray-600">
                         Component for React and Next.js applications
                       </p>

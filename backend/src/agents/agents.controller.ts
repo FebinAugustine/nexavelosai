@@ -41,6 +41,13 @@ export class AgentsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
+  @Get('analytics/detailed')
+  getDetailedAnalytics(@Request() req, @Query('month') month?: string) {
+    return this.agentsService.getDetailedAnalytics(req.user._id.toString(), month);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
     return this.agentsService.findOne(id, req.user._id.toString());
