@@ -9,6 +9,7 @@ import {
   UseGuards,
   Request,
   ValidationPipe,
+  Query,
 } from '@nestjs/common';
 import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 import { AgentsService } from './agents.service';
@@ -66,9 +67,9 @@ export class AgentsController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id/snippet')
-  async getSnippet(@Param('id') id: string, @Request() req) {
+  async getSnippet(@Param('id') id: string, @Request() req, @Query('type') type: string = 'js') {
     const agent = await this.agentsService.findOne(id, req.user._id.toString());
-    return { snippet: await this.agentsService.generateSnippet(agent) };
+    return { snippet: await this.agentsService.generateSnippet(agent, type) };
   }
 
   @UseGuards()

@@ -56,6 +56,8 @@ export default function Dashboard() {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editDomain, setEditDomain] = useState("");
+  const [snippetModalOpen, setSnippetModalOpen] = useState(false);
+  const [selectedAgentForSnippet, setSelectedAgentForSnippet] = useState<Agent | null>(null);
   const router = useRouter();
   const socket = useSocket();
 
@@ -202,11 +204,18 @@ export default function Dashboard() {
     }
   };
 
-  const handleGetSnippet = async (agentId: string) => {
+  const handleGetSnippet = (agent: Agent) => {
+    setSelectedAgentForSnippet(agent);
+    setSnippetModalOpen(true);
+  };
+
+  const handleCopySnippet = async (type: string) => {
+    if (!selectedAgentForSnippet) return;
+
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:5000/agents/${agentId}/snippet`,
+        `http://localhost:5000/agents/${selectedAgentForSnippet._id}/snippet?type=${type}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -216,10 +225,12 @@ export default function Dashboard() {
       navigator.clipboard
         .writeText(snippet)
         .then(() => {
-          toast.success("Snippet copied to clipboard!");
+          toast.success(`${type.toUpperCase()} snippet copied to clipboard!`);
+          setSnippetModalOpen(false);
         })
         .catch(() => {
           alert(`Copy this code to your website:\n\n${snippet}`);
+          setSnippetModalOpen(false);
         });
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to get snippet");
@@ -330,7 +341,7 @@ export default function Dashboard() {
                               Test Agent
                             </button>
                             <button
-                              onClick={() => handleGetSnippet(agent._id)}
+                              onClick={() => handleGetSnippet(agent)}
                               className="text-green-600 hover:text-green-800"
                             >
                               Get Snippet
@@ -1005,6 +1016,124 @@ export default function Dashboard() {
                     />
                   </svg>
                   Update Agent
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Snippet Modal */}
+      {snippetModalOpen && selectedAgentForSnippet && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-md border border-gray-200/50 overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">
+                      Get Widget Snippet
+                    </h3>
+                    <p className="text-indigo-100 text-sm">
+                      {selectedAgentForSnippet.name}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSnippetModalOpen(false)}
+                  className="text-white/80 hover:text-white transition-colors duration-200 p-1 hover:bg-white/10 rounded-full"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-gray-600 text-sm">
+                Choose the type of widget snippet you want to copy:
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={() => handleCopySnippet('js')}
+                  className="w-full p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200 text-left"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                      <svg
+                        className="w-5 h-5 text-yellow-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">JavaScript</h4>
+                      <p className="text-sm text-gray-600">
+                        Embeddable script for any website
+                      </p>
+                    </div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => handleCopySnippet('react')}
+                  className="w-full p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200 text-left"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <svg
+                        className="w-5 h-5 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">React/Next.js</h4>
+                      <p className="text-sm text-gray-600">
+                        Component for React and Next.js applications
+                      </p>
+                    </div>
+                  </div>
                 </button>
               </div>
             </div>
