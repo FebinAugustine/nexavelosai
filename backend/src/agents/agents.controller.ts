@@ -14,6 +14,7 @@ import {
 import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 import { AgentsService } from './agents.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreateAgentDto } from './dto/create-agent.dto';
 
 @Controller('agents')
 export class AgentsController {
@@ -21,7 +22,7 @@ export class AgentsController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body(ValidationPipe) createAgentDto: any, @Request() req) {
+  create(@Body(ValidationPipe) createAgentDto: CreateAgentDto, @Request() req) {
     return this.agentsService.create(createAgentDto, req.user.sub.toString());
   }
 

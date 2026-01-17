@@ -11,6 +11,7 @@ import type { Cache } from 'cache-manager';
 import { Agent, AgentDocument } from './agents.schema';
 import { User, UserDocument } from '../users/users.schema';
 import { EventsGateway } from '../events/events.gateway';
+import { CreateAgentDto } from './dto/create-agent.dto';
 
 @Injectable()
 export class AgentsService {
@@ -21,7 +22,7 @@ export class AgentsService {
     private eventsGateway: EventsGateway,
   ) {}
 
-  async create(createAgentDto: any, userId: string): Promise<AgentDocument> {
+  async create(createAgentDto: CreateAgentDto, userId: string): Promise<AgentDocument> {
     console.log('Creating agent for userId:', userId);
     // Check plan limits
     const user = await this.userModel.findById(userId);

@@ -18,6 +18,8 @@ import { VerifyDto } from './dto/verify.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotDto } from './dto/forgot.dto';
 import { ResetDto } from './dto/reset.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { DeleteAccountDto } from './dto/delete-account.dto';
 
 @Controller('auth')
 @UseGuards(ThrottlerGuard)
@@ -71,17 +73,14 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('change-password')
-  async changePassword(@Body() body: { currentPassword: string; newPassword: string }, @Request() req) {
-    await this.authService.changePassword(req.user.sub, body.currentPassword, body.newPassword);
+  async changePassword(@Body(ValidationPipe) changePasswordDto: ChangePasswordDto, @Request() req) {
+    await this.authService.changePassword(req.user.sub, changePasswordDto.currentPassword, changePasswordDto.newPassword);
     return { message: 'Password changed successfully.' };
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('account')
-  async deleteAccount(@Body() body: { confirmation: string }, @Request() req) {
-    if (body.confirmation !== 'DELETE') {
-      throw new BadRequestException('Invalid confirmation text');
-    }
+  async deleteAccount(@Body(ValidationPipe) deleteAccountDto: DeleteAccountDto, @Request() req) {
     await this.authService.deleteAccount(req.user.sub);
     return { message: 'Account deleted successfully.' };
   }

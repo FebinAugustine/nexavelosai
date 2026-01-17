@@ -6,6 +6,14 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
 import { useSocket } from "../socket-context";
+import {
+  sanitizeTextInput,
+  sanitizeAndValidateInput,
+  countWords,
+  isValidAgentName,
+  isValidDomain,
+  isValidPassword
+} from "../../lib/sanitization";
 
 interface User {
   email: string;
@@ -252,6 +260,43 @@ export default function Dashboard() {
 
   const handleCreateAgent = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Sanitize and validate inputs
+    const sanitizedName = sanitizeAndValidateInput(agentName, { maxLength: 100, fieldName: 'Agent name' });
+    if (!sanitizedName.isValid) {
+      toast.error(sanitizedName.error!);
+      return;
+    }
+
+    if (!isValidAgentName(sanitizedName.sanitized)) {
+      toast.error("Agent name can only contain letters, numbers, spaces, hyphens, and underscores");
+      return;
+    }
+
+    const sanitizedDescription = sanitizeAndValidateInput(agentDescription, { maxLength: 50000, fieldName: 'Description' });
+    if (!sanitizedDescription.isValid) {
+      toast.error(sanitizedDescription.error!);
+      return;
+    }
+
+    // Check word count for description
+    if (countWords(sanitizedDescription.sanitized) > 1000) {
+      toast.error("Description must not exceed 1000 words");
+      return;
+    }
+
+    const sanitizedApiKey = sanitizeAndValidateInput(agentApiKey, { maxLength: 1000, fieldName: 'API key' });
+    if (!sanitizedApiKey.isValid) {
+      toast.error(sanitizedApiKey.error!);
+      return;
+    }
+
+    const sanitizedDomain = agentDomain ? sanitizeTextInput(agentDomain).toLowerCase() : '';
+    if (sanitizedDomain && !isValidDomain(sanitizedDomain)) {
+      toast.error("Please enter a valid domain format");
+      return;
+    }
+
     setCreateAgentLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -262,7 +307,13 @@ export default function Dashboard() {
 
       await axios.post(
         "http://localhost:5000/agents",
-        { name: agentName, description: agentDescription, apiKey: agentApiKey, provider: agentProvider, domain: agentDomain },
+        {
+          name: sanitizedName.sanitized,
+          description: sanitizedDescription.sanitized,
+          apiKey: sanitizedApiKey.sanitized,
+          provider: agentProvider,
+          domain: sanitizedDomain || undefined
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Agent created successfully!");
@@ -288,16 +339,42 @@ export default function Dashboard() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) {
+
+    // Sanitize inputs
+    const sanitizedCurrentPassword = sanitizeTextInput(currentPassword);
+    const sanitizedNewPassword = sanitizeTextInput(newPassword);
+    const sanitizedConfirmPassword = sanitizeTextInput(confirmPassword);
+
+    // Validate
+    if (!sanitizedCurrentPassword) {
+      toast.error("Current password is required");
+      return;
+    }
+
+    if (!isValidPassword(sanitizedNewPassword)) {
+      toast.error("New password must be at least 6 characters long and contain both letters and numbers");
+      return;
+    }
+
+    if (sanitizedNewPassword !== sanitizedConfirmPassword) {
       toast.error("New passwords don't match");
       return;
     }
+
+    if (sanitizedCurrentPassword === sanitizedNewPassword) {
+      toast.error("New password must be different from current password");
+      return;
+    }
+
     setAccountSettingsLoading(true);
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
         "http://localhost:5000/auth/change-password",
-        { currentPassword, newPassword },
+        {
+          currentPassword: sanitizedCurrentPassword,
+          newPassword: sanitizedNewPassword
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Password changed successfully!");
@@ -312,16 +389,20 @@ export default function Dashboard() {
   };
 
   const handleDeleteAccount = async () => {
-    if (deleteConfirmation !== "DELETE") {
-      toast.error("Please type 'DELETE' to confirm");
+    // Sanitize confirmation input
+    const sanitizedConfirmation = sanitizeTextInput(deleteConfirmation).toUpperCase();
+
+    if (sanitizedConfirmation !== "DELETE") {
+      toast.error("Please type 'DELETE' to confirm account deletion");
       return;
     }
+
     setAccountSettingsLoading(true);
     try {
       const token = localStorage.getItem("token");
       await axios.delete("http://localhost:5000/auth/account", {
         headers: { Authorization: `Bearer ${token}` },
-        data: { confirmation: deleteConfirmation }
+        data: { confirmation: sanitizedConfirmation }
       });
       toast.success("Account deleted successfully!");
       localStorage.removeItem("token");
@@ -1139,11 +1220,16 @@ export default function Dashboard() {
                       <textarea
                         id="agentDescription"
                         rows={4}
+                        maxLength={50000}
                         className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400 resize-none"
-                        placeholder="Describe what your agent does and its capabilities"
+                        placeholder="Describe what your agent does and its capabilities (max 1000 words)"
                         value={agentDescription}
                         onChange={(e) => setAgentDescription(e.target.value)}
                       />
+                      <div className="mt-2 flex justify-between text-sm text-gray-500">
+                        <span>{countWords(agentDescription)} / 1000 words</span>
+                        <span>{agentDescription.length} / 50000 characters</span>
+                      </div>
                     </div>
 
                     <div>
