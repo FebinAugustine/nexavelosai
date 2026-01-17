@@ -1623,7 +1623,7 @@ export default function Dashboard() {
       <div
         className={`bg-white/80 backdrop-blur-md shadow-xl border-r border-gray-200/50 ${
           sidebarOpen ? "block" : "hidden"
-        } md:block w-64 min-h-screen fixed md:static inset-y-0 left-0 z-50`}
+        } md:block w-64 h-screen fixed inset-y-0 left-0 z-50 overflow-y-auto`}
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-center h-16 bg-gradient-to-r from-indigo-600 to-purple-600">
@@ -1779,7 +1779,7 @@ export default function Dashboard() {
           </div>
         </nav>
 
-        <main className="flex-1 max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
+        <main className="flex-1 max-w-7xl mx-auto py-8 sm:px-6 lg:px-8 overflow-y-auto md:ml-64">
           <div className="px-4 py-6 sm:px-0">{renderContent()}</div>
         </main>
       </div>
