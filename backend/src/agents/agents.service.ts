@@ -624,76 +624,134 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
     let responseText: string;
     const startTime = Date.now();
 
-    if (agent.provider === 'gemini') {
-      const fullMessage = `${systemPrompt}\n\nUser: ${message}`;
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${agent.apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: fullMessage }] }],
-          }),
-        },
-      );
-      const data = await response.json();
-      responseText = data.candidates[0].content.parts[0].text;
-    } else if (agent.provider === 'chatgpt') {
-      const response = await fetch(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${agent.apiKey}`,
+    try {
+      if (agent.provider === 'gemini') {
+        const fullMessage = `${systemPrompt}\n\nUser: ${message}`;
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${agent.apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: fullMessage }] }],
+            }),
           },
-          body: JSON.stringify({
-            model: 'gpt-3.5-turbo',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: message },
-            ],
-          }),
-        },
-      );
-      const data = await response.json();
-      responseText = data.choices[0].message.content;
-    } else if (agent.provider === 'openrouter') {
-      const response = await fetch(
-        'https://openrouter.ai/api/v1/chat/completions',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${agent.apiKey}`,
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Gemini API error: ${response.status} ${response.statusText}`,
+          );
+        }
+
+        const data = await response.json();
+
+        if (
+          !data.candidates ||
+          !data.candidates[0] ||
+          !data.candidates[0].content ||
+          !data.candidates[0].content.parts[0].text
+        ) {
+          throw new Error('Invalid response format from Gemini API');
+        }
+
+        responseText = data.candidates[0].content.parts[0].text;
+      } else if (agent.provider === 'chatgpt') {
+        const response = await fetch(
+          'https://api.openai.com/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${agent.apiKey}`,
+            },
+            body: JSON.stringify({
+              model: 'gpt-3.5-turbo',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: message },
+              ],
+            }),
           },
-          body: JSON.stringify({
-            model: 'openai/gpt-3.5-turbo',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: message },
-            ],
-          }),
-        },
-      );
-      const data = await response.json();
-      responseText = data.choices[0].message.content;
-    } else {
-      throw new Error('Unsupported provider');
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            `OpenAI API error: ${response.status} ${response.statusText} - ${errorData.error?.message}`,
+          );
+        }
+
+        const data = await response.json();
+
+        if (
+          !data.choices ||
+          !data.choices[0] ||
+          !data.choices[0].message ||
+          !data.choices[0].message.content
+        ) {
+          throw new Error('Invalid response format from OpenAI API');
+        }
+
+        responseText = data.choices[0].message.content;
+      } else if (agent.provider === 'openrouter') {
+        const response = await fetch(
+          'https://openrouter.ai/api/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${agent.apiKey}`,
+            },
+            body: JSON.stringify({
+              model: 'openai/gpt-3.5-turbo',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: message },
+              ],
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            `OpenRouter API error: ${response.status} ${response.statusText} - ${errorData.error?.message}`,
+          );
+        }
+
+        const data = await response.json();
+
+        if (
+          !data.choices ||
+          !data.choices[0] ||
+          !data.choices[0].message ||
+          !data.choices[0].message.content
+        ) {
+          throw new Error('Invalid response format from OpenRouter API');
+        }
+
+        responseText = data.choices[0].message.content;
+      } else {
+        throw new Error('Unsupported provider');
+      }
+
+      // Update analytics
+      const responseTime = Date.now() - startTime;
+      await this.agentModel.findByIdAndUpdate(agent._id, {
+        $inc: { chatCount: 1, totalInteractions: 1 },
+        // Could add average response time, but for simplicity, just counts
+      });
+
+      // Emit real-time analytics update
+      const analytics = await this.getAnalytics(agent.userId.toString());
+      this.eventsGateway.emitAnalyticsUpdate(analytics);
+
+      return responseText;
+    } catch (error) {
+      console.error('Chat error:', error);
+      return 'Sorry, there was an error processing your request. Please check your API key and try again.';
     }
-
-    // Update analytics
-    const responseTime = Date.now() - startTime;
-    await this.agentModel.findByIdAndUpdate(agent._id, {
-      $inc: { chatCount: 1, totalInteractions: 1 },
-      // Could add average response time, but for simplicity, just counts
-    });
-
-    // Emit real-time analytics update
-    const analytics = await this.getAnalytics(agent.userId.toString());
-    this.eventsGateway.emitAnalyticsUpdate(analytics);
-
-    return responseText;
   }
 
   async getAnalytics(userId: string): Promise<any> {

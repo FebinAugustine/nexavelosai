@@ -18,7 +18,8 @@ import { AgentsModule } from '../agents/agents.module';
     forwardRef(() => AgentsModule),
     PassportModule,
     JwtModule.register({
-      secret: 'test-secret',
+      secret:
+        '6437c8cd3f8e2dae772934d61d42eda8b399c71dc363d320a2611456c58e68b5',
       signOptions: { expiresIn: '1h' },
     }),
   ],

@@ -108,8 +108,12 @@ export class AuthService {
     }
     const payload = { email: user.email, sub: user._id.toString() };
     console.log('Login payload:', payload);
+    const secret = process.env.JWT_SECRET || 'test-secret';
+    console.log('JWT secret being used:', secret);
+    const token = this.jwtService.sign(payload);
+    console.log('Generated token:', token);
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: token,
     };
   }
 
@@ -173,14 +177,21 @@ export class AuthService {
     return user;
   }
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
     const user = await this.userModel.findById(userId);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
     // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
     if (!isCurrentPasswordValid) {
       throw new BadRequestException('Current password is incorrect');
     }

@@ -617,7 +617,7 @@ export default function Dashboard() {
                       chatbots.
                     </p>
                     <button
-                      onClick={() => router.push("/dashboard/create-agent")}
+                      onClick={() => setActiveSection("create-agent")}
                       className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
                     >
                       Create Your First Agent

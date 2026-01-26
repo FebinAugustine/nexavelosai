@@ -10,17 +10,22 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: 'test-secret',
+      secretOrKey: process.env.JWT_SECRET || 'test-secret',
     });
   }
 
   async validate(payload: any) {
     console.log('JWT Validate called with payload:', payload);
-    const user = await this.authService.getProfile(payload.sub);
-    console.log('User found:', user ? user.email : 'null');
-    if (!user) {
-      throw new UnauthorizedException();
+    try {
+      const user = await this.authService.getProfile(payload.sub);
+      console.log('User found:', user ? user.email : 'null');
+      if (!user) {
+        throw new UnauthorizedException();
+      }
+      return user;
+    } catch (error) {
+      console.error('JWT validation error:', error);
+      throw new UnauthorizedException('Invalid token');
     }
-    return user;
   }
 }

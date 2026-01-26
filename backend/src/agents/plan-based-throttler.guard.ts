@@ -52,14 +52,21 @@ export class PlanBasedThrottlerGuard extends ThrottlerGuard {
     ];
 
     try {
-      return await super.canActivate(context);
+      // Call super.canActivate which will check the throttler
+      const result = await super.canActivate(context);
+      return result;
     } catch (error) {
       if (error instanceof ThrottlerException) {
         throw new ThrottlerException(
-          `Rate limit exceeded for ${user.plan} plan. Limit: ${limitConfig.limit} requests per 30 minutes.`,
+          'You have hit the maximum request per 30 minute, kindly try again after 30 miniutes.',
         );
       }
       throw error;
     }
+  }
+
+  // Override the getTracker method to track requests per user
+  protected async getTracker(req: any): Promise<string> {
+    return req.user?._id?.toString() || req.ip;
   }
 }
