@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type UserDocument = User & Document;
 
@@ -28,6 +28,12 @@ export class User {
 
   @Prop({ default: [] })
   domains: string[];
+
+  @Prop({ default: 'user' }) // user, admin
+  role: string;
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Agent' }], default: [] })
+  agents: Types.ObjectId[];
 
   @Prop()
   resetPasswordToken?: string;

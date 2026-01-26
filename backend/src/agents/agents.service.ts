@@ -22,7 +22,10 @@ export class AgentsService {
     private eventsGateway: EventsGateway,
   ) {}
 
-  async create(createAgentDto: CreateAgentDto, userId: string): Promise<AgentDocument> {
+  async create(
+    createAgentDto: CreateAgentDto,
+    userId: string,
+  ): Promise<AgentDocument> {
     console.log('Creating agent for userId:', userId);
     // Check plan limits
     const user = await this.userModel.findById(userId);
@@ -45,10 +48,13 @@ export class AgentsService {
     const agent = new this.agentModel({ ...createAgentDto, userId });
     const savedAgent = await agent.save();
 
+    // Add agent ID to user's agents array
+    user.agents.push(savedAgent._id);
+    await user.save();
+
     // Add domain to user domains if not present
     if (createAgentDto.domain) {
-      const user = await this.userModel.findById(userId);
-      if (user && !user.domains.includes(createAgentDto.domain)) {
+      if (!user.domains.includes(createAgentDto.domain)) {
         user.domains.push(createAgentDto.domain);
         await user.save();
       }
@@ -108,6 +114,12 @@ export class AgentsService {
     if (result.deletedCount === 0) {
       throw new NotFoundException('Agent not found');
     }
+
+    // Remove agent ID from user's agents array
+    await this.userModel.findByIdAndUpdate(userId, {
+      $pull: { agents: id },
+    });
+
     // Invalidate cache
     const cacheKey = `agents:${userId}`;
     await this.cacheManager.del(cacheKey);
@@ -115,12 +127,21 @@ export class AgentsService {
 
   async removeAllByUserId(userId: string): Promise<void> {
     await this.agentModel.deleteMany({ userId: userId }).exec();
+
+    // Clear all agents from user's agents array
+    await this.userModel.findByIdAndUpdate(userId, {
+      agents: [],
+    });
+
     // Invalidate cache
     const cacheKey = `agents:${userId}`;
     await this.cacheManager.del(cacheKey);
   }
 
-  async generateSnippet(agent: AgentDocument, type: string = 'js'): Promise<string> {
+  async generateSnippet(
+    agent: AgentDocument,
+    type: string = 'js',
+  ): Promise<string> {
     if (type === 'react') {
       // Generate React/NextJs component snippet
       const snippet = `
@@ -705,8 +726,14 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
 
     // Get current date and target month
     const now = new Date();
-    const targetMonth = month ? new Date(month + '-01') : new Date(now.getFullYear(), now.getMonth(), 1);
-    const nextMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 1);
+    const targetMonth = month
+      ? new Date(month + '-01')
+      : new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonth = new Date(
+      targetMonth.getFullYear(),
+      targetMonth.getMonth() + 1,
+      1,
+    );
 
     // Generate daily data for the month
     const dailyData: Array<{
@@ -715,14 +742,22 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
       interactions: number;
       agentsCreated: number;
     }> = [];
-    const daysInMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0).getDate();
+    const daysInMonth = new Date(
+      targetMonth.getFullYear(),
+      targetMonth.getMonth() + 1,
+      0,
+    ).getDate();
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), day);
+      const date = new Date(
+        targetMonth.getFullYear(),
+        targetMonth.getMonth(),
+        day,
+      );
       const nextDay = new Date(date.getTime() + 24 * 60 * 60 * 1000);
 
       // Count agents created on this day
-      const agentsCreated = agents.filter(agent => {
+      const agentsCreated = agents.filter((agent) => {
         const createdAt = new Date((agent as any).createdAt);
         return createdAt >= date && createdAt < nextDay;
       }).length;
@@ -747,7 +782,7 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
         interactions: acc.interactions + day.interactions,
         agentsCreated: acc.agentsCreated + day.agentsCreated,
       }),
-      { chats: 0, interactions: 0, agentsCreated: 0 }
+      { chats: 0, interactions: 0, agentsCreated: 0 },
     );
 
     return {

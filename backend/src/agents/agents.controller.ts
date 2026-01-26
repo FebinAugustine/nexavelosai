@@ -11,12 +11,14 @@ import {
   ValidationPipe,
   Query,
 } from '@nestjs/common';
-import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
+import { SkipThrottle } from '@nestjs/throttler';
 import { AgentsService } from './agents.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateAgentDto } from './dto/create-agent.dto';
+import { PlanBasedThrottlerGuard } from './plan-based-throttler.guard';
 
 @Controller('agents')
+@UseGuards(PlanBasedThrottlerGuard)
 export class AgentsController {
   constructor(private readonly agentsService: AgentsService) {}
 
@@ -44,7 +46,10 @@ export class AgentsController {
   @SkipThrottle()
   @Get('analytics/detailed')
   getDetailedAnalytics(@Request() req, @Query('month') month?: string) {
-    return this.agentsService.getDetailedAnalytics(req.user._id.toString(), month);
+    return this.agentsService.getDetailedAnalytics(
+      req.user._id.toString(),
+      month,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -75,7 +80,11 @@ export class AgentsController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id/snippet')
-  async getSnippet(@Param('id') id: string, @Request() req, @Query('type') type: string = 'js') {
+  async getSnippet(
+    @Param('id') id: string,
+    @Request() req,
+    @Query('type') type: string = 'js',
+  ) {
     const agent = await this.agentsService.findOne(id, req.user._id.toString());
     return { snippet: await this.agentsService.generateSnippet(agent, type) };
   }

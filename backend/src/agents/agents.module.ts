@@ -7,6 +7,9 @@ import { Agent, AgentSchema } from './agents.schema';
 import { UsersModule } from '../users/users.module';
 import { AuthModule } from '../auth/auth.module';
 import { EventsModule } from '../events/events.module';
+import { PlanBasedThrottlerGuard } from './plan-based-throttler.guard';
+import { ThrottlerModule, ThrottlerStorage } from '@nestjs/throttler';
+import { Reflector } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -16,8 +19,8 @@ import { EventsModule } from '../events/events.module';
     forwardRef(() => AuthModule),
     EventsModule,
   ],
-  providers: [AgentsService],
+  providers: [AgentsService, PlanBasedThrottlerGuard],
   controllers: [AgentsController],
-  exports: [AgentsService],
+  exports: [AgentsService, PlanBasedThrottlerGuard],
 })
 export class AgentsModule {}
