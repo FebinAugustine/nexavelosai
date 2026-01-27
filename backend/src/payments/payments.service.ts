@@ -1,7 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { User, UserDocument } from '../users/users.schema';
 import { Billing, BillingDocument } from './billing.schema';
 import Razorpay from 'razorpay';
@@ -15,6 +17,7 @@ export class PaymentsService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Billing.name) private billingModel: Model<BillingDocument>,
     private configService: ConfigService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
     const keyId = this.configService.get<string>('RAZORPAY_KEY_ID');
     const keySecret = this.configService.get<string>('RAZORPAY_KEY_SECRET');
@@ -29,20 +32,20 @@ export class PaymentsService {
   private getPlanDetails(plan: string) {
     const plans = {
       regular: {
-        amount: 59900,
-        currency: 'USD',
+        amount: 49900, // ₹499
+        currency: 'INR',
         interval: 'monthly',
         name: 'Regular Plan',
-      }, // $599
+      },
       special: {
-        amount: 89900,
-        currency: 'USD',
+        amount: 89900, // ₹899
+        currency: 'INR',
         interval: 'monthly',
         name: 'Special Plan',
-      }, // $899
+      },
       agency: {
         amount: 0, // Contact for pricing
-        currency: 'USD',
+        currency: 'INR',
         interval: 'monthly',
         name: 'Agency Plan',
       },
@@ -59,16 +62,22 @@ export class PaymentsService {
     return limits[plan] || 0;
   }
 
-  async createSubscription(userId: string, plan: string) {
+  async createOrder(userId: string, plan: string) {
     if (!this.razorpay) throw new Error('Razorpay not configured');
     const planDetails = this.getPlanDetails(plan);
     if (!planDetails) throw new Error('Invalid plan');
 
-    const subscription = await this.razorpay.subscriptions.create({
-      plan_id: await this.getOrCreatePlan(plan, planDetails),
-      customer_notify: 1,
-      total_count: 12, // 1 year
-    });
+    const options = {
+      amount: planDetails.amount, // amount in paisa
+      currency: planDetails.currency,
+      receipt: `rcpt_${userId.slice(-4)}${Date.now()}`,
+      notes: {
+        plan: plan,
+        userId: userId,
+      },
+    };
+
+    const order = await this.razorpay.orders.create(options);
 
     // Save billing record as pending
     await this.billingModel.create({
@@ -76,12 +85,12 @@ export class PaymentsService {
       amount: planDetails.amount,
       currency: planDetails.currency,
       status: 'pending',
-      razorpaySubscriptionId: subscription.id,
+      razorpayOrderId: order.id,
       plan,
-      description: `Subscription for ${planDetails.name}`,
+      description: `Payment for ${planDetails.name}`,
     });
 
-    return subscription;
+    return order;
   }
 
   private async getOrCreatePlan(plan: string, details: any) {
@@ -116,6 +125,42 @@ export class PaymentsService {
       }
     }
     // Handle other events if needed
+  }
+
+  async verifyPayment(orderId: string, paymentId: string, signature: string) {
+    const secret = this.configService.get<string>('RAZORPAY_KEY_SECRET');
+    if (!secret) throw new Error('Razorpay secret not configured');
+
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(`${orderId}|${paymentId}`)
+      .digest('hex');
+
+    if (expectedSignature !== signature) {
+      throw new Error('Payment verification failed');
+    }
+
+    // Find and update billing record
+    const billing = await this.billingModel.findOne({
+      razorpayOrderId: orderId,
+    });
+    if (!billing) throw new Error('Billing record not found');
+
+    billing.status = 'paid';
+    billing.razorpayPaymentId = paymentId;
+    await billing.save();
+
+    // Update user plan
+    await this.userModel.findByIdAndUpdate(billing.userId, {
+      plan: billing.plan,
+      agentLimit: this.getAgentLimit(billing.plan),
+    });
+
+    // Invalidate cache
+    const cacheKey = `user:${billing.userId}`;
+    await this.cacheManager.del(cacheKey);
+
+    return billing;
   }
 
   async getBillingHistory(userId: string) {

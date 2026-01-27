@@ -619,6 +619,32 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
   }
 
   async chat(agent: AgentDocument, message: string): Promise<string> {
+    // Get user plan for throttling limits
+    const user = await this.userModel.findById(agent.userId);
+    const planLimits = {
+      free: { limit: 10, ttl: 1800000 }, // 10 requests per 30 minutes
+      regular: { limit: 500, ttl: 1800000 }, // 500 requests per 30 minutes
+      special: { limit: 100, ttl: 1800000 }, // 100 requests per 30 minutes
+      agency: { limit: 5000, ttl: 1800000 }, // 5000 requests per 30 minutes
+    };
+    const plan = user?.plan || 'free';
+    const { limit, ttl: windowMs } = planLimits[plan] || planLimits.free;
+
+    const cacheKey = `agent_requests:${agent._id}`;
+    const now = Date.now();
+
+    let timestamps: number[] =
+      (await this.cacheManager.get<number[]>(cacheKey)) || [];
+    // Filter timestamps within the last window
+    timestamps = timestamps.filter((ts) => now - ts < windowMs);
+
+    if (timestamps.length >= limit) {
+      const resetTime = Math.ceil(
+        (windowMs - (now - Math.min(...timestamps))) / 60000,
+      ); // minutes until reset
+      return `Rate limit exceeded. This agent has ${limit} requests per ${windowMs / 60000} minutes. Please try again in ${resetTime} minutes.`;
+    }
+
     const systemPrompt = `You are ${agent.name}, ${agent.description || 'an AI assistant'}. ${agent.domain ? `Your domain is ${agent.domain}.` : ''} Answer questions based on the information provided in your description. Format your responses using markdown for better readability: use **bold** for emphasis, - for lists, etc. If asked about something not related to your purpose or description, politely explain that you can only assist with topics related to ${agent.description || 'your designated services'}.`;
 
     let responseText: string;
@@ -736,6 +762,16 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
         throw new Error('Unsupported provider');
       }
 
+      // Append remaining requests info only when 5 or fewer requests remain
+      const remaining = limit - (timestamps.length + 1);
+      if (remaining <= 5) {
+        responseText += `\n\n*You have ${remaining} requests remaining in the next ${windowMs / 60000} minutes.*`;
+      }
+
+      // Update timestamps
+      timestamps.push(now);
+      await this.cacheManager.set(cacheKey, timestamps, windowMs);
+
       // Update analytics
       const responseTime = Date.now() - startTime;
       await this.agentModel.findByIdAndUpdate(agent._id, {
@@ -750,7 +786,7 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
       return responseText;
     } catch (error) {
       console.error('Chat error:', error);
-      return 'Sorry, there was an error processing your request. Please check your API key and try again.';
+      return 'Sorry, there was an error processing your request. You might have reached your request limit. Please upgrade your plan or try again later.';
     }
   }
 

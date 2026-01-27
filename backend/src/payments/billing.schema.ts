@@ -18,6 +18,9 @@ export class Billing {
   status: string; // e.g., 'paid', 'failed', 'pending'
 
   @Prop()
+  razorpayOrderId?: string;
+
+  @Prop()
   razorpayPaymentId?: string;
 
   @Prop()

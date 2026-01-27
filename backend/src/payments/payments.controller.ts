@@ -14,21 +14,33 @@ import { PaymentsService } from './payments.service';
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
-  @Post('subscribe')
+  @Post('create-order')
   @UseGuards(JwtAuthGuard)
-  async subscribe(@Body() body: { plan: string }, @Request() req) {
-    const userId = (req.user as any).sub;
-    const subscription = await this.paymentsService.createSubscription(
-      userId,
-      body.plan,
+  async createOrder(@Body() body: { plan: string }, @Request() req) {
+    const userId = req.user._id.toString();
+    const order = await this.paymentsService.createOrder(userId, body.plan);
+    return { order };
+  }
+
+  @Post('verify-payment')
+  @UseGuards(JwtAuthGuard)
+  async verifyPayment(
+    @Body() body: { orderId: string; paymentId: string; signature: string },
+    @Request() req,
+  ) {
+    const userId = req.user._id.toString();
+    const billing = await this.paymentsService.verifyPayment(
+      body.orderId,
+      body.paymentId,
+      body.signature,
     );
-    return { subscription };
+    return { success: true, billing };
   }
 
   @Get('history')
   @UseGuards(JwtAuthGuard)
   async getBillingHistory(@Request() req) {
-    const userId = (req.user as any).sub;
+    const userId = req.user._id.toString();
     return this.paymentsService.getBillingHistory(userId);
   }
 

@@ -1,4 +1,5 @@
 "use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -32,8 +33,8 @@ export default function BillingPage() {
     {
       id: "regular",
       name: "Regular",
-      price: 599,
-      currency: "USD",
+      price: 499,
+      currency: "INR",
       interval: "month",
       agents: 2,
       features: ["2 AI Agents", "Basic Analytics", "Email Support"],
@@ -42,7 +43,7 @@ export default function BillingPage() {
       id: "special",
       name: "Special",
       price: 899,
-      currency: "USD",
+      currency: "INR",
       interval: "month",
       agents: 5,
       features: ["5 AI Agents", "Advanced Analytics", "Priority Support"],
@@ -51,7 +52,7 @@ export default function BillingPage() {
       id: "agency",
       name: "Agency",
       price: 0,
-      currency: "USD",
+      currency: "INR",
       interval: "month",
       agents: "Unlimited",
       features: [
@@ -101,43 +102,59 @@ export default function BillingPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:5000/payments/subscribe",
+        "http://localhost:5000/payments/create-order",
         { plan: planId },
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
-      const subscription = response.data.subscription;
+      const order = response.data.order;
 
       // Load Razorpay script if not loaded
       if (!(window as any).Razorpay) {
         const script = document.createElement("script");
         script.src = "https://checkout.razorpay.com/v1/checkout.js";
-        script.onload = () => initiatePayment(subscription);
+        script.onload = () => initiatePayment(order);
         document.body.appendChild(script);
       } else {
-        initiatePayment(subscription);
+        initiatePayment(order);
       }
     } catch (error: any) {
-      toast.error(
-        error.response?.data?.message || "Failed to create subscription"
-      );
+      toast.error(error.response?.data?.message || "Failed to create order");
     } finally {
       setSubscribing(false);
     }
   };
 
-  const initiatePayment = (subscription: any) => {
+  const initiatePayment = (order: any) => {
     const options = {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_key", // Use env var
-      subscription_id: subscription.id,
+      amount: order.amount,
+      currency: order.currency,
       name: "NexaVelosAI",
-      description: `Subscription for ${subscription.plan_id}`,
-      handler: function (response: any) {
-        toast.success("Payment successful!");
-        // Refresh user data
-        window.location.reload();
+      description: `Payment for plan upgrade`,
+      order_id: order.id,
+      handler: async function (response: any) {
+        try {
+          const token = localStorage.getItem("token");
+          await axios.post(
+            "http://localhost:5000/payments/verify-payment",
+            {
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+          toast.success("Payment successful! Plan upgraded.");
+          // Refresh user data
+          window.location.reload();
+        } catch (error: any) {
+          toast.error("Payment verification failed");
+        }
       },
       prefill: {
         email: user?.email,
@@ -221,7 +238,7 @@ export default function BillingPage() {
                 </h3>
                 {plan.price > 0 ? (
                   <p className="mt-4 text-4xl font-bold text-gray-900">
-                    ${plan.price}
+                    ₹{plan.price}
                     <span className="text-lg font-normal text-gray-600">
                       /{plan.interval}
                     </span>
@@ -271,8 +288,8 @@ export default function BillingPage() {
                     {subscribing
                       ? "Processing..."
                       : plan.id === "agency"
-                      ? "Contact Us"
-                      : "Subscribe"}
+                        ? "Contact Us"
+                        : "Subscribe"}
                   </button>
                 )}
               </div>

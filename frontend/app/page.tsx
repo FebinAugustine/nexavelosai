@@ -257,7 +257,7 @@ export default function Home() {
                   Regular
                 </h3>
                 <div className="flex items-center justify-center mb-4">
-                  <span className="text-4xl font-bold text-gray-900">$599</span>
+                  <span className="text-4xl font-bold text-gray-900">₹499</span>
                   <span className="text-lg text-gray-600 ml-2">/month</span>
                 </div>
                 <p className="text-gray-600">
@@ -347,7 +347,7 @@ export default function Home() {
                   Special
                 </h3>
                 <div className="flex items-center justify-center mb-4">
-                  <span className="text-4xl font-bold text-gray-900">$899</span>
+                  <span className="text-4xl font-bold text-gray-900">₹899</span>
                   <span className="text-lg text-gray-600 ml-2">/month</span>
                 </div>
                 <p className="text-gray-600">Ideal for growing businesses</p>

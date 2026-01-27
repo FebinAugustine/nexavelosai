@@ -7,6 +7,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import * as redisStore from 'cache-manager-redis-store';
 import * as path from 'path';
+import { Connection } from 'mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
@@ -43,6 +44,18 @@ import { EventsModule } from './events/events.module';
     EventsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: 'DATABASE_CONNECTION',
+      useFactory: async (): Promise<Connection> => {
+        const mongoose = await import('mongoose');
+        const connection = await mongoose.connect(
+          process.env.MONGODB_URI || 'mongodb://localhost:27017/nexavelosai',
+        );
+        return connection.connection;
+      },
+    },
+  ],
 })
 export class AppModule {}

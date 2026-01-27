@@ -89,6 +89,7 @@ export class AgentsController {
     return { snippet: await this.agentsService.generateSnippet(agent, type) };
   }
 
+  @SkipThrottle()
   @Post(':id/chat')
   async chat(
     @Param('id') id: string,
@@ -100,19 +101,10 @@ export class AgentsController {
       const agent = await this.agentsService.findOne(id, userId);
       const response = await this.agentsService.chat(agent, message);
 
-      // Track user interactions if authenticated
-      if (req.user?._id) {
-        // We need to track this interaction for plan limits
-        // The throttler guard will handle this
-      }
-
       return { response };
     } catch (error) {
       console.error('Chat controller error:', error);
-      return {
-        response:
-          'Sorry, there was an error processing your request. Please try again later.',
-      };
+      throw error; // Re-throw all errors to ensure proper error handling
     }
   }
 }

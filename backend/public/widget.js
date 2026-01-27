@@ -356,7 +356,22 @@
           const data = await response.json();
           addMessage(data.response, 'bot');
         } else {
-          addMessage('Sorry, there was an error. Please try again.', 'bot');
+          // Handle error responses
+          let errorMessage = 'Sorry, there was an error. Please try again.';
+          try {
+            const errorData = await response.json();
+            if (errorData?.message) {
+              errorMessage = errorData.message;
+            } else if (errorData?.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (e) {
+            // If we can't parse the error response, use default
+            if (response.status === 429) {
+              errorMessage = 'Rate limit exceeded. Please try again later.';
+            }
+          }
+          addMessage(errorMessage, 'bot');
         }
       } catch (error) {
         console.error('Error sending message:', error);

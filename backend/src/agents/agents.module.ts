@@ -10,11 +10,13 @@ import { EventsModule } from '../events/events.module';
 import { PlanBasedThrottlerGuard } from './plan-based-throttler.guard';
 import { ThrottlerModule, ThrottlerStorage } from '@nestjs/throttler';
 import { Reflector } from '@nestjs/core';
+import { User, UserSchema } from '../users/users.schema';
 
 @Module({
   imports: [
     CacheModule.register(),
     MongooseModule.forFeature([{ name: Agent.name, schema: AgentSchema }]),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     UsersModule,
     forwardRef(() => AuthModule),
     EventsModule,

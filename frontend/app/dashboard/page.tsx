@@ -80,6 +80,7 @@ export default function Dashboard() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [accountSettingsLoading, setAccountSettingsLoading] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
   const router = useRouter();
   const socket = useSocket();
 
@@ -1758,8 +1759,8 @@ export default function Dashboard() {
                 {
                   id: "regular",
                   name: "Regular",
-                  price: 599,
-                  currency: "USD",
+                  price: 499,
+                  currency: "INR",
                   interval: "month",
                   agents: 2,
                   features: ["2 AI Agents", "Basic Analytics", "Email Support"],
@@ -1768,7 +1769,7 @@ export default function Dashboard() {
                   id: "special",
                   name: "Special",
                   price: 899,
-                  currency: "USD",
+                  currency: "INR",
                   interval: "month",
                   agents: 5,
                   features: [
@@ -1781,7 +1782,7 @@ export default function Dashboard() {
                   id: "agency",
                   name: "Agency",
                   price: 0,
-                  currency: "USD",
+                  currency: "INR",
                   interval: "month",
                   agents: "Unlimited" as string | number,
                   features: [
@@ -1804,7 +1805,7 @@ export default function Dashboard() {
                       </h3>
                       {plan.price > 0 ? (
                         <p className="text-4xl font-bold text-white">
-                          ${plan.price}
+                          ₹{plan.price}
                           <span className="text-lg font-normal text-indigo-100">
                             /{plan.interval}
                           </span>
@@ -1848,20 +1849,15 @@ export default function Dashboard() {
                       </button>
                     ) : (
                       <button
-                        onClick={() => {
-                          if (plan.id === "agency") {
-                            window.location.href =
-                              "mailto:support@nexavelosai.com?subject=Agency Plan Inquiry";
-                          } else {
-                            // Handle subscription logic here
-                            toast(
-                              "Subscription functionality will be implemented",
-                            );
-                          }
-                        }}
-                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                        onClick={() => handleSubscribe(plan.id)}
+                        disabled={subscribing}
+                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {plan.id === "agency" ? "Contact Us" : "Subscribe"}
+                        {subscribing
+                          ? "Processing..."
+                          : plan.id === "agency"
+                            ? "Contact Us"
+                            : "Subscribe"}
                       </button>
                     )}
                   </div>
@@ -1873,6 +1869,86 @@ export default function Dashboard() {
       default:
         return null;
     }
+  };
+
+  const handleSubscribe = async (planId: string) => {
+    if (planId === "agency") {
+      // Contact for pricing
+      window.location.href =
+        "mailto:support@nexavelosai.com?subject=Agency Plan Inquiry";
+      return;
+    }
+
+    if (!user) return;
+
+    setSubscribing(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        "http://localhost:5000/payments/create-order",
+        { plan: planId },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      const order = response.data.order;
+
+      // Load Razorpay script if not loaded
+      if (!(window as any).Razorpay) {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => initiatePayment(order);
+        document.body.appendChild(script);
+      } else {
+        initiatePayment(order);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to create order");
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
+  const initiatePayment = (order: any) => {
+    const options = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_key", // Use env var
+      amount: order.amount,
+      currency: order.currency,
+      name: "NexaVelosAI",
+      description: `Payment for plan upgrade`,
+      order_id: order.id,
+      handler: async function (response: any) {
+        try {
+          const token = localStorage.getItem("token");
+          await axios.post(
+            "http://localhost:5000/payments/verify-payment",
+            {
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+          toast.success("Payment successful! Plan upgraded.");
+          // Refresh user data
+          window.location.reload();
+        } catch (error: any) {
+          toast.error("Payment verification failed");
+        }
+      },
+      prefill: {
+        email: user?.email,
+      },
+      theme: {
+        color: "#6366f1",
+      },
+    };
+
+    const rzp = new (window as any).Razorpay(options);
+    rzp.open();
   };
 
   return (
