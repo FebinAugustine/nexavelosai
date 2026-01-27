@@ -10,6 +10,7 @@ import {
   Request,
   ValidationPipe,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { AgentsService } from './agents.service';
@@ -99,6 +100,23 @@ export class AgentsController {
     try {
       const userId = req.user?._id?.toString() || '';
       const agent = await this.agentsService.findOne(id, userId);
+
+      // Check domain restriction for public access
+      if (!userId) {
+        const origin =
+          req.headers['origin'] ||
+          req.headers['referer']?.split('/').slice(0, 3).join('/');
+        if (!origin) {
+          throw new BadRequestException('Origin header required');
+        }
+        const requestDomain = new URL(origin).hostname;
+        if (agent.domain !== requestDomain) {
+          throw new BadRequestException(
+            'Widget can only be used on the specified domain',
+          );
+        }
+      }
+
       const response = await this.agentsService.chat(agent, message);
 
       return { response };

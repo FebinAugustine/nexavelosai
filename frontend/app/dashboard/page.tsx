@@ -304,10 +304,12 @@ export default function Dashboard() {
       return;
     }
 
-    const sanitizedDomain = agentDomain
-      ? sanitizeTextInput(agentDomain).toLowerCase()
-      : "";
-    if (sanitizedDomain && !isValidDomain(sanitizedDomain)) {
+    const sanitizedDomain = sanitizeTextInput(agentDomain).toLowerCase();
+    if (!sanitizedDomain) {
+      toast.error("Domain is required");
+      return;
+    }
+    if (!isValidDomain(sanitizedDomain)) {
       toast.error("Please enter a valid domain format");
       return;
     }
@@ -1514,11 +1516,12 @@ export default function Dashboard() {
                             d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3"
                           />
                         </svg>
-                        Domain (Optional)
+                        Domain
                       </label>
                       <input
                         type="text"
                         id="agentDomain"
+                        required
                         placeholder="e.g., example.com"
                         className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
                         value={agentDomain}
