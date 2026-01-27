@@ -2148,13 +2148,13 @@ export default function Dashboard() {
       {/* Main Content */}
       <div className="flex-1 md:ml-0">
         {/* Top Navigation */}
-        <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200/50 md:hidden">
+        <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
               <div className="flex items-center">
                 <button
                   onClick={() => setSidebarOpen(true)}
-                  className="text-gray-700 hover:text-indigo-600 p-2 rounded-lg hover:bg-white/60 transition-all duration-200"
+                  className="md:hidden text-gray-700 hover:text-indigo-600 p-2 rounded-lg hover:bg-white/60 transition-all duration-200"
                 >
                   <svg
                     className="w-6 h-6"
@@ -2170,11 +2170,69 @@ export default function Dashboard() {
                     />
                   </svg>
                 </button>
+                <div className="hidden md:flex items-center space-x-8">
+                  <button
+                    onClick={() => setActiveSection("dashboard")}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      activeSection === "dashboard"
+                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                        : "text-gray-700 hover:bg-white/60 hover:shadow-md"
+                    }`}
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={() => setActiveSection("create-agent")}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      activeSection === "create-agent"
+                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                        : "text-gray-700 hover:bg-white/60 hover:shadow-md"
+                    }`}
+                  >
+                    Create Agent
+                  </button>
+                  <button
+                    onClick={() => setActiveSection("analytics")}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      activeSection === "analytics"
+                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                        : "text-gray-700 hover:bg-white/60 hover:shadow-md"
+                    }`}
+                  >
+                    Analytics
+                  </button>
+                  <button
+                    onClick={() => setActiveSection("billing")}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      activeSection === "billing"
+                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                        : "text-gray-700 hover:bg-white/60 hover:shadow-md"
+                    }`}
+                  >
+                    Billing
+                  </button>
+                  <button
+                    onClick={() => setActiveSection("account")}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      activeSection === "account"
+                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                        : "text-gray-700 hover:bg-white/60 hover:shadow-md"
+                    }`}
+                  >
+                    Account
+                  </button>
+                </div>
               </div>
               <div className="flex items-center space-x-4">
-                <span className="text-gray-700 font-medium">
-                  Welcome, {user?.email}
+                <span className="text-gray-700 font-medium hidden sm:block">
+                  Welcome, {user?.email?.split("@")[0]}
                 </span>
+                <button
+                  onClick={handleLogout}
+                  className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 font-medium hidden md:block"
+                >
+                  Logout
+                </button>
               </div>
             </div>
           </div>

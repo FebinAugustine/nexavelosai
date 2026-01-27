@@ -34,7 +34,7 @@ export default function BillingHistoryPage() {
           "http://localhost:5000/payments/history",
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         setBillingHistory(response.data);
       } catch (error) {
@@ -61,7 +61,7 @@ export default function BillingHistoryPage() {
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <button
-            onClick={() => router.push("/dashboard/billing")}
+            onClick={() => router.push("/dashboard")}
             className="text-indigo-600 hover:text-indigo-800 mb-4 inline-flex items-center"
           >
             <svg
@@ -151,8 +151,8 @@ export default function BillingHistoryPage() {
                             record.status === "paid"
                               ? "bg-green-100 text-green-800"
                               : record.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
                           }`}
                         >
                           {record.status}
