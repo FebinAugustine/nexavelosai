@@ -51,6 +51,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [navbarDropdownOpen, setNavbarDropdownOpen] = useState(false);
   const [testModalOpen, setTestModalOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [messages, setMessages] = useState<
@@ -2615,7 +2616,7 @@ window.nexavelWidget.open();`}</code>
                     d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                   />
                 </svg>
-                <span>Logout</span>
+                <span>Logoutt</span>
               </div>
             </button>
           </div>
@@ -2655,68 +2656,6 @@ window.nexavelWidget.open();`}</code>
                     />
                   </svg>
                 </button>
-                <div className="hidden md:flex items-center space-x-8">
-                  <button
-                    onClick={() => setActiveSection("dashboard")}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      activeSection === "dashboard"
-                        ? "bg-gradient-to-r from-[#005461] to-[#0C7779] text-white shadow-lg"
-                        : "text-gray-700 hover:bg-white/60 hover:shadow-md"
-                    }`}
-                  >
-                    Dashboard
-                  </button>
-                  <button
-                    onClick={() => setActiveSection("create-agent")}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      activeSection === "create-agent"
-                        ? "bg-gradient-to-r from-[#005461] to-[#0C7779] text-white shadow-lg"
-                        : "text-gray-700 hover:bg-white/60 hover:shadow-md"
-                    }`}
-                  >
-                    Create Agent
-                  </button>
-                  <button
-                    onClick={() => setActiveSection("analytics")}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      activeSection === "analytics"
-                        ? "bg-gradient-to-r from-[#005461] to-[#0C7779] text-white shadow-lg"
-                        : "text-gray-700 hover:bg-white/60 hover:shadow-md"
-                    }`}
-                  >
-                    Analytics
-                  </button>
-                  <button
-                    onClick={() => setActiveSection("billing")}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      activeSection === "billing"
-                        ? "bg-gradient-to-r from-[#005461] to-[#0C7779] text-white shadow-lg"
-                        : "text-gray-700 hover:bg-white/60 hover:shadow-md"
-                    }`}
-                  >
-                    Billing
-                  </button>
-                  <button
-                    onClick={() => setActiveSection("documentation")}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      activeSection === "documentation"
-                        ? "bg-gradient-to-r from-[#005461] to-[#0C7779] text-white shadow-lg"
-                        : "text-gray-700 hover:bg-white/60 hover:shadow-md"
-                    }`}
-                  >
-                    Documentation
-                  </button>
-                  <button
-                    onClick={() => setActiveSection("account")}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      activeSection === "account"
-                        ? "bg-gradient-to-r from-[#005461] to-[#0C7779] text-white shadow-lg"
-                        : "text-gray-700 hover:bg-white/60 hover:shadow-md"
-                    }`}
-                  >
-                    Account
-                  </button>
-                </div>
               </div>
               <div className="flex items-center space-x-4">
                 <span className="text-gray-700 font-medium hidden sm:block">
@@ -2728,6 +2667,124 @@ window.nexavelWidget.open();`}</code>
                 >
                   Logout
                 </button>
+                {/* Desktop Dropdown Menu */}
+                <div className="hidden md:block md:relative">
+                  <button
+                    onClick={() => setNavbarDropdownOpen(!navbarDropdownOpen)}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:shadow-md transition-all duration-200 border border-gray-200/50 bg-white/50 backdrop-blur-sm"
+                  >
+                    <span className="capitalize">
+                      {activeSection === "create-agent"
+                        ? "Create Agent"
+                        : activeSection === "billing-history"
+                          ? "Billing History"
+                          : activeSection.replace("-", " ")}
+                    </span>
+                    <svg
+                      className={`w-5 h-5 text-gray-600 transition-transform duration-200 ${navbarDropdownOpen ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {navbarDropdownOpen && (
+                    <>
+                      {/* Backdrop */}
+                      <div
+                        className="fixed inset-0 z-100000"
+                        onClick={() => setNavbarDropdownOpen(false)}
+                      ></div>
+
+                      {/* Dropdown Content */}
+                      <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-200/50 z-100000 overflow-hidden">
+                        <div className="py-2">
+                          {[
+                            {
+                              id: "dashboard",
+                              label: "Dashboard",
+                              icon: "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z",
+                            },
+                            {
+                              id: "create-agent",
+                              label: "Create Agent",
+                              icon: "M12 6v6m0 0v6m0-6h6m-6 0H6",
+                            },
+                            {
+                              id: "analytics",
+                              label: "Analytics",
+                              icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
+                            },
+                            {
+                              id: "billing",
+                              label: "Billing",
+                              icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+                            },
+                            {
+                              id: "documentation",
+                              label: "Documentation",
+                              icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253",
+                            },
+                            {
+                              id: "account",
+                              label: "Account",
+                              icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z",
+                            },
+                          ].map((item) => (
+                            <button
+                              key={item.id}
+                              onClick={() => {
+                                setActiveSection(item.id);
+                                setNavbarDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center space-x-3 px-4 py-3 text-left text-sm font-medium transition-all duration-200 z-100000 ${
+                                activeSection === item.id
+                                  ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white"
+                                  : "text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              <svg
+                                className="w-5 h-5 flex-shrink-0"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d={item.icon}
+                                />
+                              </svg>
+                              <span>{item.label}</span>
+                              {activeSection === item.id && (
+                                <svg
+                                  className="w-4 h-4 ml-auto"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

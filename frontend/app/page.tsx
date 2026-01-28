@@ -21,7 +21,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-200/10 via-white to-green-200/10">
       {/* Navigation */}
-      <nav className="bg-white backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-50">
+      <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -84,7 +84,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-emerald-400 via-green-100 to-emerald-400 ">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto text-center">
           <div className="mb-8">
             <span className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-600 text-sm font-medium mb-4">
@@ -144,7 +144,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-green-50 backdrop-blur-sm">
+      <section id="features" className="py-24 bg-white/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
@@ -157,7 +157,7 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white/70 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-gray-200/50 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-              <div className="w-16 h-16 bg-gradient-to-r from-[#187501] to-[#2ba506] rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#005461] to-[#0C7779] rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -181,7 +181,7 @@ export default function Home() {
               </p>
             </div>
             <div className="bg-white/70 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-gray-200/50 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-              <div className="w-16 h-16 bg-gradient-to-r from-[#187501] to-[#2ba506] rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#0C7779] to-[#3BC1A8] rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -205,7 +205,7 @@ export default function Home() {
               </p>
             </div>
             <div className="bg-white/70 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-gray-200/50 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-              <div className="w-16 h-16 bg-gradient-to-r from-[#187501] to-[#2ba506] rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-green-400 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -233,10 +233,13 @@ export default function Home() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-amber-50">
+      <section
+        id="pricing"
+        className="py-24 bg-gradient-to-br from-emerald-500/5 via-white to-green-500/5"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-[#026109] to-[#03b145] bg-clip-text text-transparent mb-4">
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
               Simple, Transparent Pricing
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -324,7 +327,7 @@ export default function Home() {
 
               <a
                 href="/register"
-                className="w-full bg-gradient-to-r from-[#176100] to-[#0c790c] text-white py-3 px-6 rounded-xl font-semibold hover:from-[#0C7779] hover:to-[#249E94] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-center block"
+                className="w-full bg-gradient-to-r from-[#005461] to-[#0C7779] text-white py-3 px-6 rounded-xl font-semibold hover:from-[#0C7779] hover:to-[#249E94] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-center block"
               >
                 Get Started
               </a>
@@ -333,7 +336,7 @@ export default function Home() {
             {/* Special Plan - Popular */}
             <div className="bg-white/70 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-2 border-[#0C7779] hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2 relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-gradient-to-r from-[#176100] to-[#0c790c] text-white px-4 py-1 rounded-full text-sm font-semibold">
+                <span className="bg-gradient-to-r from-[#005461] to-[#0C7779] text-white px-4 py-1 rounded-full text-sm font-semibold">
                   Most Popular
                 </span>
               </div>
@@ -426,7 +429,7 @@ export default function Home() {
 
               <a
                 href="/register"
-                className="w-full bg-gradient-to-r from-[#176100] to-[#0c790c] text-white py-3 px-6 rounded-xl font-semibold hover:from-[#0C7779] hover:to-[#249E94] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-center block"
+                className="w-full bg-gradient-to-r from-[#005461] to-[#0C7779] text-white py-3 px-6 rounded-xl font-semibold hover:from-[#0C7779] hover:to-[#249E94] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-center block"
               >
                 Get Started
               </a>
@@ -525,7 +528,7 @@ export default function Home() {
 
               <a
                 href="mailto:support@nexavelosai.com?subject=Agency Plan Inquiry"
-                className="w-full bg-gradient-to-r from-[#114601] to-[#0c790c] text-white py-3 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-center block"
+                className="w-full bg-gradient-to-r from-gray-600 to-gray-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-gray-700 hover:to-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-center block"
               >
                 Contact Sales
               </a>
@@ -545,7 +548,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-24 bg-green-50 backdrop-blur-sm">
+      <section id="testimonials" className="py-24 bg-white/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
@@ -758,8 +761,8 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-green-900 text-white py-16 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-emerald-900 to-emerald-900"></div>
+      <footer className="bg-gray-900 text-white py-16 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/20 to-green-900/20"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div className="md:col-span-2">
