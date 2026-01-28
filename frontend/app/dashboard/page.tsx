@@ -67,6 +67,7 @@ export default function Dashboard() {
   const [snippetModalOpen, setSnippetModalOpen] = useState(false);
   const [selectedAgentForSnippet, setSelectedAgentForSnippet] =
     useState<Agent | null>(null);
+  const [snippetVersion, setSnippetVersion] = useState("full");
   // Create Agent form state
   const [agentName, setAgentName] = useState("");
   const [agentDescription, setAgentDescription] = useState("");
@@ -229,6 +230,12 @@ export default function Dashboard() {
 
   const handleGetSnippet = (agent: Agent) => {
     setSelectedAgentForSnippet(agent);
+    // Set default snippet version based on user plan
+    if (user?.plan === "special") {
+      setSnippetVersion("full");
+    } else {
+      setSnippetVersion("short");
+    }
     setSnippetModalOpen(true);
   };
 
@@ -238,7 +245,7 @@ export default function Dashboard() {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:5000/agents/${selectedAgentForSnippet._id}/snippet?type=${type}`,
+        `http://localhost:5000/agents/${selectedAgentForSnippet._id}/snippet?type=${type}&version=${snippetVersion}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -958,6 +965,452 @@ export default function Dashboard() {
             </div>
           </div>
         );
+      case "documentation":
+        return (
+          <>
+            <div className="mb-8">
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+                Widget Integration Documentation
+              </h2>
+              <p className="text-lg text-gray-600">
+                Complete guide to embedding NexaVelosAI chat widgets on your
+                website
+              </p>
+            </div>
+
+            <div className="space-y-8">
+              {/* Overview */}
+              <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 md:p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg
+                        className="w-5 h-5 md:w-6 md:h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg md:text-xl font-semibold text-white">
+                      Widget Overview
+                    </h3>
+                  </div>
+                </div>
+                <div className="px-6 py-8 sm:p-8">
+                  <p className="text-gray-700 mb-4">
+                    NexaVelosAI provides two types of widget implementations to
+                    suit different integration needs:
+                  </p>
+                  <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                    <div className="flex-1 bg-gradient-to-br from-blue-50 to-blue-100 p-3 md:p-4 rounded-lg border border-blue-200/50">
+                      <h4 className="font-semibold text-blue-900 mb-2">
+                        Short Snippet (External Script)
+                      </h4>
+                      <p className="text-sm text-blue-800">
+                        Lightweight implementation that loads the widget script
+                        from our servers. Recommended for most websites.
+                      </p>
+                    </div>
+                    <div className="flex-1 bg-gradient-to-br from-purple-50 to-purple-100 p-3 md:p-4 rounded-lg border border-purple-200/50">
+                      <h4 className="font-semibold text-purple-900 mb-2">
+                        Full Snippet (Inline Code)
+                      </h4>
+                      <p className="text-sm text-purple-800">
+                        Complete widget code embedded directly. Offers maximum
+                        customization but requires more setup. Available for
+                        Special plan users only.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* JavaScript Implementation */}
+              <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
+                <div className="bg-gradient-to-r from-yellow-500 to-orange-500 p-4 md:p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg
+                        className="w-5 h-5 md:w-6 md:h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg md:text-xl font-semibold text-white">
+                      JavaScript Implementation
+                    </h3>
+                  </div>
+                </div>
+                <div className="px-6 py-8 sm:p-8 space-y-6">
+                  {/* Short Snippet */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                      Short Snippet (Recommended)
+                    </h4>
+                    <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 mb-4 overflow-hidden">
+                      <pre className="text-xs md:text-sm text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+                        <code>{`<!-- NexaVelosAI Widget Short Code -->
+<!-- To customize the widget, add CSS overrides in your website's styles -->
+<!-- Example customizations:
+<style>
+.nexavel-chat-widget { z-index: 999999 !important; }
+.nexavel-chat-button { bottom: 30px !important; right: 30px !important; }
+</style>
+-->
+<script>window.nexavelAgentId = 'YOUR_AGENT_ID'; window.nexavelApiUrl = 'http://localhost:5000';</script><script src="http://localhost:5000/widget.js"></script>`}</code>
+                      </pre>
+                    </div>
+                    <div className="space-y-3">
+                      <h5 className="font-medium text-gray-900">
+                        Implementation Steps:
+                      </h5>
+                      <ol className="list-decimal list-inside space-y-2 text-gray-700">
+                        <li>Copy the code snippet above</li>
+                        <li>
+                          Replace{" "}
+                          <code className="bg-gray-100 px-1 rounded">
+                            YOUR_AGENT_ID
+                          </code>{" "}
+                          with your actual agent ID
+                        </li>
+                        <li>
+                          Paste the code just before the closing{" "}
+                          <code className="bg-gray-100 px-1 rounded">{`</body>`}</code>{" "}
+                          tag on your website
+                        </li>
+                        <li>The widget will automatically load and display</li>
+                      </ol>
+                    </div>
+                  </div>
+
+                  {/* Full Snippet */}
+                  {user?.plan === "special" && (
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                        Full Snippet (Special Plan Only)
+                      </h4>
+                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 md:p-4 rounded-lg border border-purple-200 mb-4 overflow-hidden">
+                        <p className="text-xs md:text-sm text-purple-800 mb-3">
+                          <strong>Note:</strong> Full snippet implementation
+                          requires a Special plan subscription. It provides
+                          complete control over the widget appearance and
+                          behavior.
+                        </p>
+                        <pre className="text-xs md:text-sm text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+                          <code>{`<script>
+(function () {
+  // Wait for DOM to be ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initWidget);
+  } else {
+    initWidget();
+  }
+
+  function initWidget() {
+    // Agent ID is embedded in the snippet
+    const agentId = 'YOUR_AGENT_ID';
+
+    // Create widget HTML and styles...
+    // [Complete inline implementation code]
+  }
+})();
+</script>`}</code>
+                        </pre>
+                      </div>
+                      <div className="space-y-3">
+                        <h5 className="font-medium text-gray-900">
+                          Advantages:
+                        </h5>
+                        <ul className="list-disc list-inside space-y-1 text-gray-700">
+                          <li>No external dependencies</li>
+                          <li>Complete customization control</li>
+                          <li>Faster initial load</li>
+                          <li>Works offline (after initial load)</li>
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* React/Next.js Implementation */}
+              <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
+                <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4 md:p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg
+                        className="w-5 h-5 md:w-6 md:h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg md:text-xl font-semibold text-white">
+                      React/Next.js Implementation
+                    </h3>
+                  </div>
+                </div>
+                <div className="px-6 py-8 sm:p-8 space-y-6">
+                  {/* Short Component */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                      Short Component (Recommended)
+                    </h4>
+                    <div className="bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200 mb-4 overflow-hidden">
+                      <pre className="text-xs md:text-sm text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+                        <code>{`'use client';
+
+import { useEffect } from 'react';
+
+export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
+  useEffect(() => {
+    // Set global agent ID and API URL
+    (window as any).nexavelAgentId = agentId;
+    (window as any).nexavelApiUrl = 'http://localhost:5000';
+
+    // Load widget script
+    const script = document.createElement('script');
+    script.src = 'http://localhost:5000/widget.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      // Cleanup
+      document.body.removeChild(script);
+      delete (window as any).nexavelAgentId;
+      delete (window as any).nexavelApiUrl;
+    };
+  }, [agentId]);
+
+  return null;
+}`}</code>
+                      </pre>
+                    </div>
+                    <div className="space-y-3">
+                      <h5 className="font-medium text-gray-900">Usage:</h5>
+                      <pre className="bg-gray-50 p-3 rounded text-sm text-gray-800">
+                        <code>{`<NexaVelosAIWidget agentId="YOUR_AGENT_ID" />`}</code>
+                      </pre>
+                      <p className="text-gray-700 text-sm">
+                        Add this component to your React/Next.js application.
+                        The widget will automatically initialize when the
+                        component mounts.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Full Component */}
+                  {user?.plan === "special" && (
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                        Full Component (Special Plan Only)
+                      </h4>
+                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200 mb-4">
+                        <p className="text-sm text-purple-800 mb-3">
+                          Complete React component with full widget
+                          implementation. Requires Special plan.
+                        </p>
+                        <pre className="text-xs md:text-sm text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+                          <code>{`'use client';
+
+import { useState, useEffect } from 'react';
+
+export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Complete component implementation...
+  return (
+    <>
+      <style jsx>{\`
+        .nexavel-chat-widget {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          z-index: 10000;
+          // Complete styles...
+        }
+        // ... more styles
+      \`}</style>
+      <div className="nexavel-chat-widget">
+        <button className="nexavel-chat-button" onClick={() => setIsOpen(!isOpen)}>
+          💬
+        </button>
+        {/* Complete chat interface */}
+      </div>
+    </>
+  );
+}`}</code>
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Customization */}
+              {user?.plan === "special" && (
+                <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
+                  <div className="bg-gradient-to-r from-green-500 to-teal-500 p-4 md:p-6">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg
+                          className="w-5 h-5 md:w-6 md:h-6 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg md:text-xl font-semibold text-white">
+                        Customization Options
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="px-6 py-8 sm:p-8">
+                    <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 mb-3">
+                          CSS Customization
+                        </h4>
+                        <pre className="bg-gray-50 p-2 md:p-3 rounded text-xs md:text-sm text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+                          <code>{`/* Position adjustments */
+.nexavel-chat-widget {
+  bottom: 30px !important;
+  right: 30px !important;
+}
+
+/* Button styling */
+.nexavel-chat-button {
+  width: 70px !important;
+  height: 70px !important;
+  background: linear-gradient(135deg, #ff6b6b, #4ecdc4) !important;
+}
+
+/* Chat window */
+.nexavel-chat-window {
+  width: 400px !important;
+  height: 650px !important;
+}`}</code>
+                        </pre>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 mb-3">
+                          JavaScript API
+                        </h4>
+                        <pre className="bg-gray-50 p-2 md:p-3 rounded text-xs md:text-sm text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
+                          <code>{`// Programmatically control the widget
+window.nexavelWidget = {
+  open: () => {/* open chat */},
+  close: () => {/* close chat */},
+  sendMessage: (msg) => {/* send message */},
+  onMessage: (callback) => {/* message handler */}
+};
+
+// Example usage
+window.nexavelWidget.open();`}</code>
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Troubleshooting */}
+              <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
+                <div className="bg-gradient-to-r from-red-500 to-pink-500 p-4 md:p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg
+                        className="w-5 h-5 md:w-6 md:h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg md:text-xl font-semibold text-white">
+                      Troubleshooting
+                    </h3>
+                  </div>
+                </div>
+                <div className="px-6 py-8 sm:p-8">
+                  <div className="space-y-3 md:space-y-4">
+                    <div className="border-l-4 border-red-400 bg-red-50 p-3 md:p-4">
+                      <h5 className="font-medium text-red-800 text-sm md:text-base">
+                        Widget not appearing?
+                      </h5>
+                      <ul className="text-xs md:text-sm text-red-700 mt-2 space-y-1">
+                        <li>• Check that the agent ID is correct</li>
+                        <li>• Ensure the script is loaded before DOM ready</li>
+                        <li>• Verify no CSS conflicts hiding the widget</li>
+                        <li>• Check browser console for JavaScript errors</li>
+                      </ul>
+                    </div>
+                    <div className="border-l-4 border-yellow-400 bg-yellow-50 p-3 md:p-4">
+                      <h5 className="font-medium text-yellow-800 text-sm md:text-base">
+                        Messages not sending?
+                      </h5>
+                      <ul className="text-xs md:text-sm text-yellow-700 mt-2 space-y-1">
+                        <li>• Verify API URL is accessible</li>
+                        <li>• Check network connectivity</li>
+                        <li>• Ensure agent is properly configured</li>
+                        <li>• Review rate limiting (if applicable)</li>
+                      </ul>
+                    </div>
+                    <div className="border-l-4 border-blue-400 bg-blue-50 p-3 md:p-4">
+                      <h5 className="font-medium text-blue-800 text-sm md:text-base">
+                        Styling issues?
+                      </h5>
+                      <ul className="text-xs md:text-sm text-blue-700 mt-2 space-y-1">
+                        <li>• Use !important for CSS overrides</li>
+                        <li>• Check for z-index conflicts</li>
+                        <li>• Ensure proper CSS specificity</li>
+                        <li>• Test on different screen sizes</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        );
       case "account":
         return (
           <>
@@ -970,7 +1423,7 @@ export default function Dashboard() {
               </p>
             </div>
 
-            <div className="space-y-8">
+            <div className="space-y-6 md:space-y-8">
               {/* Profile Information */}
               <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
@@ -1074,7 +1527,7 @@ export default function Dashboard() {
                         onChange={(e) => setCurrentPassword(e.target.value)}
                       />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                       <div>
                         <label
                           htmlFor="newPassword"
@@ -2087,6 +2540,34 @@ export default function Dashboard() {
             </button>
             <button
               onClick={() => {
+                setActiveSection("documentation");
+                setSidebarOpen(false);
+              }}
+              className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
+                activeSection === "documentation"
+                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                  : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
+                </svg>
+                <span>Documentation</span>
+              </div>
+            </button>
+            <button
+              onClick={() => {
                 setActiveSection("account");
                 setSidebarOpen(false);
               }}
@@ -2213,6 +2694,16 @@ export default function Dashboard() {
                     }`}
                   >
                     Billing
+                  </button>
+                  <button
+                    onClick={() => setActiveSection("documentation")}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      activeSection === "documentation"
+                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                        : "text-gray-700 hover:bg-white/60 hover:shadow-md"
+                    }`}
+                  >
+                    Documentation
                   </button>
                   <button
                     onClick={() => setActiveSection("account")}
@@ -2752,9 +3243,26 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-gray-600 text-sm">
-                Choose the type of widget snippet you want to copy:
-              </p>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Snippet Version
+                  </label>
+                  <select
+                    value={snippetVersion}
+                    onChange={(e) => setSnippetVersion(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
+                  >
+                    {user?.plan === "special" && (
+                      <option value="full">Full (Inline Code)</option>
+                    )}
+                    <option value="short">Short (External Script)</option>
+                  </select>
+                </div>
+                <p className="text-gray-600 text-sm">
+                  Choose the type of widget snippet you want to copy:
+                </p>
+              </div>
               <div className="space-y-3">
                 <button
                   onClick={() => handleCopySnippet("js")}

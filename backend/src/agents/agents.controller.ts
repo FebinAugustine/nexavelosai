@@ -12,16 +12,22 @@ import {
   Query,
   BadRequestException,
 } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 import { SkipThrottle } from '@nestjs/throttler';
+import { Model } from 'mongoose';
 import { AgentsService } from './agents.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateAgentDto } from './dto/create-agent.dto';
 import { PlanBasedThrottlerGuard } from './plan-based-throttler.guard';
+import { User, UserDocument } from '../users/users.schema';
 
 @Controller('agents')
 @UseGuards(PlanBasedThrottlerGuard)
 export class AgentsController {
-  constructor(private readonly agentsService: AgentsService) {}
+  constructor(
+    private readonly agentsService: AgentsService,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -85,9 +91,29 @@ export class AgentsController {
     @Param('id') id: string,
     @Request() req,
     @Query('type') type: string = 'js',
+    @Query('version') version: string = 'full',
   ) {
     const agent = await this.agentsService.findOne(id, req.user._id.toString());
-    return { snippet: await this.agentsService.generateSnippet(agent, type) };
+
+    // Get user to check plan
+    const user = await this.userModel.findById(req.user._id.toString());
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Check plan restrictions
+    if (
+      (user.plan === 'free' || user.plan === 'regular') &&
+      version === 'full'
+    ) {
+      throw new BadRequestException(
+        'Full widget snippet is only available for special plan users',
+      );
+    }
+
+    return {
+      snippet: await this.agentsService.generateSnippet(agent, type, version),
+    };
   }
 
   @SkipThrottle()

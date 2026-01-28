@@ -7,13 +7,26 @@
   }
 
   function initWidget() {
-    // Get agent ID from URL parameter
+    // Get agent ID from URL parameter or global variable
     const urlParams = new URLSearchParams(window.location.search);
-    const agentId = urlParams.get('agent');
+    let agentId = urlParams.get('agent') || window.nexavelAgentId;
 
     if (!agentId) {
-      console.error('Agent ID not found in URL');
+      console.error('Agent ID not found in URL or global variable');
       return;
+    }
+
+    // Set API URL if not set
+    if (!window.nexavelApiUrl) {
+      // Find the script tag and get its origin
+      const scripts = document.querySelectorAll('script');
+      for (let script of scripts) {
+        if (script.src && script.src.includes('widget.js')) {
+          const url = new URL(script.src);
+          window.nexavelApiUrl = url.origin;
+          break;
+        }
+      }
     }
 
     // Create chat widget styles
@@ -531,16 +544,14 @@
       const typingIndicator = showTypingIndicator();
 
       try {
-        const response = await fetch(
-          `${window.location.origin}/agents/${agentId}/chat`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ message }),
+        const apiUrl = window.nexavelApiUrl || window.location.origin;
+        const response = await fetch(`${apiUrl}/agents/${agentId}/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-        );
+          body: JSON.stringify({ message }),
+        });
 
         // Remove typing indicator
         removeTypingIndicator(typingIndicator);

@@ -17,7 +17,31 @@ async function bootstrap() {
     }),
   );
 
-  app.use(helmet());
+  // Enable Helmet with appropriate CSP configuration for widget embedding
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: [
+            "'self'",
+            "'unsafe-inline'", // Required for widget inline scripts
+            "'unsafe-eval'", // Required for some widget functionality
+          ],
+          styleSrc: [
+            "'self'",
+            "'unsafe-inline'", // Required for widget inline styles
+          ],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          frameSrc: ["'self'", 'https:'],
+          connectSrc: ["'self'", 'https:'],
+        },
+      },
+      crossOriginEmbedderPolicy: false, // Allow embedding from external domains
+      crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow cross-origin resources
+    }),
+  );
+
   app.enableCors({
     origin: true, // Allow all origins for widget embedding
     credentials: true,

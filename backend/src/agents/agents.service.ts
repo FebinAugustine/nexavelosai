@@ -141,7 +141,60 @@ export class AgentsService {
   async generateSnippet(
     agent: AgentDocument,
     type: string = 'js',
+    version: string = 'full',
   ): Promise<string> {
+    if (version === 'short') {
+      if (type === 'react') {
+        const snippet = `
+// NexaVelosAI Widget Short Code for React/Next.js
+// To customize the widget, add CSS overrides in your global styles
+// Example customizations:
+// .nexavel-chat-widget { z-index: 999999 !important; }
+// .nexavel-chat-button { bottom: 30px !important; right: 30px !important; }
+
+'use client';
+
+import { useEffect } from 'react';
+
+export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
+  useEffect(() => {
+    // Set global agent ID and API URL
+    (window as any).nexavelAgentId = agentId;
+    (window as any).nexavelApiUrl = 'http://localhost:5000';
+
+    // Load widget script
+    const script = document.createElement('script');
+    script.src = 'http://localhost:5000/widget.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      // Cleanup
+      document.body.removeChild(script);
+      delete (window as any).nexavelAgentId;
+      delete (window as any).nexavelApiUrl;
+    };
+  }, [agentId]);
+
+  return null;
+}
+        `.trim();
+        return snippet;
+      } else {
+        // JS short snippet
+        const snippet = `<!-- NexaVelosAI Widget Short Code -->
+<!-- To customize the widget, add CSS overrides in your website's styles -->
+<!-- Example customizations:
+<style>
+.nexavel-chat-widget { z-index: 999999 !important; }
+.nexavel-chat-button { bottom: 30px !important; right: 30px !important; }
+</style>
+-->
+<script>window.nexavelAgentId = '${agent._id}'; window.nexavelApiUrl = 'http://localhost:5000';</script><script src="http://localhost:5000/widget.js"></script>`;
+        return snippet;
+      }
+    }
+
     if (type === 'react') {
       // Generate React/NextJs component snippet
       const snippet = `
