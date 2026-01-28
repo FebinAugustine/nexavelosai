@@ -950,14 +950,7 @@ export default function Home() {
                     Pricing
                   </a>
                 </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-white transition-colors duration-200"
-                  >
-                    API Documentation
-                  </a>
-                </li>
+
                 <li>
                   <a
                     href="#"
@@ -981,7 +974,7 @@ export default function Home() {
                 </li>
                 <li>
                   <a
-                    href="#"
+                    href="/contact"
                     className="hover:text-white transition-colors duration-200"
                   >
                     Contact Us
@@ -992,7 +985,7 @@ export default function Home() {
                     href="#"
                     className="hover:text-white transition-colors duration-200"
                   >
-                    Status Page
+                    Refund Policy
                   </a>
                 </li>
                 <li>
@@ -1000,7 +993,7 @@ export default function Home() {
                     href="#"
                     className="hover:text-white transition-colors duration-200"
                   >
-                    Community
+                    Privacy Policy
                   </a>
                 </li>
               </ul>

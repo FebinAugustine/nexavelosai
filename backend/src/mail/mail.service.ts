@@ -77,4 +77,36 @@ export class MailService {
       // Do not rethrow to avoid failing the password reset process
     }
   }
+
+  async sendContactEmail(
+    name: string,
+    email: string,
+    subject: string,
+    message: string,
+  ): Promise<void> {
+    const mailOptions = {
+      from: process.env.FROM_EMAIL,
+      to: process.env.CONTACT_EMAIL || 'support@nexavelosai.com',
+      subject: `Contact Form: ${subject}`,
+      html: `
+        <h1>New Contact Form Submission</h1>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Subject:</strong> ${subject}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
+      `,
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Contact email sent from ${email}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send contact email from ${email}:`,
+        error.message,
+      );
+      throw error; // Rethrow to let the controller handle the error
+    }
+  }
 }
