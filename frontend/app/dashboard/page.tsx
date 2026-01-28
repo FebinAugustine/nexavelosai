@@ -455,7 +455,7 @@ export default function Dashboard() {
         return (
           <>
             <div className="mb-8">
-              <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-2">
                 Dashboard
               </h2>
               <p className="text-lg text-gray-600">
@@ -465,7 +465,7 @@ export default function Dashboard() {
 
             {/* User Info */}
             <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+              <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                     <svg
@@ -502,6 +502,7 @@ export default function Dashboard() {
                           strokeLinejoin="round"
                           strokeWidth={2}
                           d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                          className="text-[#0C7779]"
                         />
                       </svg>
                       Email
@@ -534,7 +535,7 @@ export default function Dashboard() {
                   <div className="sm:col-span-1">
                     <dt className="text-sm font-semibold text-gray-700 flex items-center mb-2">
                       <svg
-                        className="w-4 h-4 mr-2 text-indigo-600"
+                        className="w-4 h-4 mr-2 text-emerald-600"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -555,7 +556,7 @@ export default function Dashboard() {
                   <div className="sm:col-span-1">
                     <dt className="text-sm font-semibold text-gray-700 flex items-center mb-2">
                       <svg
-                        className="w-4 h-4 mr-2 text-indigo-600"
+                        className="w-4 h-4 mr-2 text-[#0C7779]"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -579,7 +580,7 @@ export default function Dashboard() {
 
             {/* Agents Overview */}
             <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+              <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                     <svg
@@ -628,7 +629,7 @@ export default function Dashboard() {
                     </p>
                     <button
                       onClick={() => setActiveSection("create-agent")}
-                      className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                      className="bg-gradient-to-r from-emerald-600 to-green-600 text-white px-8 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
                     >
                       Create Your First Agent
                     </button>
@@ -767,7 +768,7 @@ export default function Dashboard() {
       case "analytics":
         return (
           <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+            <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                   <svg
@@ -793,9 +794,9 @@ export default function Dashboard() {
               {analytics ? (
                 <div className="space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-2xl border border-indigo-200/50 shadow-lg">
+                    <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 rounded-2xl border border-emerald-200/50 shadow-lg">
                       <div className="flex items-center space-x-3 mb-4">
-                        <div className="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
                           <svg
                             className="w-6 h-6 text-white"
                             fill="none"
@@ -811,12 +812,12 @@ export default function Dashboard() {
                           </svg>
                         </div>
                         <div>
-                          <h4 className="text-sm font-semibold text-indigo-700">
+                          <h4 className="text-sm font-semibold text-emerald-700">
                             Total Agents
                           </h4>
                         </div>
                       </div>
-                      <p className="text-3xl font-bold text-indigo-900">
+                      <p className="text-3xl font-bold text-emerald-900">
                         {analytics.totalAgents}
                       </p>
                     </div>
@@ -903,7 +904,7 @@ export default function Dashboard() {
                             <div className="flex items-center space-x-4">
                               <div className="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
                                 <svg
-                                  className="w-6 h-6 text-indigo-600"
+                                  className="w-6 h-6 text-[#0C7779]"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -981,7 +982,7 @@ export default function Dashboard() {
             <div className="space-y-8">
               {/* Overview */}
               <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 md:p-6">
+                <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-4 md:p-6">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg
@@ -1034,7 +1035,7 @@ export default function Dashboard() {
 
               {/* JavaScript Implementation */}
               <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
-                <div className="bg-gradient-to-r from-yellow-500 to-orange-500 p-4 md:p-6">
+                <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-4 md:p-6">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg
@@ -1150,7 +1151,7 @@ export default function Dashboard() {
 
               {/* React/Next.js Implementation */}
               <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
-                <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4 md:p-6">
+                <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-4 md:p-6">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg
@@ -1275,7 +1276,7 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
               {/* Customization */}
               {user?.plan === "special" && (
                 <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
-                  <div className="bg-gradient-to-r from-green-500 to-teal-500 p-4 md:p-6">
+                  <div className="bg-gradient-to-r from-[#249E94] to-[#3BC1A8] p-4 md:p-6">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                         <svg
@@ -1348,7 +1349,7 @@ window.nexavelWidget.open();`}</code>
 
               {/* Troubleshooting */}
               <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
-                <div className="bg-gradient-to-r from-red-500 to-pink-500 p-4 md:p-6">
+                <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-4 md:p-6">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg
@@ -1415,7 +1416,7 @@ window.nexavelWidget.open();`}</code>
         return (
           <>
             <div className="mb-8">
-              <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-2">
                 Account Settings
               </h2>
               <p className="text-lg text-gray-600">
@@ -1426,7 +1427,7 @@ window.nexavelWidget.open();`}</code>
             <div className="space-y-6 md:space-y-8">
               {/* Profile Information */}
               <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+                <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                       <svg
@@ -1486,7 +1487,7 @@ window.nexavelWidget.open();`}</code>
 
               {/* Change Password */}
               <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+                <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                       <svg
@@ -1539,7 +1540,7 @@ window.nexavelWidget.open();`}</code>
                           type="password"
                           id="newPassword"
                           required
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-[#0C7779] focus:border-[#0C7779] transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
                           placeholder="Enter new password"
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
@@ -1556,7 +1557,7 @@ window.nexavelWidget.open();`}</code>
                           type="password"
                           id="confirmPassword"
                           required
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-[#0C7779] focus:border-[#0C7779] transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
                           placeholder="Confirm new password"
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
@@ -1567,7 +1568,7 @@ window.nexavelWidget.open();`}</code>
                       <button
                         type="submit"
                         disabled={accountSettingsLoading}
-                        className="inline-flex items-center px-8 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
+                        className="inline-flex items-center px-8 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-green-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
                       >
                         {accountSettingsLoading ? (
                           <>
@@ -1758,7 +1759,7 @@ window.nexavelWidget.open();`}</code>
               </div>
 
               <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8">
+                <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-8">
                   <div className="text-center">
                     <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
                       <svg
@@ -1796,7 +1797,7 @@ window.nexavelWidget.open();`}</code>
                     <div className="flex flex-col sm:flex-row justify-center gap-4">
                       <button
                         onClick={() => setActiveSection("billing")}
-                        className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                        className="bg-gradient-to-r from-[#005461] to-[#0C7779] text-white px-8 py-3 rounded-xl hover:from-[#0C7779] hover:to-[#249E94] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
                       >
                         View Plans & Upgrade
                       </button>
@@ -1826,7 +1827,7 @@ window.nexavelWidget.open();`}</code>
             </div>
 
             <div className="bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-200/50 overflow-hidden">
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+              <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                     <svg
@@ -2071,7 +2072,7 @@ window.nexavelWidget.open();`}</code>
                     <button
                       type="submit"
                       disabled={createAgentLoading}
-                      className="inline-flex items-center px-8 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
+                      className="inline-flex items-center px-8 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-green-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
                     >
                       {createAgentLoading ? (
                         <>
@@ -2136,7 +2137,7 @@ window.nexavelWidget.open();`}</code>
 
             {/* Current Plan */}
             <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+              <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                     <svg
@@ -2186,7 +2187,7 @@ window.nexavelWidget.open();`}</code>
                 <div className="mt-6">
                   <button
                     onClick={() => router.push("/dashboard/billing-history")}
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                    className="bg-gradient-to-r from-emerald-600 to-green-600 text-white px-6 py-3 rounded-xl hover:from-[#0C7779] hover:to-[#249E94] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
                   >
                     <div className="flex items-center space-x-2">
                       <svg
@@ -2254,7 +2255,7 @@ window.nexavelWidget.open();`}</code>
                     user?.plan === plan.id ? "ring-2 ring-indigo-500" : ""
                   }`}
                 >
-                  <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+                  <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
                     <div className="text-center">
                       <h3 className="text-2xl font-bold text-white mb-2">
                         {plan.name}
@@ -2307,7 +2308,7 @@ window.nexavelWidget.open();`}</code>
                       <button
                         onClick={() => handleSubscribe(plan.id)}
                         disabled={subscribing}
-                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {subscribing
                           ? "Processing..."
@@ -2408,7 +2409,7 @@ window.nexavelWidget.open();`}</code>
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 flex">
       {/* Sidebar */}
       <div
         className={`bg-white/80 backdrop-blur-md shadow-xl border-r border-gray-200/50 ${
@@ -2416,7 +2417,7 @@ window.nexavelWidget.open();`}</code>
         } md:block w-64 h-screen fixed inset-y-0 left-0 z-50 overflow-y-auto`}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-center h-16 bg-gradient-to-r from-indigo-600 to-purple-600">
+          <div className="flex items-center justify-center h-16 bg-gradient-to-r from-emerald-600 to-green-600">
             <h1 className="text-xl font-bold text-white">NexaVelosAI</h1>
           </div>
           <nav className="flex-1 px-4 py-6 space-y-2">
@@ -2427,7 +2428,7 @@ window.nexavelWidget.open();`}</code>
               }}
               className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
                 activeSection === "dashboard"
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                  ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg"
                   : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
               }`}
             >
@@ -2461,7 +2462,7 @@ window.nexavelWidget.open();`}</code>
               }}
               className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
                 activeSection === "create-agent"
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                  ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg"
                   : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
               }`}
             >
@@ -2489,7 +2490,7 @@ window.nexavelWidget.open();`}</code>
               }}
               className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
                 activeSection === "analytics"
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                  ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg"
                   : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
               }`}
             >
@@ -2517,7 +2518,7 @@ window.nexavelWidget.open();`}</code>
               }}
               className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
                 activeSection === "billing"
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                  ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg"
                   : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
               }`}
             >
@@ -2545,7 +2546,7 @@ window.nexavelWidget.open();`}</code>
               }}
               className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
                 activeSection === "documentation"
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                  ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg"
                   : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
               }`}
             >
@@ -2573,7 +2574,7 @@ window.nexavelWidget.open();`}</code>
               }}
               className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
                 activeSection === "account"
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                  ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg"
                   : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
               }`}
             >
@@ -2638,7 +2639,7 @@ window.nexavelWidget.open();`}</code>
               <div className="flex items-center">
                 <button
                   onClick={() => setSidebarOpen(true)}
-                  className="md:hidden text-gray-700 hover:text-indigo-600 p-2 rounded-lg hover:bg-white/60 transition-all duration-200"
+                  className="md:hidden text-gray-700 hover:text-emerald-600 p-2 rounded-lg hover:bg-white/60 transition-all duration-200"
                 >
                   <svg
                     className="w-6 h-6"
@@ -2659,7 +2660,7 @@ window.nexavelWidget.open();`}</code>
                     onClick={() => setActiveSection("dashboard")}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       activeSection === "dashboard"
-                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                        ? "bg-gradient-to-r from-[#005461] to-[#0C7779] text-white shadow-lg"
                         : "text-gray-700 hover:bg-white/60 hover:shadow-md"
                     }`}
                   >
@@ -2669,7 +2670,7 @@ window.nexavelWidget.open();`}</code>
                     onClick={() => setActiveSection("create-agent")}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       activeSection === "create-agent"
-                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                        ? "bg-gradient-to-r from-[#005461] to-[#0C7779] text-white shadow-lg"
                         : "text-gray-700 hover:bg-white/60 hover:shadow-md"
                     }`}
                   >
@@ -2679,7 +2680,7 @@ window.nexavelWidget.open();`}</code>
                     onClick={() => setActiveSection("analytics")}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       activeSection === "analytics"
-                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                        ? "bg-gradient-to-r from-[#005461] to-[#0C7779] text-white shadow-lg"
                         : "text-gray-700 hover:bg-white/60 hover:shadow-md"
                     }`}
                   >
@@ -2689,7 +2690,7 @@ window.nexavelWidget.open();`}</code>
                     onClick={() => setActiveSection("billing")}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       activeSection === "billing"
-                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                        ? "bg-gradient-to-r from-[#005461] to-[#0C7779] text-white shadow-lg"
                         : "text-gray-700 hover:bg-white/60 hover:shadow-md"
                     }`}
                   >
@@ -2699,7 +2700,7 @@ window.nexavelWidget.open();`}</code>
                     onClick={() => setActiveSection("documentation")}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       activeSection === "documentation"
-                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                        ? "bg-gradient-to-r from-[#005461] to-[#0C7779] text-white shadow-lg"
                         : "text-gray-700 hover:bg-white/60 hover:shadow-md"
                     }`}
                   >
@@ -2709,7 +2710,7 @@ window.nexavelWidget.open();`}</code>
                     onClick={() => setActiveSection("account")}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       activeSection === "account"
-                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                        ? "bg-gradient-to-r from-[#005461] to-[#0C7779] text-white shadow-lg"
                         : "text-gray-700 hover:bg-white/60 hover:shadow-md"
                     }`}
                   >
@@ -2741,7 +2742,7 @@ window.nexavelWidget.open();`}</code>
       {testModalOpen && selectedAgent && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden border border-gray-200/50">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+            <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -2833,7 +2834,7 @@ window.nexavelWidget.open();`}</code>
                           <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                               msg.role === "user"
-                                ? "bg-gradient-to-r from-indigo-600 to-purple-600"
+                                ? "bg-gradient-to-r from-emerald-600 to-green-600"
                                 : "bg-gradient-to-r from-gray-400 to-gray-600"
                             }`}
                           >
@@ -2870,7 +2871,7 @@ window.nexavelWidget.open();`}</code>
                           <div
                             className={`px-4 py-3 rounded-2xl shadow-sm ${
                               msg.role === "user"
-                                ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
+                                ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white"
                                 : "bg-white border border-gray-200 text-gray-800"
                             }`}
                           >
@@ -2960,7 +2961,7 @@ window.nexavelWidget.open();`}</code>
                   <button
                     onClick={handleSendMessage}
                     disabled={chatLoading || !chatMessage.trim()}
-                    className="inline-flex items-center px-6 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
+                    className="inline-flex items-center px-6 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-green-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
                   >
                     {chatLoading ? (
                       <svg
@@ -3012,7 +3013,7 @@ window.nexavelWidget.open();`}</code>
       {editModalOpen && selectedAgentForEdit && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-lg border border-gray-200/50 overflow-hidden">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+            <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -3168,7 +3169,7 @@ window.nexavelWidget.open();`}</code>
                 </button>
                 <button
                   onClick={handleUpdateAgent}
-                  className="inline-flex items-center px-8 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="inline-flex items-center px-8 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-green-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   <svg
                     className="w-4 h-4 mr-2"
@@ -3195,7 +3196,7 @@ window.nexavelWidget.open();`}</code>
       {snippetModalOpen && selectedAgentForSnippet && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-md border border-gray-200/50 overflow-hidden">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+            <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -3251,7 +3252,7 @@ window.nexavelWidget.open();`}</code>
                   <select
                     value={snippetVersion}
                     onChange={(e) => setSnippetVersion(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0C7779] focus:border-[#0C7779] bg-white text-gray-900"
                   >
                     {user?.plan === "special" && (
                       <option value="full">Full (Inline Code)</option>

@@ -19,17 +19,17 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-200/10 via-white to-green-200/10">
       {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-50">
+      <nav className="bg-white backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-green-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">NV</span>
                 </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
                   NexaVelosAI
                 </h1>
               </div>
@@ -37,13 +37,13 @@ export default function Home() {
             <div className="flex items-center space-x-6">
               <a
                 href="#features"
-                className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200"
+                className="text-gray-700 hover:text-[#0C7779] font-medium transition-colors duration-200"
               >
                 Features
               </a>
               <a
                 href="#pricing"
-                className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200"
+                className="text-gray-700 hover:text-emerald-600 font-medium transition-colors duration-200"
               >
                 Pricing
               </a>
@@ -51,13 +51,13 @@ export default function Home() {
                 <>
                   <a
                     href="/dashboard"
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                    className="bg-gradient-to-r from-[#005461] to-[#0C7779] text-white px-6 py-2 rounded-xl hover:from-[#0C7779] hover:to-[#249E94] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
                   >
                     Dashboard
                   </a>
                   <button
                     onClick={handleLogout}
-                    className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200"
+                    className="text-[#0C7779] hover:text-[#005461] font-medium transition-colors duration-200"
                   >
                     Logout
                   </button>
@@ -66,13 +66,13 @@ export default function Home() {
                 <>
                   <a
                     href="/login"
-                    className="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200"
+                    className="text-emerald-600 hover:text-emerald-800 font-medium transition-colors duration-200"
                   >
                     Login
                   </a>
                   <a
                     href="/register"
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                    className="bg-gradient-to-r from-emerald-600 to-green-600 text-white px-6 py-2 rounded-xl hover:from-emerald-700 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
                   >
                     Get Started
                   </a>
@@ -84,17 +84,16 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 to-purple-600/10"></div>
-        <div className="max-w-7xl mx-auto text-center relative z-10">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-emerald-400 via-green-100 to-emerald-400 ">
+        <div className="max-w-7xl mx-auto text-center">
           <div className="mb-8">
-            <span className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-100 text-indigo-800 text-sm font-medium mb-4">
+            <span className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-600 text-sm font-medium mb-4">
               🚀 Now supporting React & Next.js components
             </span>
           </div>
           <h1 className="text-5xl sm:text-7xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent mb-6 leading-tight">
             Create Custom AI Chat Agents
-            <span className="block bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
               Effortlessly
             </span>
           </h1>
@@ -106,7 +105,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row justify-center gap-6">
             <a
               href="/register"
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-10 py-4 rounded-2xl text-lg font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+              className="bg-gradient-to-r from-emerald-600 to-green-600 text-white px-10 py-4 rounded-2xl text-lg font-semibold hover:from-emerald-700 hover:to-green-700 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
             >
               Start Building Now
             </a>
@@ -121,19 +120,19 @@ export default function Home() {
             <div className="bg-white/60 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-gray-200/50">
               <div className="grid grid-cols-3 gap-8 text-center">
                 <div>
-                  <div className="text-3xl font-bold text-indigo-600 mb-2">
+                  <div className="text-3xl font-bold text-[#3BC1A8] mb-2">
                     10K+
                   </div>
                   <div className="text-gray-600">Active Agents</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-purple-600 mb-2">
+                  <div className="text-3xl font-bold text-[#249E94] mb-2">
                     1M+
                   </div>
                   <div className="text-gray-600">Conversations</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-indigo-600 mb-2">
+                  <div className="text-3xl font-bold text-[#0C7779] mb-2">
                     99.9%
                   </div>
                   <div className="text-gray-600">Uptime</div>
@@ -145,7 +144,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-white/50 backdrop-blur-sm">
+      <section id="features" className="py-24 bg-green-50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
@@ -158,7 +157,7 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white/70 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-gray-200/50 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-              <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#187501] to-[#2ba506] rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -182,7 +181,7 @@ export default function Home() {
               </p>
             </div>
             <div className="bg-white/70 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-gray-200/50 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-              <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#187501] to-[#2ba506] rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -206,7 +205,7 @@ export default function Home() {
               </p>
             </div>
             <div className="bg-white/70 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-gray-200/50 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#187501] to-[#2ba506] rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="none"
@@ -234,13 +233,10 @@ export default function Home() {
       </section>
 
       {/* Pricing Section */}
-      <section
-        id="pricing"
-        className="py-24 bg-gradient-to-br from-indigo-50 via-white to-purple-50"
-      >
+      <section id="pricing" className="py-24 bg-amber-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-[#026109] to-[#03b145] bg-clip-text text-transparent mb-4">
               Simple, Transparent Pricing
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -328,16 +324,16 @@ export default function Home() {
 
               <a
                 href="/register"
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-center block"
+                className="w-full bg-gradient-to-r from-[#176100] to-[#0c790c] text-white py-3 px-6 rounded-xl font-semibold hover:from-[#0C7779] hover:to-[#249E94] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-center block"
               >
                 Get Started
               </a>
             </div>
 
             {/* Special Plan - Popular */}
-            <div className="bg-white/70 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-2 border-indigo-500 hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2 relative">
+            <div className="bg-white/70 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-2 border-[#0C7779] hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2 relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                <span className="bg-gradient-to-r from-[#176100] to-[#0c790c] text-white px-4 py-1 rounded-full text-sm font-semibold">
                   Most Popular
                 </span>
               </div>
@@ -430,7 +426,7 @@ export default function Home() {
 
               <a
                 href="/register"
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-center block"
+                className="w-full bg-gradient-to-r from-[#176100] to-[#0c790c] text-white py-3 px-6 rounded-xl font-semibold hover:from-[#0C7779] hover:to-[#249E94] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-center block"
               >
                 Get Started
               </a>
@@ -529,7 +525,7 @@ export default function Home() {
 
               <a
                 href="mailto:support@nexavelosai.com?subject=Agency Plan Inquiry"
-                className="w-full bg-gradient-to-r from-gray-600 to-gray-700 text-white py-3 px-6 rounded-xl font-semibold hover:from-gray-700 hover:to-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-center block"
+                className="w-full bg-gradient-to-r from-[#114601] to-[#0c790c] text-white py-3 px-6 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-center block"
               >
                 Contact Sales
               </a>
@@ -549,7 +545,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-24 bg-white/50 backdrop-blur-sm">
+      <section id="testimonials" className="py-24 bg-green-50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
@@ -607,7 +603,7 @@ export default function Home() {
                 hours."
               </p>
               <div className="flex items-center">
-                <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mr-4">
+                <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full flex items-center justify-center mr-4">
                   <span className="text-white font-semibold">JD</span>
                 </div>
                 <div>
@@ -733,13 +729,13 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 relative overflow-hidden">
+      <section className="py-24 bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-800 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <h2 className="text-4xl font-bold text-white mb-6">
             Ready to Transform Your Website?
           </h2>
-          <p className="text-xl text-indigo-100 mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-emerald-100 mb-12 max-w-3xl mx-auto leading-relaxed">
             Join thousands of businesses enhancing their customer experience
             with intelligent AI chat agents. Start building your first agent
             today.
@@ -747,7 +743,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row justify-center gap-6">
             <a
               href="/register"
-              className="bg-white text-indigo-600 px-10 py-4 rounded-2xl text-lg font-semibold hover:bg-gray-50 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+              className="bg-white text-emerald-600 px-10 py-4 rounded-2xl text-lg font-semibold hover:bg-gray-50 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
             >
               Start Building Now
             </a>
@@ -762,16 +758,16 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/20 to-purple-900/20"></div>
+      <footer className="bg-green-900 text-white py-16 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-900 to-emerald-900"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div className="md:col-span-2">
               <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-r from-emerald-600 to-green-600 rounded-xl flex items-center justify-center">
                   <span className="text-white font-bold text-lg">NV</span>
                 </div>
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent">
                   NexaVelosAI
                 </h3>
               </div>

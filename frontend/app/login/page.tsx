@@ -30,7 +30,7 @@ export default function Login() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
         <div className="text-center">
           <svg
-            className="animate-spin h-12 w-12 text-indigo-600 mx-auto mb-4"
+            className="animate-spin h-12 w-12 text-emerald-600 mx-auto mb-4"
             fill="none"
             viewBox="0 0 24 24"
           >
@@ -73,17 +73,17 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
       {/* Navigation */}
       <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-green-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">NV</span>
                 </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
                   NexaVelosAI
                 </h1>
               </div>
@@ -91,13 +91,13 @@ export default function Login() {
             <div className="flex items-center space-x-6">
               <a
                 href="/"
-                className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200"
+                className="text-gray-700 hover:text-emerald-600 font-medium transition-colors duration-200"
               >
                 Home
               </a>
               <a
                 href="/register"
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                className="bg-gradient-to-r from-emerald-600 to-green-600 text-white px-6 py-2 rounded-xl hover:from-emerald-700 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
               >
                 Get Started
               </a>
@@ -110,12 +110,12 @@ export default function Login() {
       <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
           <div className="bg-white/70 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200/50 overflow-hidden">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8">
+            <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-8">
               <div className="text-center">
                 <h2 className="text-3xl font-bold text-white mb-2">
                   Welcome Back
                 </h2>
-                <p className="text-indigo-100">
+                <p className="text-emerald-100">
                   Sign in to your NexaVelosAI account
                 </p>
               </div>
@@ -135,7 +135,7 @@ export default function Login() {
                     name="email"
                     type="email"
                     required
-                    className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -175,7 +175,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  className="w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   {loading ? (
                     <>
