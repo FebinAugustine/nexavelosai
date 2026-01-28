@@ -2151,7 +2151,7 @@ export default function Dashboard() {
       {/* Main Content */}
       <div className="flex-1 md:ml-0">
         {/* Top Navigation */}
-        <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200/50">
+        <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200/50 md:ml-64">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
               <div className="flex items-center">
