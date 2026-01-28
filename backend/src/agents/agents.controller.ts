@@ -110,7 +110,7 @@ export class AgentsController {
           throw new BadRequestException('Origin header required');
         }
         const requestDomain = new URL(origin).hostname;
-        if (agent.domain !== requestDomain) {
+        if (agent.domain !== requestDomain && requestDomain !== 'localhost') {
           throw new BadRequestException(
             'Widget can only be used on the specified domain',
           );
