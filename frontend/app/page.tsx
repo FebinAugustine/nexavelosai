@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
 
@@ -58,7 +58,7 @@ export default function Home() {
               >
                 Pricing
               </a>
-              {isLoggedIn ? (
+              {isLoggedIn === true ? (
                 <>
                   <a
                     href="/dashboard"
@@ -73,7 +73,7 @@ export default function Home() {
                     Logout
                   </button>
                 </>
-              ) : (
+              ) : isLoggedIn === false ? (
                 <>
                   <a
                     href="/login"
@@ -88,6 +88,9 @@ export default function Home() {
                     Get Started
                   </a>
                 </>
+              ) : (
+                // Show nothing or a loading indicator while determining login state
+                <div className="w-24 h-6 bg-gray-200 rounded animate-pulse" />
               )}
             </div>
 
@@ -142,7 +145,7 @@ export default function Home() {
               >
                 Pricing
               </a>
-              {isLoggedIn ? (
+              {isLoggedIn === true ? (
                 <>
                   <a
                     href="/dashboard"
@@ -161,7 +164,7 @@ export default function Home() {
                     Logout
                   </button>
                 </>
-              ) : (
+              ) : isLoggedIn === false ? (
                 <>
                   <a
                     href="/login"
@@ -178,6 +181,9 @@ export default function Home() {
                     Get Started
                   </a>
                 </>
+              ) : (
+                // Show loading indicator for mobile menu
+                <div className="w-full h-8 bg-gray-200 rounded animate-pulse" />
               )}
             </div>
           </div>
@@ -982,7 +988,7 @@ export default function Home() {
                 </li>
                 <li>
                   <a
-                    href="#"
+                    href="/refund-policy"
                     className="hover:text-white transition-colors duration-200"
                   >
                     Refund Policy

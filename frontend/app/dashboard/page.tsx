@@ -2634,7 +2634,7 @@ window.nexavelWidget.open();`}</code>
       {/* Main Content */}
       <div className="flex-1 md:ml-0">
         {/* Top Navigation */}
-        <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200/50 md:ml-64">
+        <nav className="relative z-40 bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200/50 md:ml-64">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
               <div className="flex items-center">
@@ -2668,7 +2668,7 @@ window.nexavelWidget.open();`}</code>
                   Logout
                 </button>
                 {/* Desktop Dropdown Menu */}
-                <div className="hidden md:block md:relative">
+                <div className="hidden md:block relative">
                   <button
                     onClick={() => setNavbarDropdownOpen(!navbarDropdownOpen)}
                     className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:shadow-md transition-all duration-200 border border-gray-200/50 bg-white/50 backdrop-blur-sm"
@@ -2700,12 +2700,12 @@ window.nexavelWidget.open();`}</code>
                     <>
                       {/* Backdrop */}
                       <div
-                        className="fixed inset-0 z-100000"
+                        className="fixed inset-0 z-[99999]"
                         onClick={() => setNavbarDropdownOpen(false)}
                       ></div>
 
                       {/* Dropdown Content */}
-                      <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-200/50 z-100000 overflow-hidden">
+                      <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-200/50 z-[99999]">
                         <div className="py-2">
                           {[
                             {
@@ -2745,7 +2745,7 @@ window.nexavelWidget.open();`}</code>
                                 setActiveSection(item.id);
                                 setNavbarDropdownOpen(false);
                               }}
-                              className={`w-full flex items-center space-x-3 px-4 py-3 text-left text-sm font-medium transition-all duration-200 z-100000 ${
+                              className={`w-full flex items-center space-x-3 px-4 py-3 text-left text-sm font-medium transition-all duration-200 z-[99999] ${
                                 activeSection === item.id
                                   ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white"
                                   : "text-gray-700 hover:bg-gray-50"
