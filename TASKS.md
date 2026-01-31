@@ -16,11 +16,12 @@ This document outlines the detailed tasks required to implement the NexaVelosAI 
 
 ### 1.2 Frontend Setup
 
-- **Task**: Initialize Next.js project with Tailwind CSS.
-- **Description**: Set up Next.js app, integrate Tailwind CSS, and configure basic routing.
-- **Effort**: 2 days
-- **Dependencies**: None
-- **Acceptance Criteria**: Next.js app runs, Tailwind styles applied, basic pages render.
+- **Task**: Resolve 'tailwindcss' module not found error.
+- **Description**: Ran `npm install` in the frontend directory to install missing dependencies including Tailwind CSS.
+- **Effort**: 0.5 days
+- **Dependencies**: Frontend setup
+- **Acceptance Criteria**: Tailwind CSS modules are resolved and application builds without error.
+- **Status**: Completed
 - **Status**: Completed
 - **Status**: Completed
 
