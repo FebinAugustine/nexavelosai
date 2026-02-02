@@ -17,6 +17,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { Model } from 'mongoose';
 import { AgentsService } from './agents.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { CreateAgentDto } from './dto/create-agent.dto';
 import { PlanBasedThrottlerGuard } from './plan-based-throttler.guard';
 import { User, UserDocument } from '../users/users.schema';
@@ -24,10 +25,7 @@ import { User, UserDocument } from '../users/users.schema';
 @Controller('agents')
 @UseGuards(PlanBasedThrottlerGuard)
 export class AgentsController {
-  constructor(
-    private readonly agentsService: AgentsService,
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-  ) {}
+  constructor(private readonly agentsService: AgentsService) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -95,17 +93,10 @@ export class AgentsController {
   ) {
     const agent = await this.agentsService.findOne(id, req.user._id.toString());
 
-    // Get user to check plan
-    const user = await this.userModel.findById(req.user._id.toString());
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
+    const userPlan = await this.agentsService.getUserPlan(req.user._id.toString());
 
     // Check plan restrictions
-    if (
-      (user.plan === 'free' || user.plan === 'regular') &&
-      version === 'full'
-    ) {
+    if ((userPlan === 'free' || userPlan === 'regular') && version === 'full') {
       throw new BadRequestException(
         'Full widget snippet is only available for special plan users',
       );
@@ -116,19 +107,20 @@ export class AgentsController {
     };
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @SkipThrottle()
   @Post(':id/chat')
   async chat(
     @Param('id') id: string,
     @Body('message') message: string,
     @Request() req,
-  ) {
+  ): Promise<{ jobId: string | number; message: string } | { response: string }> { // Updated return type
     try {
       const userId = req.user?._id?.toString() || '';
       const agent = await this.agentsService.findOne(id, userId);
 
       // Check domain restriction for public access
-      if (!userId) {
+      if (!userId) { // Only apply origin check for anonymous users
         const origin =
           req.headers['origin'] ||
           req.headers['referer']?.split('/').slice(0, 3).join('/');
@@ -136,19 +128,26 @@ export class AgentsController {
           throw new BadRequestException('Origin header required');
         }
         const requestDomain = new URL(origin).hostname;
-        if (agent.domain !== requestDomain && requestDomain !== 'localhost') {
+        if (agent.domain && agent.domain !== requestDomain && requestDomain !== 'localhost') { // Only check if agent has a domain set
           throw new BadRequestException(
             'Widget can only be used on the specified domain',
           );
         }
       }
 
-      const response = await this.agentsService.chat(agent, message);
+      const chatResult = await this.agentsService.chat(id, userId, message);
 
-      return { response };
+      if (typeof chatResult === 'string') {
+        // This is the direct response for anonymous widget users
+        return { response: chatResult };
+      } else {
+        // This is the jobId for logged-in dashboard users
+        return { jobId: chatResult.jobId, message: 'Agent request queued successfully.' };
+      }
     } catch (error) {
       console.error('Chat controller error:', error);
       throw error; // Re-throw all errors to ensure proper error handling
     }
   }
 }
+

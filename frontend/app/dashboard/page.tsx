@@ -16,10 +16,17 @@ import {
 } from "../../lib/sanitization";
 
 interface User {
+
+  _id: string;
+
   email: string;
+
   plan: string;
+
   agentLimit: number;
+
   domains: string[];
+
 }
 
 interface Agent {
@@ -135,6 +142,35 @@ export default function Dashboard() {
     }
   }, [socket]);
 
+  // New useEffect to listen for agent response via WebSocket
+  useEffect(() => {
+    if (socket && user) {
+      const agentResultEvent = `agent-result-${user._id}`;
+      socket.on(agentResultEvent, (data: { jobId: string; status: string; data?: string; error?: string }) => {
+        if (data.status === 'completed' && data.data) {
+          const agentMessage = {
+            role: "agent" as const,
+            content: data.data,
+          };
+          setMessages((prev) => [...prev, agentMessage]);
+          toast.success("Agent responded!");
+        } else if (data.status === 'failed' && data.error) {
+          toast.error(`Agent failed: ${data.error}`);
+          const errorMessage = {
+            role: "agent" as const,
+            content: `Error: ${data.error}`,
+          };
+          setMessages((prev) => [...prev, errorMessage]);
+        }
+        setChatLoading(false); // Stop loading after receiving response
+      });
+
+      return () => {
+        socket.off(agentResultEvent);
+      };
+    }
+  }, [socket, user, setMessages, setChatLoading]); // Add dependencies as needed
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     toast.success("Logged out successfully");
@@ -163,7 +199,7 @@ export default function Dashboard() {
   };
 
   const handleSendMessage = async () => {
-    if (!chatMessage.trim() || !selectedAgent) return;
+    if (!chatMessage.trim() || !selectedAgent || !user) return; // Ensure user is available for userId
 
     const userMessage = { role: "user" as const, content: chatMessage };
     setMessages((prev) => [...prev, userMessage]);
@@ -172,6 +208,7 @@ export default function Dashboard() {
 
     try {
       const token = localStorage.getItem("token");
+      // Expect jobId in response
       const response = await axios.post(
         `http://localhost:5000/agents/${selectedAgent._id}/chat`,
         {
@@ -181,15 +218,14 @@ export default function Dashboard() {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      const agentMessage = {
-        role: "agent" as const,
-        content: response.data.response,
-      };
-      setMessages((prev) => [...prev, agentMessage]);
+      // Backend now returns { jobId: string }
+      toast.success("Message sent to agent queue. Awaiting response...");
+
+      // No direct agentMessage added here; it will come via WebSocket
+      // Optionally, you could store the jobId to link to the response later
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to send message");
-    } finally {
-      setChatLoading(false);
+      setChatLoading(false); // If request fails, stop loading
     }
   };
 

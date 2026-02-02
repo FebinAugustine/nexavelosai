@@ -7,6 +7,7 @@ import { Agent, AgentSchema } from './agents.schema';
 import { UsersModule } from '../users/users.module';
 import { AuthModule } from '../auth/auth.module';
 import { EventsModule } from '../events/events.module';
+import { AgentQueueModule } from '../agent-queue/agent-queue.module';
 import { PlanBasedThrottlerGuard } from './plan-based-throttler.guard';
 import { ThrottlerModule, ThrottlerStorage } from '@nestjs/throttler';
 import { Reflector } from '@nestjs/core';
@@ -20,6 +21,7 @@ import { User, UserSchema } from '../users/users.schema';
     UsersModule,
     forwardRef(() => AuthModule),
     EventsModule,
+    AgentQueueModule,
   ],
   providers: [AgentsService, PlanBasedThrottlerGuard],
   controllers: [AgentsController],

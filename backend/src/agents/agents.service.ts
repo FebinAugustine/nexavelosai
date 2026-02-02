@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   Inject,
+  Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -12,14 +13,18 @@ import { Agent, AgentDocument } from './agents.schema';
 import { User, UserDocument } from '../users/users.schema';
 import { EventsGateway } from '../events/events.gateway';
 import { CreateAgentDto } from './dto/create-agent.dto';
+import { AgentQueueService } from '../agent-queue/agent-queue.service';
 
 @Injectable()
 export class AgentsService {
+  private readonly logger = new Logger(AgentsService.name);
+
   constructor(
     @InjectModel(Agent.name) private agentModel: Model<AgentDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private eventsGateway: EventsGateway,
+    private agentQueueService: AgentQueueService, // Inject AgentQueueService
   ) {}
 
   async create(
@@ -1101,19 +1106,57 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
     return snippet;
   }
 
-  async chat(agent: AgentDocument, message: string): Promise<string> {
-    // Get user plan for throttling limits
-    const user = await this.userModel.findById(agent.userId);
+  async chat(
+    agentId: string,
+    userId: string,
+    message: string,
+  ): Promise<{ jobId: string | number } | string> { // Updated return type
+    if (userId) {
+      // For logged-in users (dashboard), queue the job and send response via WebSocket
+      const job = await this.agentQueueService.addAgentRequest({ agentId, userId, message });
+      return { jobId: job.id };
+    } else {
+      // For anonymous users (widget), process the request synchronously and return the response directly
+      try {
+        const responseText = await this.processQueuedAgentRequest(agentId, userId, message);
+        return responseText;
+      } catch (error: any) {
+        this.logger.error(`Synchronous chat error for agentId: ${agentId}, userId: ${userId}: ${error.message}`, error.stack);
+        // Return a user-friendly error message, similar to what processQueuedAgentRequest would return on failure
+        return error.message || 'Sorry, there was an error processing your request. Please try again.';
+      }
+    }
+  }
+
+  async processQueuedAgentRequest(
+    agentId: string,
+    userId: string,
+    message: string,
+  ): Promise<string> {
+    this.logger.debug(`[processQueuedAgentRequest] Started for agentId: ${agentId}, userId: ${userId}`);
+    const agent = await this.agentModel.findById(agentId).exec();
+    if (!agent) {
+      this.logger.warn(`[processQueuedAgentRequest] Agent not found for agentId: ${agentId}`);
+      throw new NotFoundException('Agent not found');
+    }
+    let user: UserDocument | null = null;
+    if (userId) { // Only attempt to find user if userId is not empty
+      user = await this.userModel.findById(userId);
+      if (!user) { // If userId was provided but user not found
+        this.logger.warn(`[processQueuedAgentRequest] User not found for userId: ${userId}. Proceeding with default 'free' plan.`);
+      }
+    }
+
     const planLimits = {
       free: { limit: 10, ttl: 1800000 }, // 10 requests per 30 minutes
       regular: { limit: 500, ttl: 1800000 }, // 500 requests per 30 minutes
       special: { limit: 100, ttl: 1800000 }, // 100 requests per 30 minutes
       agency: { limit: 5000, ttl: 1800000 }, // 5000 requests per 30 minutes
     };
-    const plan = user?.plan || 'free';
+    const plan = user?.plan || 'free'; // Default to 'free' if no user
     const { limit, ttl: windowMs } = planLimits[plan] || planLimits.free;
 
-    const cacheKey = `agent_requests:${agent._id}`;
+    const cacheKey = `agent_requests:${agentId}`;
     const now = Date.now();
 
     let timestamps: number[] =
@@ -1125,6 +1168,7 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
       const resetTime = Math.ceil(
         (windowMs - (now - Math.min(...timestamps))) / 60000,
       ); // minutes until reset
+      this.logger.warn(`[processQueuedAgentRequest] Rate limit exceeded for agentId: ${agentId}, userId: ${userId}`);
       return `Rate limit exceeded. This agent has ${limit} requests per ${windowMs / 60000} minutes. Please try again in ${resetTime} minutes.`;
     }
 
@@ -1257,18 +1301,19 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
 
       // Update analytics
       const responseTime = Date.now() - startTime;
-      await this.agentModel.findByIdAndUpdate(agent._id, {
+      await this.agentModel.findByIdAndUpdate(agentId, {
         $inc: { chatCount: 1, totalInteractions: 1 },
         // Could add average response time, but for simplicity, just counts
       });
 
       // Emit real-time analytics update
-      const analytics = await this.getAnalytics(agent.userId.toString());
+      const analytics = await this.getAnalytics(userId.toString());
       this.eventsGateway.emitAnalyticsUpdate(analytics);
 
+      this.logger.debug(`[processQueuedAgentRequest] Completed for agentId: ${agentId}, userId: ${userId}`);
       return responseText;
     } catch (error) {
-      console.error('Chat error:', error);
+      this.logger.error(`[processQueuedAgentRequest] Chat error for agentId: ${agentId}, userId: ${userId}: ${error.message}`, error.stack);
       return 'Sorry, there was an error processing your request. You might have reached your request limit. Please upgrade your plan or try again later.';
     }
   }
@@ -1374,5 +1419,10 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
         createdAt: (agent as any).createdAt,
       })),
     };
+  }
+
+  async getUserPlan(userId: string): Promise<string> {
+    const user = await this.userModel.findById(userId);
+    return user?.plan || 'free';
   }
 }

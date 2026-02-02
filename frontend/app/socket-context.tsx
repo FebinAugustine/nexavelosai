@@ -15,10 +15,34 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      return;
+    }
+
     const socketInstance = io(
-      process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"
+      process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000",
+      {
+        auth: {
+          token: `${token}`,
+        },
+      }
     );
+
     setSocket(socketInstance);
+
+    socketInstance.on("connect", () => {
+      console.log("Socket connected:", socketInstance.id);
+    });
+
+    socketInstance.on("disconnect", () => {
+      console.log("Socket disconnected");
+    });
+
+    socketInstance.on("error", (error) => {
+      console.error("Socket error:", error);
+    });
 
     return () => {
       socketInstance.disconnect();
