@@ -122,6 +122,12 @@ export class PaymentsService {
           plan: billing.plan,
           agentLimit: this.getAgentLimit(billing.plan),
         });
+
+        // Invalidate cache
+        const userCacheKey = `user:${billing.userId}`;
+        const billingCacheKey = `billing:${billing.userId}`;
+        await this.cacheManager.del(userCacheKey);
+        await this.cacheManager.del(billingCacheKey);
       }
     }
     // Handle other events if needed
@@ -157,14 +163,30 @@ export class PaymentsService {
     });
 
     // Invalidate cache
-    const cacheKey = `user:${billing.userId}`;
-    await this.cacheManager.del(cacheKey);
+    const userCacheKey = `user:${billing.userId}`;
+    const billingCacheKey = `billing:${billing.userId}`;
+    await this.cacheManager.del(userCacheKey);
+    await this.cacheManager.del(billingCacheKey);
 
     return billing;
   }
 
   async getBillingHistory(userId: string) {
-    return this.billingModel.find({ userId }).sort({ createdAt: -1 });
+    const cacheKey = `billing:${userId}`;
+    const cachedBillingHistory = await this.cacheManager.get(cacheKey);
+    if (cachedBillingHistory) {
+      return cachedBillingHistory;
+    }
+
+    const billingHistory = await this.billingModel
+      .find({ userId })
+      .sort({ createdAt: -1 });
+    await this.cacheManager.set(cacheKey, billingHistory, 300000); // 5 minutes
+    return billingHistory;
+  }
+
+  async findAllInvoices(): Promise<BillingDocument[]> {
+    return this.billingModel.find().sort({ createdAt: -1 }).exec();
   }
 
   verifyWebhook(body: Buffer, signature: string): boolean {

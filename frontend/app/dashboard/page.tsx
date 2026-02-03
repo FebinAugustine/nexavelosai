@@ -14,9 +14,9 @@ import {
   isValidDomain,
   isValidPassword,
 } from "../../lib/sanitization";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface User {
-
   _id: string;
 
   email: string;
@@ -26,7 +26,6 @@ interface User {
   agentLimit: number;
 
   domains: string[];
-
 }
 
 interface Agent {
@@ -52,10 +51,70 @@ interface Analytics {
 }
 
 export default function Dashboard() {
-  const [user, setUser] = useState<User | null>(null);
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [analytics, setAnalytics] = useState<Analytics | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  const socket = useSocket();
+
+  // Fetch user profile
+  const {
+    data: user,
+    isLoading: userLoading,
+    error: userError,
+  } = useQuery({
+    queryKey: ["user"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return null;
+      }
+      const response = await axios.get("http://localhost:5000/auth/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    },
+  });
+
+  // Fetch agents
+  const {
+    data: agents,
+    isLoading: agentsLoading,
+    error: agentsError,
+  } = useQuery<Agent[]>({
+    queryKey: ["agents"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return [];
+      const response = await axios.get("http://localhost:5000/agents", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch analytics
+  const {
+    data: analytics,
+    isLoading: analyticsLoading,
+    error: analyticsError,
+  } = useQuery<Analytics>({
+    queryKey: ["analytics"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return null;
+      const response = await axios.get(
+        "http://localhost:5000/agents/analytics",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      return response.data;
+    },
+    enabled: !!user,
+  });
+
+  const loading = userLoading || agentsLoading || analyticsLoading;
   const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [navbarDropdownOpen, setNavbarDropdownOpen] = useState(false);
@@ -90,80 +149,49 @@ export default function Dashboard() {
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [accountSettingsLoading, setAccountSettingsLoading] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
-  const router = useRouter();
-  const socket = useSocket();
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    // Fetch user profile, agents, and analytics
-    const fetchData = async () => {
-      try {
-        const [userResponse, agentsResponse, analyticsResponse] =
-          await Promise.all([
-            axios.get("http://localhost:5000/auth/profile", {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-            axios.get("http://localhost:5000/agents", {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-            axios.get("http://localhost:5000/agents/analytics", {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-          ]);
-        setUser(userResponse.data);
-        setAgents(agentsResponse.data);
-        setAnalytics(analyticsResponse.data);
-      } catch (error) {
-        toast.error("Failed to load data");
-        localStorage.removeItem("token");
-        router.push("/login");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [router]);
 
   useEffect(() => {
     if (socket) {
       socket.on("analyticsUpdate", (data: Analytics) => {
-        setAnalytics(data);
+        queryClient.invalidateQueries({ queryKey: ["analytics"] });
       });
 
       return () => {
         socket.off("analyticsUpdate");
       };
     }
-  }, [socket]);
+  }, [socket, queryClient]);
 
   // New useEffect to listen for agent response via WebSocket
   useEffect(() => {
     if (socket && user) {
       const agentResultEvent = `agent-result-${user._id}`;
-      socket.on(agentResultEvent, (data: { jobId: string; status: string; data?: string; error?: string }) => {
-        if (data.status === 'completed' && data.data) {
-          const agentMessage = {
-            role: "agent" as const,
-            content: data.data,
-          };
-          setMessages((prev) => [...prev, agentMessage]);
-          toast.success("Agent responded!");
-        } else if (data.status === 'failed' && data.error) {
-          toast.error(`Agent failed: ${data.error}`);
-          const errorMessage = {
-            role: "agent" as const,
-            content: `Error: ${data.error}`,
-          };
-          setMessages((prev) => [...prev, errorMessage]);
-        }
-        setChatLoading(false); // Stop loading after receiving response
-      });
+      socket.on(
+        agentResultEvent,
+        (data: {
+          jobId: string;
+          status: string;
+          data?: string;
+          error?: string;
+        }) => {
+          if (data.status === "completed" && data.data) {
+            const agentMessage = {
+              role: "agent" as const,
+              content: data.data,
+            };
+            setMessages((prev) => [...prev, agentMessage]);
+            toast.success("Agent responded!");
+          } else if (data.status === "failed" && data.error) {
+            toast.error(`Agent failed: ${data.error}`);
+            const errorMessage = {
+              role: "agent" as const,
+              content: `Error: ${data.error}`,
+            };
+            setMessages((prev) => [...prev, errorMessage]);
+          }
+          setChatLoading(false); // Stop loading after receiving response
+        },
+      );
 
       return () => {
         socket.off(agentResultEvent);
@@ -177,19 +205,26 @@ export default function Dashboard() {
     router.push("/");
   };
 
-  const handleDeleteAgent = async (agentId: string) => {
-    if (!confirm("Are you sure you want to delete this agent?")) return;
-
-    try {
+  const deleteAgentMutation = useMutation({
+    mutationFn: async (agentId: string) => {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/agents/${agentId}`, {
+      return axios.delete(`http://localhost:5000/agents/${agentId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+    },
+    onSuccess: () => {
       toast.success("Agent deleted successfully!");
-      setAgents(agents.filter((agent) => agent._id !== agentId));
-    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: ["agents"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    },
+    onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to delete agent");
-    }
+    },
+  });
+
+  const handleDeleteAgent = async (agentId: string) => {
+    if (!confirm("Are you sure you want to delete this agent?")) return;
+    deleteAgentMutation.mutate(agentId);
   };
 
   const handleTestAgent = (agent: Agent) => {
@@ -237,32 +272,34 @@ export default function Dashboard() {
     setEditModalOpen(true);
   };
 
+  const updateAgentMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const token = localStorage.getItem("token");
+      return axios.patch(`http://localhost:5000/agents/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Agent updated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["agents"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+      setEditModalOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to update agent");
+    },
+  });
+
   const handleUpdateAgent = async () => {
     if (!selectedAgentForEdit) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.patch(
-        `http://localhost:5000/agents/${selectedAgentForEdit._id}`,
-        {
-          name: editName,
-          description: editDescription,
-          domain: editDomain,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      toast.success("Agent updated successfully!");
-      setAgents(
-        agents.map((agent) =>
-          agent._id === selectedAgentForEdit._id ? response.data : agent,
-        ),
-      );
-      setEditModalOpen(false);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to update agent");
-    }
+    updateAgentMutation.mutate({
+      id: selectedAgentForEdit._id,
+      data: {
+        name: editName,
+        description: editDescription,
+        domain: editDomain,
+      },
+    });
   };
 
   const handleGetSnippet = (agent: Agent) => {
@@ -303,6 +340,35 @@ export default function Dashboard() {
       toast.error(error.response?.data?.message || "Failed to get snippet");
     }
   };
+
+  const createAgentMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const token = localStorage.getItem("token");
+      return axios.post("http://localhost:5000/agents", data, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Agent created successfully!");
+      // Reset form
+      setAgentName("");
+      setAgentDescription("");
+      setAgentApiKey("");
+      setAgentProvider("gemini");
+      setAgentDomain("");
+      // Switch back to dashboard
+      setActiveSection("dashboard");
+      // Invalidate cache to refresh data
+      queryClient.invalidateQueries({ queryKey: ["agents"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to create agent");
+    },
+    onSettled: () => {
+      setCreateAgentLoading(false);
+    },
+  });
 
   const handleCreateAgent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -359,43 +425,13 @@ export default function Dashboard() {
     }
 
     setCreateAgentLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      await axios.post(
-        "http://localhost:5000/agents",
-        {
-          name: sanitizedName.sanitized,
-          description: sanitizedDescription.sanitized,
-          apiKey: sanitizedApiKey.sanitized,
-          provider: agentProvider,
-          domain: sanitizedDomain || undefined,
-        },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      toast.success("Agent created successfully!");
-      // Reset form
-      setAgentName("");
-      setAgentDescription("");
-      setAgentApiKey("");
-      setAgentProvider("gemini");
-      setAgentDomain("");
-      // Switch back to dashboard
-      setActiveSection("dashboard");
-      // Refresh agents list
-      const agentsResponse = await axios.get("http://localhost:5000/agents", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setAgents(agentsResponse.data);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to create agent");
-    } finally {
-      setCreateAgentLoading(false);
-    }
+    createAgentMutation.mutate({
+      name: sanitizedName.sanitized,
+      description: sanitizedDescription.sanitized,
+      apiKey: sanitizedApiKey.sanitized,
+      provider: agentProvider,
+      domain: sanitizedDomain || undefined,
+    });
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -635,12 +671,12 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <h3 className="text-xl font-semibold text-white">
-                    AI Agents ({agents.length})
+                    AI Agents ({agents?.length || 0})
                   </h3>
                 </div>
               </div>
               <div className="px-6 py-8 sm:p-8">
-                {agents.length === 0 ? (
+                {agents?.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                       <svg
@@ -673,7 +709,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {agents.map((agent) => (
+                    {agents?.map((agent) => (
                       <div
                         key={agent._id}
                         className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200"
@@ -1782,7 +1818,7 @@ window.nexavelWidget.open();`}</code>
           </>
         );
       case "create-agent":
-        if (user?.plan === "free" && agents.length > 0) {
+        if (user?.plan === "free" && (agents?.length || 0) > 0) {
           return (
             <>
               <div className="mb-8">

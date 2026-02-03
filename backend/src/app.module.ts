@@ -17,6 +17,7 @@ import { AgentsModule } from './agents/agents.module';
 import { PaymentsModule } from './payments/payments.module';
 import { EventsModule } from './events/events.module';
 import { AgentQueueModule } from './agent-queue/agent-queue.module';
+import { AdminModule } from './admin/admin.module'; // Import AdminModule
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { AgentQueueModule } from './agent-queue/agent-queue.module';
     PaymentsModule,
     EventsModule,
     AgentQueueModule,
+    AdminModule, // Add AdminModule here
   ],
   controllers: [AppController],
   providers: [

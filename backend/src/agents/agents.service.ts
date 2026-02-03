@@ -67,7 +67,11 @@ export class AgentsService {
 
     // Invalidate cache
     const cacheKey = `agents:${userId}`;
+    const analyticsCacheKey = `analytics:${userId}`;
     await this.cacheManager.del(cacheKey);
+    await this.cacheManager.del(analyticsCacheKey);
+    // Note: Detailed analytics cache invalidation would require knowing all possible month parameters
+    // For now, we'll rely on the 5-minute TTL
 
     return savedAgent;
   }
@@ -108,7 +112,13 @@ export class AgentsService {
     }
     // Invalidate cache
     const cacheKey = `agents:${userId}`;
+    const analyticsCacheKey = `analytics:${userId}`;
     await this.cacheManager.del(cacheKey);
+    await this.cacheManager.del(analyticsCacheKey);
+    // Note: Detailed analytics cache invalidation would require knowing all possible month parameters
+    // For now, we'll rely on the 5-minute TTL
+    // Note: Snippet cache invalidation would require knowing all possible type and version combinations
+    // For now, we'll rely on the 5-minute TTL
     return agent;
   }
 
@@ -127,7 +137,13 @@ export class AgentsService {
 
     // Invalidate cache
     const cacheKey = `agents:${userId}`;
+    const analyticsCacheKey = `analytics:${userId}`;
     await this.cacheManager.del(cacheKey);
+    await this.cacheManager.del(analyticsCacheKey);
+    // Note: Detailed analytics cache invalidation would require knowing all possible month parameters
+    // For now, we'll rely on the 5-minute TTL
+    // Note: Snippet cache invalidation would require knowing all possible type and version combinations
+    // For now, we'll rely on the 5-minute TTL
   }
 
   async removeAllByUserId(userId: string): Promise<void> {
@@ -140,7 +156,11 @@ export class AgentsService {
 
     // Invalidate cache
     const cacheKey = `agents:${userId}`;
+    const analyticsCacheKey = `analytics:${userId}`;
     await this.cacheManager.del(cacheKey);
+    await this.cacheManager.del(analyticsCacheKey);
+    // Note: Detailed analytics cache invalidation would require knowing all possible month parameters
+    // For now, we'll rely on the 5-minute TTL
   }
 
   async generateSnippet(
@@ -148,6 +168,11 @@ export class AgentsService {
     type: string = 'js',
     version: string = 'full',
   ): Promise<string> {
+    const cacheKey = `snippet:${agent._id}:${type}:${version}`;
+    const cachedSnippet = await this.cacheManager.get<string>(cacheKey);
+    if (cachedSnippet) {
+      return cachedSnippet;
+    }
     if (version === 'short') {
       if (type === 'react') {
         const snippet = `
@@ -184,6 +209,7 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
   return null;
 }
         `.trim();
+        await this.cacheManager.set(cacheKey, snippet, 300000); // 5 minutes
         return snippet;
       } else {
         // JS short snippet
@@ -196,6 +222,7 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
 </style>
 -->
 <script>window.nexavelAgentId = '${agent._id}'; window.nexavelApiUrl = 'http://localhost:5000';</script><script src="http://localhost:5000/widget.js"></script>`;
+        await this.cacheManager.set(cacheKey, snippet, 300000); // 5 minutes
         return snippet;
       }
     }
@@ -1103,6 +1130,7 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
 })();
 </script>
     `.trim();
+    await this.cacheManager.set(cacheKey, snippet, 300000); // 5 minutes
     return snippet;
   }
 
@@ -1110,20 +1138,35 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
     agentId: string,
     userId: string,
     message: string,
-  ): Promise<{ jobId: string | number } | string> { // Updated return type
+  ): Promise<{ jobId: string | number } | string> {
+    // Updated return type
     if (userId) {
       // For logged-in users (dashboard), queue the job and send response via WebSocket
-      const job = await this.agentQueueService.addAgentRequest({ agentId, userId, message });
+      const job = await this.agentQueueService.addAgentRequest({
+        agentId,
+        userId,
+        message,
+      });
       return { jobId: job.id };
     } else {
       // For anonymous users (widget), process the request synchronously and return the response directly
       try {
-        const responseText = await this.processQueuedAgentRequest(agentId, userId, message);
+        const responseText = await this.processQueuedAgentRequest(
+          agentId,
+          userId,
+          message,
+        );
         return responseText;
       } catch (error: any) {
-        this.logger.error(`Synchronous chat error for agentId: ${agentId}, userId: ${userId}: ${error.message}`, error.stack);
+        this.logger.error(
+          `Synchronous chat error for agentId: ${agentId}, userId: ${userId}: ${error.message}`,
+          error.stack,
+        );
         // Return a user-friendly error message, similar to what processQueuedAgentRequest would return on failure
-        return error.message || 'Sorry, there was an error processing your request. Please try again.';
+        return (
+          error.message ||
+          'Sorry, there was an error processing your request. Please try again.'
+        );
       }
     }
   }
@@ -1133,17 +1176,25 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
     userId: string,
     message: string,
   ): Promise<string> {
-    this.logger.debug(`[processQueuedAgentRequest] Started for agentId: ${agentId}, userId: ${userId}`);
+    this.logger.debug(
+      `[processQueuedAgentRequest] Started for agentId: ${agentId}, userId: ${userId}`,
+    );
     const agent = await this.agentModel.findById(agentId).exec();
     if (!agent) {
-      this.logger.warn(`[processQueuedAgentRequest] Agent not found for agentId: ${agentId}`);
+      this.logger.warn(
+        `[processQueuedAgentRequest] Agent not found for agentId: ${agentId}`,
+      );
       throw new NotFoundException('Agent not found');
     }
     let user: UserDocument | null = null;
-    if (userId) { // Only attempt to find user if userId is not empty
+    if (userId) {
+      // Only attempt to find user if userId is not empty
       user = await this.userModel.findById(userId);
-      if (!user) { // If userId was provided but user not found
-        this.logger.warn(`[processQueuedAgentRequest] User not found for userId: ${userId}. Proceeding with default 'free' plan.`);
+      if (!user) {
+        // If userId was provided but user not found
+        this.logger.warn(
+          `[processQueuedAgentRequest] User not found for userId: ${userId}. Proceeding with default 'free' plan.`,
+        );
       }
     }
 
@@ -1168,7 +1219,9 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
       const resetTime = Math.ceil(
         (windowMs - (now - Math.min(...timestamps))) / 60000,
       ); // minutes until reset
-      this.logger.warn(`[processQueuedAgentRequest] Rate limit exceeded for agentId: ${agentId}, userId: ${userId}`);
+      this.logger.warn(
+        `[processQueuedAgentRequest] Rate limit exceeded for agentId: ${agentId}, userId: ${userId}`,
+      );
       return `Rate limit exceeded. This agent has ${limit} requests per ${windowMs / 60000} minutes. Please try again in ${resetTime} minutes.`;
     }
 
@@ -1310,15 +1363,26 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
       const analytics = await this.getAnalytics(userId.toString());
       this.eventsGateway.emitAnalyticsUpdate(analytics);
 
-      this.logger.debug(`[processQueuedAgentRequest] Completed for agentId: ${agentId}, userId: ${userId}`);
+      this.logger.debug(
+        `[processQueuedAgentRequest] Completed for agentId: ${agentId}, userId: ${userId}`,
+      );
       return responseText;
     } catch (error) {
-      this.logger.error(`[processQueuedAgentRequest] Chat error for agentId: ${agentId}, userId: ${userId}: ${error.message}`, error.stack);
+      this.logger.error(
+        `[processQueuedAgentRequest] Chat error for agentId: ${agentId}, userId: ${userId}: ${error.message}`,
+        error.stack,
+      );
       return 'Sorry, there was an error processing your request. You might have reached your request limit. Please upgrade your plan or try again later.';
     }
   }
 
   async getAnalytics(userId: string): Promise<any> {
+    const cacheKey = `analytics:${userId}`;
+    const cachedAnalytics = await this.cacheManager.get<any>(cacheKey);
+    if (cachedAnalytics) {
+      return cachedAnalytics;
+    }
+
     const agents = await this.agentModel.find({ userId: userId }).exec();
     const totalAgents = agents.length;
     const totalChats = agents.reduce(
@@ -1330,7 +1394,7 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
       0,
     );
 
-    return {
+    const analytics = {
       totalAgents,
       totalChats,
       totalInteractions,
@@ -1341,9 +1405,20 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
         totalInteractions: agent.totalInteractions || 0,
       })),
     };
+
+    await this.cacheManager.set(cacheKey, analytics, 300000); // 5 minutes
+    return analytics;
   }
 
   async getDetailedAnalytics(userId: string, month?: string): Promise<any> {
+    const cacheKey = month
+      ? `analytics:${userId}:${month}`
+      : `analytics:${userId}:all`;
+    const cachedAnalytics = await this.cacheManager.get<any>(cacheKey);
+    if (cachedAnalytics) {
+      return cachedAnalytics;
+    }
+
     const agents = await this.agentModel.find({ userId: userId }).exec();
 
     // Get current date and target month
@@ -1407,7 +1482,7 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
       { chats: 0, interactions: 0, agentsCreated: 0 },
     );
 
-    return {
+    const detailedAnalytics = {
       month: targetMonth.toISOString().slice(0, 7), // YYYY-MM format
       dailyData,
       monthlyTotal,
@@ -1419,6 +1494,9 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
         createdAt: (agent as any).createdAt,
       })),
     };
+
+    await this.cacheManager.set(cacheKey, detailedAnalytics, 300000); // 5 minutes
+    return detailedAnalytics;
   }
 
   async getUserPlan(userId: string): Promise<string> {
