@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Minimal Widget Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      #container {
+        margin-top: 20px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        min-height: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Minimal Widget Test</h1>
+    <p>Test widget loading from http://localhost:5000</p>
+    <button onclick="loadWidget()">Load Widget</button>
+    <div id="container"></div>
+
+    <script>
+      function loadWidget() {
+        console.log("loadWidget called");
+        const container = document.getElementById("container");
+        container.innerHTML = "Loading widget...";
+
+        // Set global variables
+        window.nexavelAgentId = "agent123";
+        window.nexavelApiUrl = "http://localhost:5000";
+
+        // Create widget script tag
+        const script = document.createElement("script");
+        script.src = "http://localhost:5000/widget.js";
+        script.async = true;
+
+        script.onload = () => {
+          console.log("Widget loaded successfully");
+          container.innerHTML = "Widget loaded! Check console for more info.";
+        };
+
+        script.onerror = (error) => {
+          console.error("Failed to load widget:", error);
+          container.innerHTML =
+            "Error loading widget. Check console for details.";
+        };
+
+        document.body.appendChild(script);
+      }
+    </script>
+  </body>
+</html>

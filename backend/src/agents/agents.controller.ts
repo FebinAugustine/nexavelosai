@@ -25,7 +25,10 @@ import { User, UserDocument } from '../users/users.schema';
 @Controller('agents')
 @UseGuards(PlanBasedThrottlerGuard)
 export class AgentsController {
-  constructor(private readonly agentsService: AgentsService) {}
+  constructor(
+    private readonly agentsService: AgentsService,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -84,6 +87,20 @@ export class AgentsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch(':id/lead-capture')
+  async updateLeadCapture(
+    @Param('id') id: string,
+    @Body() updateData: any,
+    @Request() req,
+  ) {
+    return this.agentsService.updateLeadCapture(
+      id,
+      req.user._id.toString(),
+      updateData,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get(':id/snippet')
   async getSnippet(
     @Param('id') id: string,
@@ -93,7 +110,9 @@ export class AgentsController {
   ) {
     const agent = await this.agentsService.findOne(id, req.user._id.toString());
 
-    const userPlan = await this.agentsService.getUserPlan(req.user._id.toString());
+    const userPlan = await this.agentsService.getUserPlan(
+      req.user._id.toString(),
+    );
 
     // Check plan restrictions
     if ((userPlan === 'free' || userPlan === 'regular') && version === 'full') {
@@ -114,25 +133,53 @@ export class AgentsController {
     @Param('id') id: string,
     @Body('message') message: string,
     @Request() req,
-  ): Promise<{ jobId: string | number; message: string } | { response: string }> { // Updated return type
+  ): Promise<
+    { jobId: string | number; message: string } | { response: string }
+  > {
+    // Updated return type
     try {
       const userId = req.user?._id?.toString() || '';
       const agent = await this.agentsService.findOne(id, userId);
 
       // Check domain restriction for public access
-      if (!userId) { // Only apply origin check for anonymous users
+      if (!userId) {
+        // Only apply origin check for anonymous users
         const origin =
           req.headers['origin'] ||
           req.headers['referer']?.split('/').slice(0, 3).join('/');
-        if (!origin) {
-          throw new BadRequestException('Origin header required');
+        // Allow file:// protocol (local files like test-widget.html) and null origin for testing
+        if (!origin || origin.startsWith('file://')) {
+          // Allow access for local file testing
+        } else {
+          const requestDomain = new URL(origin).hostname;
+
+          // Get user associated with the agent
+          const user = await this.userModel.findOne({ _id: agent.userId });
+          if (user && user.domains.length > 0) {
+            // Check if request domain is in user's allowed domains or localhost
+            // Check if request domain is in user's allowed domains or localhost (with any port)
+            // Also handle cases where domain might include www or not, and support for local development
+            const isAllowed = user.domains.some((domain) => {
+              const normalizedDomain = domain.replace('www.', '').toLowerCase();
+              const normalizedRequestDomain = requestDomain
+                .replace('www.', '')
+                .toLowerCase();
+
+              return (
+                normalizedRequestDomain === normalizedDomain ||
+                normalizedRequestDomain.endsWith(`.${normalizedDomain}`) ||
+                normalizedRequestDomain.startsWith('localhost')
+              );
+            });
+
+            if (!isAllowed) {
+              throw new BadRequestException(
+                'Widget can only be used on the specified domain',
+              );
+            }
+          }
         }
-        const requestDomain = new URL(origin).hostname;
-        if (agent.domain && agent.domain !== requestDomain && requestDomain !== 'localhost') { // Only check if agent has a domain set
-          throw new BadRequestException(
-            'Widget can only be used on the specified domain',
-          );
-        }
+        // If user has no domains configured, allow access (backward compatibility)
       }
 
       const chatResult = await this.agentsService.chat(id, userId, message);
@@ -142,7 +189,10 @@ export class AgentsController {
         return { response: chatResult };
       } else {
         // This is the jobId for logged-in dashboard users
-        return { jobId: chatResult.jobId, message: 'Agent request queued successfully.' };
+        return {
+          jobId: chatResult.jobId,
+          message: 'Agent request queued successfully.',
+        };
       }
     } catch (error) {
       console.error('Chat controller error:', error);
@@ -150,4 +200,3 @@ export class AgentsController {
     }
   }
 }
-

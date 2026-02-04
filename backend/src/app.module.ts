@@ -18,6 +18,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { EventsModule } from './events/events.module';
 import { AgentQueueModule } from './agent-queue/agent-queue.module';
 import { AdminModule } from './admin/admin.module'; // Import AdminModule
+import { LeadsModule } from './leads/leads.module'; // Import Leads module
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { AdminModule } from './admin/admin.module'; // Import AdminModule
     EventsModule,
     AgentQueueModule,
     AdminModule, // Add AdminModule here
+    LeadsModule, // Add Leads module here
   ],
   controllers: [AppController],
   providers: [

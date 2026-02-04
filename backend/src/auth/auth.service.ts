@@ -165,6 +165,19 @@ export class AuthService {
   }
 
   async updateProfile(userId: string, updateData: any): Promise<UserDocument> {
+    // Normalize domains: remove http://, https://, www., and trailing slashes
+    if (updateData.domains) {
+      updateData.domains = updateData.domains
+        .filter((domain: string) => domain.trim() !== '')
+        .map((domain: string) => {
+          return domain
+            .trim()
+            .replace(/^https?:\/\//, '') // Remove http:// or https://
+            .replace(/^www\./, '') // Remove www.
+            .replace(/\/$/, ''); // Remove trailing slash
+        });
+    }
+
     const user = await this.userModel.findByIdAndUpdate(userId, updateData, {
       new: true,
     });

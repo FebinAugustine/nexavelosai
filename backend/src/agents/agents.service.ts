@@ -59,8 +59,18 @@ export class AgentsService {
 
     // Add domain to user domains if not present
     if (createAgentDto.domain) {
-      if (!user.domains.includes(createAgentDto.domain)) {
-        user.domains.push(createAgentDto.domain);
+      const normalizedDomain = createAgentDto.domain
+        .trim()
+        .replace(/^https?:\/\//, '') // Remove http:// or https://
+        .replace(/^www\./, '') // Remove www.
+        .replace(/\/$/, ''); // Remove trailing slash
+
+      if (
+        !user.domains
+          .map((d) => d.toLowerCase())
+          .includes(normalizedDomain.toLowerCase())
+      ) {
+        user.domains.push(normalizedDomain);
         await user.save();
       }
     }
@@ -102,14 +112,43 @@ export class AgentsService {
     updateAgentDto: any,
     userId: string,
   ): Promise<AgentDocument> {
+    // Get existing agent to check old domain
+    const existingAgent = await this.agentModel
+      .findOne({ _id: id, userId: userId })
+      .exec();
+    if (!existingAgent) {
+      throw new NotFoundException('Agent not found');
+    }
+
     const agent = await this.agentModel
       .findOneAndUpdate({ _id: id, userId: userId }, updateAgentDto, {
         new: true,
       })
       .exec();
+
     if (!agent) {
       throw new NotFoundException('Agent not found');
     }
+
+    // Update user's domains if domain changed
+    if (
+      updateAgentDto.domain &&
+      updateAgentDto.domain !== existingAgent.domain
+    ) {
+      const user = await this.userModel.findById(userId);
+      if (user) {
+        // Remove old domain from user's domains
+        user.domains = user.domains.filter(
+          (domain) => domain !== existingAgent.domain,
+        );
+        // Add new domain to user's domains if not already present
+        if (!user.domains.includes(updateAgentDto.domain)) {
+          user.domains.push(updateAgentDto.domain);
+        }
+        await user.save();
+      }
+    }
+
     // Invalidate cache
     const cacheKey = `agents:${userId}`;
     const analyticsCacheKey = `analytics:${userId}`;
@@ -161,6 +200,30 @@ export class AgentsService {
     await this.cacheManager.del(analyticsCacheKey);
     // Note: Detailed analytics cache invalidation would require knowing all possible month parameters
     // For now, we'll rely on the 5-minute TTL
+  }
+
+  async updateLeadCapture(
+    id: string,
+    userId: string,
+    updateData: any,
+  ): Promise<AgentDocument> {
+    const agent = await this.agentModel
+      .findOneAndUpdate(
+        { _id: id, userId: userId },
+        { leadCapture: updateData },
+        { new: true },
+      )
+      .exec();
+
+    if (!agent) {
+      throw new NotFoundException('Agent not found');
+    }
+
+    // Invalidate cache
+    const cacheKey = `agents:${userId}`;
+    await this.cacheManager.del(cacheKey);
+
+    return agent;
   }
 
   async generateSnippet(

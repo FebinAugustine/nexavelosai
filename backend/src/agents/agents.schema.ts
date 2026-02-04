@@ -31,6 +31,20 @@ export class Agent {
 
   @Prop({ default: 0 })
   totalInteractions: number;
+
+  @Prop({ type: Object, default: { enabled: false } })
+  leadCapture: {
+    enabled: boolean;
+    trigger: 'manual' | 'time' | 'messageCount';
+    triggerValue: number;
+    formFields: Array<{
+      name: string;
+      label: string;
+      type: 'text' | 'email' | 'phone' | 'textarea';
+      required: boolean;
+      placeholder?: string;
+    }>;
+  };
 }
 
 export const AgentSchema = SchemaFactory.createForClass(Agent);

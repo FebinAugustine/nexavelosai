@@ -15,6 +15,7 @@ import {
   isValidPassword,
 } from "../../lib/sanitization";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import LeadsPage from "./leads/page";
 
 interface User {
   _id: string;
@@ -524,6 +525,8 @@ export default function Dashboard() {
 
   const renderContent = () => {
     switch (activeSection) {
+      case "leads":
+        return <LeadsPage />;
       case "dashboard":
         return (
           <>
@@ -2558,6 +2561,34 @@ window.nexavelWidget.open();`}</code>
             </button>
             <button
               onClick={() => {
+                setActiveSection("leads");
+                setSidebarOpen(false);
+              }}
+              className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
+                activeSection === "leads"
+                  ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg"
+                  : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                <span>Leads</span>
+              </div>
+            </button>
+            <button
+              onClick={() => {
                 setActiveSection("analytics");
                 setSidebarOpen(false);
               }}
@@ -2784,6 +2815,11 @@ window.nexavelWidget.open();`}</code>
                               id: "dashboard",
                               label: "Dashboard",
                               icon: "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z",
+                            },
+                            {
+                              id: "leads",
+                              label: "Leads",
+                              icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z",
                             },
                             {
                               id: "create-agent",

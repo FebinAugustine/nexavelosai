@@ -6,13 +6,10 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/admin/:path*',
-        destination: 'http://localhost:5000/admin/:path*', // Proxy to your backend
+        source: "/api/admin/:path*",
+        destination: "http://localhost:5000/admin/:path*", // Proxy to your backend
       },
     ];
-  },
-  turbopack: {
-    root: path.resolve(__dirname, ".."),
   },
 };
 
