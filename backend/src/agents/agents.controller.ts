@@ -60,10 +60,12 @@ export class AgentsController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(OptionalJwtAuthGuard)
+  @SkipThrottle()
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
-    return this.agentsService.findOne(id, req.user._id.toString());
+    const userId = req.user?._id?.toString() || '';
+    return this.agentsService.findOne(id, userId);
   }
 
   @Patch(':id')

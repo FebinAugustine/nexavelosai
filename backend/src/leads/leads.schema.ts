@@ -16,8 +16,8 @@ export class Lead {
   @Prop({ type: Types.ObjectId, ref: 'Agent', required: true })
   agentId: Types.ObjectId;
 
-  @Prop({ required: true })
-  email: string;
+  @Prop()
+  email?: string;
 
   @Prop()
   phone?: string;

@@ -25,6 +25,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly jwtService: JwtService) {}
 
   async handleConnection(client: Socket, ...args: any[]) {
+    this.logger.log(`New client connection: ${client.id}`);
     const token = client.handshake.auth.token;
     if (!token) {
       this.logger.warn(`Client ${client.id} connected without a token.`);
@@ -38,9 +39,13 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
       const userId = payload.sub;
       client.join(userId);
-      this.logger.log(`Client ${client.id} (user: ${userId}) connected and joined room.`);
+      this.logger.log(
+        `Client ${client.id} (user: ${userId}) connected and joined room.`,
+      );
     } catch (error) {
-      this.logger.error(`Authentication error for client ${client.id}: ${error.message}`);
+      this.logger.error(
+        `Authentication error for client ${client.id}: ${error.message}`,
+      );
       client.disconnect(true);
     }
   }
@@ -48,7 +53,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
   }
-  
+
   @SubscribeMessage('analytics')
   handleAnalytics(@MessageBody() data: any, @ConnectedSocket() client: Socket) {
     // Handle analytics events if needed

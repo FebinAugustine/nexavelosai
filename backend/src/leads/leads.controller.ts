@@ -18,12 +18,14 @@ import { LeadsService } from './leads.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Agent, AgentDocument } from '../agents/agents.schema';
+import { Lead, LeadDocument } from './leads.schema';
 
 @Controller('leads')
 export class LeadsController {
   constructor(
     private readonly leadsService: LeadsService,
     @InjectModel(Agent.name) private agentModel: Model<AgentDocument>,
+    @InjectModel(Lead.name) private leadModel: Model<LeadDocument>,
   ) {}
 
   @Post()
@@ -55,12 +57,37 @@ export class LeadsController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   async findAll(@Request() req, @Query() query: any) {
+    console.log(
+      'LeadsController.findAll called with user:',
+      req.user._id.toString(),
+      'query:',
+      query,
+    );
+
+    // Debug: Check user ID from token vs leads in database
+    const allLeads = await this.leadModel.find({}).exec();
+    console.log('All leads in database:', allLeads.length);
+    console.log('User ID from token:', req.user._id.toString());
+    console.log(
+      'Leads with matching user ID:',
+      allLeads.filter(
+        (lead) => lead.userId.toString() === req.user._id.toString(),
+      ).length,
+    );
+
     const leads = await this.leadsService.findAll(
       req.user._id.toString(),
       query,
     );
     const count = await this.leadsService.getLeadCount(req.user._id.toString());
+    console.log(
+      'LeadsController.findAll returning',
+      leads.length,
+      'leads, count:',
+      count,
+    );
     return {
       data: leads,
       count,
@@ -70,16 +97,19 @@ export class LeadsController {
   }
 
   @Get('stats')
+  @UseGuards(JwtAuthGuard)
   async getStats(@Request() req) {
     return this.leadsService.getLeadStats(req.user._id.toString());
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   async findOne(@Param('id') id: string, @Request() req) {
     return this.leadsService.findOne(id, req.user._id.toString());
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id') id: string,
     @Body() updateData: any,
@@ -93,12 +123,14 @@ export class LeadsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async remove(@Param('id') id: string, @Request() req) {
     await this.leadsService.deleteLead(id, req.user._id.toString());
     return { message: 'Lead deleted successfully' };
   }
 
   @Post('export')
+  @UseGuards(JwtAuthGuard)
   async exportLeads(
     @Body() body: { format?: 'csv' | 'json' },
     @Request() req,
@@ -122,6 +154,7 @@ export class LeadsController {
   }
 
   @Get(':id/sessions')
+  @UseGuards(JwtAuthGuard)
   async getChatSessions(@Param('id') id: string, @Request() req) {
     return this.leadsService.findChatSessionsByLead(
       id,

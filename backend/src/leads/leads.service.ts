@@ -19,8 +19,22 @@ export class LeadsService {
   ) {}
 
   async createLead(data: any): Promise<LeadDocument> {
-    const lead = new this.leadModel(data);
+    console.log('Creating lead with data:', data);
+    const leadData = {
+      ...data,
+      userId:
+        typeof data.userId === 'string'
+          ? new Types.ObjectId(data.userId)
+          : data.userId,
+      agentId:
+        typeof data.agentId === 'string'
+          ? new Types.ObjectId(data.agentId)
+          : data.agentId,
+    };
+    const lead = new this.leadModel(leadData);
     const savedLead = await lead.save();
+
+    console.log('Saved lead:', savedLead);
 
     // Invalidate cache
     const cacheKey = `leads:${data.userId}`;
@@ -30,14 +44,38 @@ export class LeadsService {
   }
 
   async findAll(userId: string, query: any = {}): Promise<LeadDocument[]> {
+    console.log(
+      'LeadsService.findAll called with userId:',
+      userId,
+      'query:',
+      query,
+    );
+
     const cacheKey = `leads:${userId}:${JSON.stringify(query)}`;
     const cachedLeads = await this.cacheManager.get<LeadDocument[]>(cacheKey);
 
     if (cachedLeads) {
+      console.log('Returning cached leads');
       return cachedLeads;
     }
 
-    const filter: any = { userId };
+    // Debug: Check if there are any leads in the database
+    const allLeads = await this.leadModel.find({}).exec();
+    console.log('All leads in DB:', allLeads.length);
+    console.log(
+      'All leads details:',
+      allLeads.map((lead) => ({
+        id: lead._id,
+        userId: lead.userId,
+        email: lead.email,
+        createdAt: lead.createdAt,
+      })),
+    );
+
+    // Query by both string and ObjectId to handle existing data
+    const filter: any = {
+      $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
+    };
 
     if (query.status) {
       filter.status = query.status;
@@ -52,6 +90,7 @@ export class LeadsService {
       ];
     }
 
+    console.log('MongoDB query filter:', filter);
     const leads = await this.leadModel
       .find(filter)
       .sort({ createdAt: -1 })
@@ -59,12 +98,15 @@ export class LeadsService {
       .limit(query.limit || 50)
       .exec();
 
+    console.log('Found', leads.length, 'leads for user');
     await this.cacheManager.set(cacheKey, leads, 300000); // 5 minutes
     return leads;
   }
 
   async findOne(id: string, userId: string): Promise<LeadDocument> {
-    const lead = await this.leadModel.findOne({ _id: id, userId }).exec();
+    const lead = await this.leadModel
+      .findOne({ _id: id, userId: new Types.ObjectId(userId) })
+      .exec();
     if (!lead) {
       throw new NotFoundException('Lead not found');
     }
@@ -77,7 +119,11 @@ export class LeadsService {
     updateData: any,
   ): Promise<LeadDocument> {
     const lead = await this.leadModel
-      .findOneAndUpdate({ _id: id, userId }, updateData, { new: true })
+      .findOneAndUpdate(
+        { _id: id, userId: new Types.ObjectId(userId) },
+        updateData,
+        { new: true },
+      )
       .exec();
 
     if (!lead) {
@@ -92,7 +138,9 @@ export class LeadsService {
   }
 
   async deleteLead(id: string, userId: string): Promise<void> {
-    const result = await this.leadModel.deleteOne({ _id: id, userId }).exec();
+    const result = await this.leadModel
+      .deleteOne({ _id: id, userId: new Types.ObjectId(userId) })
+      .exec();
     if (result.deletedCount === 0) {
       throw new NotFoundException('Lead not found');
     }
@@ -113,7 +161,10 @@ export class LeadsService {
     userId: string,
   ): Promise<ChatSessionDocument[]> {
     return this.chatSessionModel
-      .find({ leadId, userId })
+      .find({
+        leadId: new Types.ObjectId(leadId),
+        userId: new Types.ObjectId(userId),
+      })
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -123,7 +174,7 @@ export class LeadsService {
     userId: string,
   ): Promise<ChatSessionDocument> {
     const session = await this.chatSessionModel
-      .findOne({ _id: id, userId })
+      .findOne({ _id: id, userId: new Types.ObjectId(userId) })
       .exec();
     if (!session) {
       throw new NotFoundException('Chat session not found');
@@ -137,7 +188,11 @@ export class LeadsService {
     updateData: any,
   ): Promise<ChatSessionDocument> {
     const session = await this.chatSessionModel
-      .findOneAndUpdate({ _id: id, userId }, updateData, { new: true })
+      .findOneAndUpdate(
+        { _id: id, userId: new Types.ObjectId(userId) },
+        updateData,
+        { new: true },
+      )
       .exec();
 
     if (!session) {
@@ -148,13 +203,21 @@ export class LeadsService {
   }
 
   async getLeadCount(userId: string): Promise<number> {
-    return this.leadModel.countDocuments({ userId }).exec();
+    return this.leadModel
+      .countDocuments({
+        $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
+      })
+      .exec();
   }
 
   async getLeadStats(userId: string): Promise<any> {
     const stats = await this.leadModel
       .aggregate([
-        { $match: { userId: new Types.ObjectId(userId) } },
+        {
+          $match: {
+            $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
+          },
+        },
         {
           $group: {
             _id: '$status',
@@ -186,7 +249,7 @@ export class LeadsService {
     format: 'csv' | 'json' = 'csv',
   ): Promise<string | object[]> {
     const leads = await this.leadModel
-      .find({ userId })
+      .find({ userId: new Types.ObjectId(userId) })
       .sort({ createdAt: -1 })
       .exec();
 

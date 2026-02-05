@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -36,7 +36,11 @@ export default function LeadsPage() {
   const [limit, setLimit] = useState(10);
 
   // Fetch leads
-  const { data: leads, isLoading: leadsLoading } = useQuery<{
+  const {
+    data: leads,
+    isLoading: leadsLoading,
+    error: leadsError,
+  } = useQuery<{
     data: Lead[];
     count: number;
     page: number;
@@ -63,10 +67,13 @@ export default function LeadsPage() {
       );
       return response.data;
     },
+    enabled: true,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Fetch leads stats
-  const { data: stats } = useQuery<LeadStats>({
+  const { data: stats, error: statsError } = useQuery<LeadStats>({
     queryKey: ["leads-stats"],
     queryFn: async () => {
       const token = localStorage.getItem("token");
@@ -131,6 +138,17 @@ export default function LeadsPage() {
   const handleView = (leadId: string) => {
     router.push(`/dashboard/leads/${leadId}`);
   };
+
+  // Error handling
+  if (leadsError) {
+    console.error("Error fetching leads:", leadsError);
+    toast.error("Failed to fetch leads. Please check console for details.");
+  }
+
+  if (statsError) {
+    console.error("Error fetching stats:", statsError);
+    toast.error("Failed to fetch stats. Please check console for details.");
+  }
 
   return (
     <div className="p-6">

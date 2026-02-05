@@ -1,4 +1,10 @@
-import { Processor, Process, OnQueueActive, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
+import {
+  Processor,
+  Process,
+  OnQueueActive,
+  OnQueueCompleted,
+  OnQueueFailed,
+} from '@nestjs/bull';
 import { Job } from 'bull';
 import { Logger } from '@nestjs/common';
 import { EventsGateway } from '../events/events.gateway'; // Import EventsGateway
@@ -15,16 +21,27 @@ export class AgentQueueProcessor {
 
   @Process('process-agent-request')
   async handleProcessAgentRequest(job: Job<any>) {
-    this.logger.debug(`Processing job ${job.id} of type ${job.name} with data: ${JSON.stringify(job.data)}`);
+    this.logger.log(
+      `Processing job ${job.id} of type ${job.name} with data: ${JSON.stringify(job.data)}`,
+    );
     const { agentId, userId, message } = job.data; // Destructure all expected properties from job.data
 
     try {
       // In a real scenario, this would call the actual agent processing logic from AgentsService
-      const agentResult = await this.agentsService.processQueuedAgentRequest(agentId, userId, message);
+      const agentResult = await this.agentsService.processQueuedAgentRequest(
+        agentId,
+        userId,
+        message,
+      );
 
-      this.logger.debug(`Job ${job.id} processed. Result: ${JSON.stringify(agentResult)}`);
+      this.logger.log(
+        `Job ${job.id} processed. Result: ${JSON.stringify(agentResult)}`,
+      );
 
       // Emit result back to the client via WebSocket
+      this.logger.log(
+        `Emitting agent result to user ${userId} via event agent-result-${userId}`,
+      );
       this.eventsGateway.sendToUser(userId, `agent-result-${userId}`, {
         jobId: job.id,
         status: 'completed',
@@ -33,7 +50,10 @@ export class AgentQueueProcessor {
 
       return agentResult;
     } catch (error) {
-      this.logger.error(`Failed to process job ${job.id}: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to process job ${job.id}: ${error.message}`,
+        error.stack,
+      );
       // Emit an error state back to the client
       this.eventsGateway.sendToUser(userId, `agent-result-${userId}`, {
         jobId: job.id,
@@ -51,11 +71,16 @@ export class AgentQueueProcessor {
 
   @OnQueueCompleted()
   onCompleted(job: Job, result: any) {
-    this.logger.debug(`Job ${job.id} of type ${job.name} completed. Result: ${JSON.stringify(result)}`);
+    this.logger.debug(
+      `Job ${job.id} of type ${job.name} completed. Result: ${JSON.stringify(result)}`,
+    );
   }
 
   @OnQueueFailed()
   onFailed(job: Job, error: Error) {
-    this.logger.error(`Job ${job.id} of type ${job.name} failed: ${error.message}`, error.stack);
+    this.logger.error(
+      `Job ${job.id} of type ${job.name} failed: ${error.message}`,
+      error.stack,
+    );
   }
 }
