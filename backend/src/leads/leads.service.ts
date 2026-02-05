@@ -105,7 +105,10 @@ export class LeadsService {
 
   async findOne(id: string, userId: string): Promise<LeadDocument> {
     const lead = await this.leadModel
-      .findOne({ _id: id, userId: new Types.ObjectId(userId) })
+      .findOne({
+        _id: id,
+        $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
+      })
       .exec();
     if (!lead) {
       throw new NotFoundException('Lead not found');
@@ -120,7 +123,10 @@ export class LeadsService {
   ): Promise<LeadDocument> {
     const lead = await this.leadModel
       .findOneAndUpdate(
-        { _id: id, userId: new Types.ObjectId(userId) },
+        {
+          _id: id,
+          $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
+        },
         updateData,
         { new: true },
       )
@@ -139,7 +145,10 @@ export class LeadsService {
 
   async deleteLead(id: string, userId: string): Promise<void> {
     const result = await this.leadModel
-      .deleteOne({ _id: id, userId: new Types.ObjectId(userId) })
+      .deleteOne({
+        _id: id,
+        $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
+      })
       .exec();
     if (result.deletedCount === 0) {
       throw new NotFoundException('Lead not found');
@@ -163,7 +172,7 @@ export class LeadsService {
     return this.chatSessionModel
       .find({
         leadId: new Types.ObjectId(leadId),
-        userId: new Types.ObjectId(userId),
+        $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
       })
       .sort({ createdAt: -1 })
       .exec();
