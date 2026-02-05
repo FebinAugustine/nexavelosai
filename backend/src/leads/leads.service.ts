@@ -31,28 +31,37 @@ export class LeadsService {
           ? new Types.ObjectId(data.agentId)
           : data.agentId,
     };
-    const lead = new this.leadModel(leadData);
-    const savedLead = await lead.save();
 
-    console.log('Saved lead:', savedLead);
-
-    // Create chat session for the new lead
-    if (data.agentId) {
-      const chatSession = await this.createChatSession({
-        userId: savedLead.userId,
-        agentId: savedLead.agentId,
-        leadId: savedLead._id,
+    // Create chat session first
+    let chatSession: ChatSessionDocument | null = null;
+    if (leadData.agentId) {
+      chatSession = await this.createChatSession({
+        userId: leadData.userId,
+        agentId: leadData.agentId,
+        leadId: null, // Will set after lead is created
         visitorId: data.visitorId,
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
         referringUrl: data.referringUrl,
         pageUrl: data.pageUrl,
       });
-
-      // Add chat session to lead's chatSessions array
-      savedLead.chatSessions.push(chatSession._id);
-      await savedLead.save();
     }
+
+    // Create lead with chatSessionId
+    const lead = new this.leadModel({
+      ...leadData,
+      chatSessions: chatSession ? [chatSession._id] : [],
+    });
+
+    const savedLead = await lead.save();
+
+    // Update chat session with leadId
+    if (chatSession) {
+      chatSession.leadId = savedLead._id;
+      await chatSession.save();
+    }
+
+    console.log('Saved lead with chat session:', savedLead);
 
     // Invalidate cache
     const cacheKey = `leads:${data.userId}`;
@@ -179,6 +188,16 @@ export class LeadsService {
 
   async createChatSession(data: any): Promise<ChatSessionDocument> {
     const session = new this.chatSessionModel(data);
+    // Add initial welcome message if no messages are provided
+    if (!session.messages || session.messages.length === 0) {
+      session.messages = [
+        {
+          role: 'agent',
+          content: "👋 Hi! I'm your AI assistant. How can I help you today?",
+          timestamp: new Date(),
+        },
+      ];
+    }
     const savedSession = await session.save();
     return savedSession;
   }
@@ -218,6 +237,43 @@ export class LeadsService {
       .findOneAndUpdate(
         { _id: id, userId: new Types.ObjectId(userId) },
         updateData,
+        { new: true },
+      )
+      .exec();
+
+    if (!session) {
+      throw new NotFoundException('Chat session not found');
+    }
+
+    return session;
+  }
+
+  async addMessageToChatSession(
+    sessionId: string,
+    userId: string,
+    message: { role: 'user' | 'agent'; content: string; timestamp?: Date },
+  ): Promise<ChatSessionDocument> {
+    // Build query - if userId is provided and valid, include it; otherwise, just use sessionId
+    const query: any = { _id: sessionId };
+    if (userId) {
+      try {
+        query.userId = new Types.ObjectId(userId);
+      } catch (error) {
+        // If userId is not a valid ObjectId, ignore it (for anonymous users)
+      }
+    }
+
+    const session = await this.chatSessionModel
+      .findOneAndUpdate(
+        query,
+        {
+          $push: {
+            messages: {
+              ...message,
+              timestamp: message.timestamp || new Date(),
+            },
+          },
+        },
         { new: true },
       )
       .exec();

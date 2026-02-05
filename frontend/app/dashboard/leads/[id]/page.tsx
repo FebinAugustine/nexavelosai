@@ -19,6 +19,18 @@ interface Lead {
   createdAt: string;
 }
 
+interface ChatMessage {
+  role: "user" | "agent";
+  content: string;
+  timestamp?: string;
+}
+
+interface ChatMessage {
+  role: "user" | "agent";
+  content: string;
+  timestamp?: string;
+}
+
 interface ChatSession {
   _id: string;
   status: string;
@@ -26,6 +38,7 @@ interface ChatSession {
   visitorId: string;
   ipAddress: string;
   userAgent: string;
+  messages: ChatMessage[];
 }
 
 export default function LeadDetail() {
@@ -386,8 +399,48 @@ export default function LeadDetail() {
                       </div>
                     )}
                     {session.userAgent && (
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 mb-2">
                         Browser: {session.userAgent}
+                      </div>
+                    )}
+                    {session.messages && session.messages.length > 0 && (
+                      <div className="mt-3">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">
+                          Conversation
+                        </h4>
+                        <div className="max-h-60 overflow-y-auto bg-gray-50 rounded-lg p-3 space-y-3">
+                          {session.messages.map((msg, idx) => (
+                            <div
+                              key={idx}
+                              className={`flex ${
+                                msg.role === "user"
+                                  ? "justify-end"
+                                  : "justify-start"
+                              }`}
+                            >
+                              <div
+                                className={`max-w-[80%] p-2 rounded-lg ${
+                                  msg.role === "user"
+                                    ? "bg-blue-600 text-white rounded-br-none"
+                                    : "bg-white text-gray-900 rounded-bl-none border border-gray-200"
+                                }`}
+                              >
+                                <p className="text-sm">{msg.content}</p>
+                                {msg.timestamp && (
+                                  <span className="text-xs opacity-75 block mt-1">
+                                    {new Date(msg.timestamp).toLocaleTimeString(
+                                      [],
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      },
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

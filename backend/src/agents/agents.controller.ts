@@ -134,6 +134,7 @@ export class AgentsController {
   async chat(
     @Param('id') id: string,
     @Body('message') message: string,
+    @Body('chatSessionId') chatSessionId: string,
     @Request() req,
   ): Promise<
     { jobId: string | number; message: string } | { response: string }
@@ -184,7 +185,12 @@ export class AgentsController {
         // If user has no domains configured, allow access (backward compatibility)
       }
 
-      const chatResult = await this.agentsService.chat(id, userId, message);
+      const chatResult = await this.agentsService.chat(
+        id,
+        userId,
+        message,
+        chatSessionId,
+      );
 
       if (typeof chatResult === 'string') {
         // This is the direct response for anonymous widget users

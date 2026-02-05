@@ -12,6 +12,7 @@ import { PlanBasedThrottlerGuard } from './plan-based-throttler.guard';
 import { ThrottlerModule, ThrottlerStorage } from '@nestjs/throttler';
 import { Reflector } from '@nestjs/core';
 import { User, UserSchema } from '../users/users.schema';
+import { LeadsModule } from '../leads/leads.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { User, UserSchema } from '../users/users.schema';
     forwardRef(() => AuthModule),
     EventsModule,
     AgentQueueModule,
+    LeadsModule,
   ],
   providers: [AgentsService, PlanBasedThrottlerGuard],
   controllers: [AgentsController],

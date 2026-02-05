@@ -19,6 +19,12 @@ interface Lead {
   createdAt: string;
 }
 
+interface ChatMessage {
+  role: "user" | "agent";
+  content: string;
+  timestamp?: string;
+}
+
 interface ChatSession {
   _id: string;
   status: string;
@@ -26,6 +32,7 @@ interface ChatSession {
   visitorId: string;
   ipAddress: string;
   userAgent: string;
+  messages: ChatMessage[];
 }
 
 interface LeadStats {
@@ -650,13 +657,13 @@ export default function LeadsPage() {
                       No chat sessions found
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {chatSessions?.map((session) => (
                         <div
                           key={session._id}
-                          className="border border-gray-200 rounded-xl p-3 bg-white/50"
+                          className="border border-gray-200 rounded-xl p-4 bg-white/50"
                         >
-                          <div className="flex justify-between items-start mb-2">
+                          <div className="flex justify-between items-start mb-3">
                             <span
                               className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                 session.status === "active"
@@ -670,21 +677,68 @@ export default function LeadsPage() {
                               {new Date(session.createdAt).toLocaleDateString()}
                             </span>
                           </div>
-                          {session.visitorId && (
-                            <div className="text-sm text-gray-600 mb-1">
-                              Visitor: {session.visitorId}
+
+                          {/* Chat Conversation */}
+                          {session.messages && session.messages.length > 0 && (
+                            <div className="mb-3">
+                              <h4 className="text-sm font-medium text-gray-700 mb-2">
+                                Conversation:
+                              </h4>
+                              <div className="space-y-2 max-h-60 overflow-y-auto">
+                                {session.messages.map((message, idx) => (
+                                  <div
+                                    key={idx}
+                                    className={`flex ${
+                                      message.role === "user"
+                                        ? "justify-end"
+                                        : "justify-start"
+                                    }`}
+                                  >
+                                    <div
+                                      className={`max-w-[80%] p-3 rounded-lg ${
+                                        message.role === "user"
+                                          ? "bg-blue-600 text-white rounded-tr-none"
+                                          : "bg-gray-100 text-gray-900 rounded-tl-none"
+                                      }`}
+                                    >
+                                      <div className="text-sm">
+                                        {message.content}
+                                      </div>
+                                      {message.timestamp && (
+                                        <div
+                                          className={`text-xs mt-1 ${
+                                            message.role === "user"
+                                              ? "text-blue-100"
+                                              : "text-gray-500"
+                                          }`}
+                                        >
+                                          {new Date(
+                                            message.timestamp,
+                                          ).toLocaleTimeString([], {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
-                          {session.ipAddress && (
-                            <div className="text-sm text-gray-600 mb-1">
-                              IP: {session.ipAddress}
-                            </div>
-                          )}
-                          {session.userAgent && (
-                            <div className="text-sm text-gray-600">
-                              Browser: {session.userAgent}
-                            </div>
-                          )}
+
+                          {/* Session Details */}
+                          <div className="space-y-1 text-xs text-gray-600">
+                            {session.visitorId && (
+                              <div>Visitor: {session.visitorId}</div>
+                            )}
+                            {session.ipAddress && (
+                              <div>IP: {session.ipAddress}</div>
+                            )}
+                            {session.userAgent && (
+                              <div>Browser: {session.userAgent}</div>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>

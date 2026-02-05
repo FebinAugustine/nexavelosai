@@ -3,6 +3,17 @@ import { Document, Types } from 'mongoose';
 
 export type ChatSessionDocument = ChatSession & Document;
 
+export class ChatMessage {
+  @Prop({ required: true })
+  role: 'user' | 'agent';
+
+  @Prop({ required: true })
+  content: string;
+
+  @Prop({ type: Date, default: Date.now })
+  timestamp?: Date;
+}
+
 @Schema({ timestamps: true })
 export class ChatSession {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
@@ -31,6 +42,9 @@ export class ChatSession {
 
   @Prop()
   pageUrl?: string;
+
+  @Prop({ type: [Object], default: [] })
+  messages: ChatMessage[];
 }
 
 export const ChatSessionSchema = SchemaFactory.createForClass(ChatSession);

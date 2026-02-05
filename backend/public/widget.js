@@ -657,6 +657,7 @@
     let leadCaptureConfig = null;
     let leadCaptureSubmitted = false;
     let messageCount = 0;
+    let currentChatSessionId = null;
 
     // Load agent configuration
     const loadAgentConfig = async () => {
@@ -799,6 +800,11 @@
         });
 
         if (response.ok) {
+          const lead = await response.json();
+          // Get chat session ID from the new lead
+          if (lead.chatSessions && lead.chatSessions.length > 0) {
+            currentChatSessionId = lead.chatSessions[0];
+          }
           leadCaptureSubmitted = true;
           hideLeadCaptureModal();
           // Show welcome message
@@ -855,25 +861,29 @@
       inputField.value = '';
       sendButton.disabled = true;
       sendButton.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; animation: spin 1s linear infinite;">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" stroke-dasharray="31.416" stroke-dashoffset="31.416">
-            <animate attributeName="stroke-dashoffset" dur="1s" repeatCount="indefinite" values="31.416;0"/>
-          </circle>
-        </svg>
-        Sending...
-      `;
+         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; animation: spin 1s linear infinite;">
+           <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+             <animate attributeName="stroke-dashoffset" dur="1s" repeatCount="indefinite" values="31.416;0"/>
+           </circle>
+         </svg>
+         Sending...
+       `;
 
       // Show typing indicator
       const typingIndicator = showTypingIndicator();
 
       try {
         const apiUrl = window.nexavelApiUrl || window.location.origin;
+        const requestBody = {
+          message,
+          chatSessionId: currentChatSessionId,
+        };
         const response = await fetch(`${apiUrl}/agents/${agentId}/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ message }),
+          body: JSON.stringify(requestBody),
         });
 
         // Remove typing indicator

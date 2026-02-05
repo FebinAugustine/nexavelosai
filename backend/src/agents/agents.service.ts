@@ -14,6 +14,7 @@ import { User, UserDocument } from '../users/users.schema';
 import { EventsGateway } from '../events/events.gateway';
 import { CreateAgentDto } from './dto/create-agent.dto';
 import { AgentQueueService } from '../agent-queue/agent-queue.service';
+import { LeadsService } from '../leads/leads.service';
 
 @Injectable()
 export class AgentsService {
@@ -25,6 +26,7 @@ export class AgentsService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private eventsGateway: EventsGateway,
     private agentQueueService: AgentQueueService, // Inject AgentQueueService
+    private leadsService: LeadsService, // Inject LeadsService
   ) {}
 
   async create(
@@ -1201,6 +1203,7 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
     agentId: string,
     userId: string,
     message: string,
+    chatSessionId?: string,
   ): Promise<{ jobId: string | number } | string> {
     // Updated return type
     if (userId) {
@@ -1209,6 +1212,7 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
         agentId,
         userId,
         message,
+        chatSessionId,
       });
       return { jobId: job.id };
     } else {
@@ -1218,6 +1222,7 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
           agentId,
           userId,
           message,
+          chatSessionId,
         );
         return responseText;
       } catch (error: any) {
@@ -1238,6 +1243,7 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
     agentId: string,
     userId: string,
     message: string,
+    chatSessionId?: string,
   ): Promise<string> {
     this.logger.debug(
       `[processQueuedAgentRequest] Started for agentId: ${agentId}, userId: ${userId}`,
@@ -1425,6 +1431,18 @@ export default function NexaVelosAIWidget({ agentId }: { agentId: string }) {
       // Emit real-time analytics update
       const analytics = await this.getAnalytics(userId.toString());
       this.eventsGateway.emitAnalyticsUpdate(analytics);
+
+      // Save messages to chat session
+      if (chatSessionId) {
+        await this.leadsService.addMessageToChatSession(chatSessionId, userId, {
+          role: 'user',
+          content: message,
+        });
+        await this.leadsService.addMessageToChatSession(chatSessionId, userId, {
+          role: 'agent',
+          content: responseText,
+        });
+      }
 
       this.logger.debug(
         `[processQueuedAgentRequest] Completed for agentId: ${agentId}, userId: ${userId}`,
