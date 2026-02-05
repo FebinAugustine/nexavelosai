@@ -364,8 +364,111 @@ export default function LeadsPage() {
         </div>
       </div>
 
-      {/* Leads Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* Leads Cards (Mobile/Tablet) */}
+      <div className="lg:hidden grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {leadsLoading ? (
+          Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-lg shadow p-4 animate-pulse"
+            >
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3 mb-3"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/3 mb-3"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            </div>
+          ))
+        ) : leads?.data.length === 0 ? (
+          <div className="col-span-2 bg-white rounded-lg shadow p-8 text-center">
+            <div className="text-gray-500">No leads found</div>
+          </div>
+        ) : (
+          leads?.data.map((lead) => (
+            <div
+              key={lead._id}
+              className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <div className="text-lg font-semibold text-gray-900">
+                    {lead.name || "N/A"}
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    {new Date(lead.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+                <span
+                  className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    lead.status === "new"
+                      ? "bg-blue-100 text-blue-800"
+                      : lead.status === "contacted"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : lead.status === "qualified"
+                          ? "bg-purple-100 text-purple-800"
+                          : lead.status === "converted"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {lead.status}
+                </span>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                {lead.email && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">Email:</span>
+                    <span className="text-gray-900">{lead.email}</span>
+                  </div>
+                )}
+                {lead.phone && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">Phone:</span>
+                    <span className="text-gray-900">{lead.phone}</span>
+                  </div>
+                )}
+                {lead.company && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">Company:</span>
+                    <span className="text-gray-900">{lead.company}</span>
+                  </div>
+                )}
+                {lead.website && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">Website:</span>
+                    <span className="text-gray-900">{lead.website}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() => handleView(lead)}
+                  className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                >
+                  View
+                </button>
+                <button
+                  onClick={() => handleEdit(lead)}
+                  className="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(lead._id)}
+                  className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Leads Table (Desktop) */}
+      <div className="hidden lg:block bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -492,14 +595,14 @@ export default function LeadsPage() {
                 <button
                   onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
                   disabled={page === 1}
-                  className="px-3 py-1 border border-gray-300 rounded text-sm leading-4 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 border border-gray-300 rounded text-sm leading-4 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setPage((prev) => prev + 1)}
                   disabled={leads.data.length < limit}
-                  className="px-3 py-1 border border-gray-300 rounded text-sm leading-4 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 border border-gray-300 rounded text-sm leading-4 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
                 >
                   Next
                 </button>
@@ -572,7 +675,7 @@ export default function LeadsPage() {
                     onChange={(e) =>
                       setEditLeadData({ ...editLeadData, name: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   />
                 </div>
                 <div>
@@ -588,7 +691,7 @@ export default function LeadsPage() {
                         email: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   />
                 </div>
                 <div>
@@ -604,7 +707,7 @@ export default function LeadsPage() {
                         phone: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   />
                 </div>
                 <div>
@@ -620,7 +723,7 @@ export default function LeadsPage() {
                         company: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   />
                 </div>
                 <div>
@@ -636,7 +739,7 @@ export default function LeadsPage() {
                         website: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   />
                 </div>
                 <div>
@@ -651,7 +754,7 @@ export default function LeadsPage() {
                         status: e.target.value as any,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   >
                     <option value="new">New</option>
                     <option value="contacted">Contacted</option>
@@ -671,7 +774,7 @@ export default function LeadsPage() {
                     setEditLeadData({ ...editLeadData, notes: e.target.value })
                   }
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 />
               </div>
               <div className="mt-6 flex justify-end space-x-3">

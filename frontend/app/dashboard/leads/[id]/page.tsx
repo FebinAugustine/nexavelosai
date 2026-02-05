@@ -203,7 +203,7 @@ export default function LeadDetail() {
                     onChange={(e) =>
                       setEditedLead({ ...editedLead, name: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   />
                 ) : (
                   <p className="text-gray-900">{lead?.name || "N/A"}</p>
@@ -221,7 +221,7 @@ export default function LeadDetail() {
                     onChange={(e) =>
                       setEditedLead({ ...editedLead, email: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   />
                 ) : (
                   <p className="text-gray-900">{lead?.email}</p>
@@ -239,7 +239,7 @@ export default function LeadDetail() {
                     onChange={(e) =>
                       setEditedLead({ ...editedLead, phone: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   />
                 ) : (
                   <p className="text-gray-900">{lead?.phone || "N/A"}</p>
@@ -257,7 +257,7 @@ export default function LeadDetail() {
                     onChange={(e) =>
                       setEditedLead({ ...editedLead, company: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   />
                 ) : (
                   <p className="text-gray-900">{lead?.company || "N/A"}</p>
@@ -275,7 +275,7 @@ export default function LeadDetail() {
                     onChange={(e) =>
                       setEditedLead({ ...editedLead, website: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   />
                 ) : (
                   <p className="text-gray-900">
@@ -308,7 +308,7 @@ export default function LeadDetail() {
                         status: e.target.value as Lead["status"],
                       })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   >
                     <option value="new">New</option>
                     <option value="contacted">Contacted</option>
@@ -346,7 +346,7 @@ export default function LeadDetail() {
                       setEditedLead({ ...editedLead, notes: e.target.value })
                     }
                     rows={4}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   />
                 ) : (
                   <p className="text-gray-900">{lead?.notes || "N/A"}</p>
