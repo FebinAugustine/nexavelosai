@@ -51,7 +51,9 @@ export default function LeadsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [editLeadData, setEditLeadData] = useState<Partial<Lead>>({});
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
@@ -122,6 +124,25 @@ export default function LeadsPage() {
     },
   });
 
+  // Update lead mutation
+  const updateLeadMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Lead> }) => {
+      const token = localStorage.getItem("token");
+      return axios.patch(`http://localhost:5000/leads/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Lead updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["leads-stats"] });
+      setEditModalOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to update lead");
+    },
+  });
+
   // Export leads
   const exportLeads = async (format: "csv" | "json") => {
     try {
@@ -180,6 +201,30 @@ export default function LeadsPage() {
     setSelectedLead(lead);
     await fetchChatSessions(lead._id);
     setViewModalOpen(true);
+  };
+
+  const handleEdit = (lead: Lead) => {
+    setSelectedLead(lead);
+    setEditLeadData({
+      name: lead.name,
+      email: lead.email,
+      phone: lead.phone,
+      company: lead.company,
+      website: lead.website,
+      status: lead.status,
+      notes: lead.notes,
+      tags: lead.tags,
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLead) return;
+    updateLeadMutation.mutate({
+      id: selectedLead._id,
+      data: editLeadData,
+    });
   };
 
   // Error handling
@@ -416,6 +461,12 @@ export default function LeadsPage() {
                         View
                       </button>
                       <button
+                        onClick={() => handleEdit(lead)}
+                        className="text-green-600 hover:text-green-900"
+                      >
+                        Edit
+                      </button>
+                      <button
                         onClick={() => handleDelete(lead._id)}
                         className="text-red-600 hover:text-red-900"
                       >
@@ -457,6 +508,192 @@ export default function LeadsPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Lead Modal */}
+      {editModalOpen && selectedLead && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200/50">
+            <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">
+                      Edit Lead
+                    </h3>
+                    <p className="text-indigo-100 text-sm">
+                      {selectedLead.name}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setEditModalOpen(false)}
+                  className="text-white/80 hover:text-white transition-colors duration-200 p-1 hover:bg-white/10 rounded-full"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <form onSubmit={handleEditSubmit} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editLeadData.name || ""}
+                    onChange={(e) =>
+                      setEditLeadData({ ...editLeadData, name: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={editLeadData.email || ""}
+                    onChange={(e) =>
+                      setEditLeadData({
+                        ...editLeadData,
+                        email: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone
+                  </label>
+                  <input
+                    type="text"
+                    value={editLeadData.phone || ""}
+                    onChange={(e) =>
+                      setEditLeadData({
+                        ...editLeadData,
+                        phone: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Company
+                  </label>
+                  <input
+                    type="text"
+                    value={editLeadData.company || ""}
+                    onChange={(e) =>
+                      setEditLeadData({
+                        ...editLeadData,
+                        company: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Website
+                  </label>
+                  <input
+                    type="text"
+                    value={editLeadData.website || ""}
+                    onChange={(e) =>
+                      setEditLeadData({
+                        ...editLeadData,
+                        website: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <select
+                    value={editLeadData.status || "new"}
+                    onChange={(e) =>
+                      setEditLeadData({
+                        ...editLeadData,
+                        status: e.target.value as any,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="qualified">Qualified</option>
+                    <option value="converted">Converted</option>
+                    <option value="lost">Lost</option>
+                  </select>
+                </div>
+              </div>
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes
+                </label>
+                <textarea
+                  value={editLeadData.notes || ""}
+                  onChange={(e) =>
+                    setEditLeadData({ ...editLeadData, notes: e.target.value })
+                  }
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setEditModalOpen(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updateLeadMutation.isPending}
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {updateLeadMutation.isPending ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* View Lead Modal */}
       {viewModalOpen && selectedLead && (
