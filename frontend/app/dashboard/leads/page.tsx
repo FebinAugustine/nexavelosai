@@ -297,7 +297,7 @@ export default function LeadsPage() {
               setSearchTerm(e.target.value);
               setPage(1);
             }}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           />
         </div>
         <div className="min-w-[150px]">
@@ -307,7 +307,7 @@ export default function LeadsPage() {
               setStatusFilter(e.target.value);
               setPage(1);
             }}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           >
             <option value="">All Statuses</option>
             <option value="new">New</option>

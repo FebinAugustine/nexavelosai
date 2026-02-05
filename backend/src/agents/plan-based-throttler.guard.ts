@@ -23,6 +23,15 @@ export class PlanBasedThrottlerGuard extends ThrottlerGuard {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
 
+    // Skip rate limiting if @SkipThrottle() decorator is applied
+    const isSkipThrottle = this.reflector.get<boolean>(
+      'throttler:skip',
+      context.getHandler(),
+    );
+    if (isSkipThrottle) {
+      return true;
+    }
+
     // Skip rate limiting for static file requests (CSS, JS, images, etc.)
     if (this.isStaticFileRequest(request)) {
       return true;
@@ -49,8 +58,8 @@ export class PlanBasedThrottlerGuard extends ThrottlerGuard {
     const planLimits = {
       free: { limit: 10, ttl: 1800000 }, // 10 requests per 30 minutes
       regular: { limit: 500, ttl: 60000 }, // 500 requests per minute
-      special: { limit: 100, ttl: 1800000 }, // 100 requests per minute
-      agency: { limit: 5000, ttl: 1800000 }, // 5000 requests per minute
+      special: { limit: 1000, ttl: 60000 }, // 1000 requests per minute (fixed from 100 per 30 minutes)
+      agency: { limit: 5000, ttl: 60000 }, // 5000 requests per minute
     };
 
     const limitConfig = user
