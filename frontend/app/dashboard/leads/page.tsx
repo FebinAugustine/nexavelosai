@@ -467,6 +467,34 @@ export default function LeadsPage() {
         )}
       </div>
 
+      {/* Pagination for Mobile/Tablet */}
+      {leads && leads.count > limit && (
+        <div className="lg:hidden bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+          <div className="flex justify-between">
+            <div className="text-sm text-gray-700">
+              Showing <span className="font-medium">{leads.data.length}</span>{" "}
+              of <span className="font-medium">{leads.count}</span> leads
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                disabled={page === 1}
+                className="px-3 py-1 border border-gray-300 rounded text-sm leading-4 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage((prev) => prev + 1)}
+                disabled={leads.data.length < limit}
+                className="px-3 py-1 border border-gray-300 rounded text-sm leading-4 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Leads Table (Desktop) */}
       <div className="hidden lg:block bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">

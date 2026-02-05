@@ -78,14 +78,7 @@ export class LeadsService {
       query,
     );
 
-    const cacheKey = `leads:${userId}:${JSON.stringify(query)}`;
-    const cachedLeads = await this.cacheManager.get<LeadDocument[]>(cacheKey);
-
-    if (cachedLeads) {
-      console.log('Returning cached leads');
-      return cachedLeads;
-    }
-
+    // Don't cache leads to ensure real-time data after updates
     // Debug: Check if there are any leads in the database
     const allLeads = await this.leadModel.find({}).exec();
     console.log('All leads in DB:', allLeads.length);
@@ -126,7 +119,6 @@ export class LeadsService {
       .exec();
 
     console.log('Found', leads.length, 'leads for user');
-    await this.cacheManager.set(cacheKey, leads, 300000); // 5 minutes
     return leads;
   }
 
@@ -163,10 +155,6 @@ export class LeadsService {
       throw new NotFoundException('Lead not found');
     }
 
-    // Invalidate cache
-    const cacheKey = `leads:${userId}`;
-    await this.cacheManager.del(cacheKey);
-
     return lead;
   }
 
@@ -180,10 +168,6 @@ export class LeadsService {
     if (result.deletedCount === 0) {
       throw new NotFoundException('Lead not found');
     }
-
-    // Invalidate cache
-    const cacheKey = `leads:${userId}`;
-    await this.cacheManager.del(cacheKey);
   }
 
   async createChatSession(data: any): Promise<ChatSessionDocument> {
