@@ -36,6 +36,24 @@ export class LeadsService {
 
     console.log('Saved lead:', savedLead);
 
+    // Create chat session for the new lead
+    if (data.agentId) {
+      const chatSession = await this.createChatSession({
+        userId: savedLead.userId,
+        agentId: savedLead.agentId,
+        leadId: savedLead._id,
+        visitorId: data.visitorId,
+        ipAddress: data.ipAddress,
+        userAgent: data.userAgent,
+        referringUrl: data.referringUrl,
+        pageUrl: data.pageUrl,
+      });
+
+      // Add chat session to lead's chatSessions array
+      savedLead.chatSessions.push(chatSession._id);
+      await savedLead.save();
+    }
+
     // Invalidate cache
     const cacheKey = `leads:${data.userId}`;
     await this.cacheManager.del(cacheKey);

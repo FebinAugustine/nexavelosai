@@ -16,6 +16,7 @@ import {
 } from "../../lib/sanitization";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import LeadsPage from "./leads/page";
+import LeadCaptureModal from "./[id]/lead-capture/LeadCaptureModal";
 
 interface User {
   _id: string;
@@ -136,6 +137,9 @@ export default function Dashboard() {
   const [selectedAgentForSnippet, setSelectedAgentForSnippet] =
     useState<Agent | null>(null);
   const [snippetVersion, setSnippetVersion] = useState("full");
+  const [leadCaptureModalOpen, setLeadCaptureModalOpen] = useState(false);
+  const [selectedAgentForLeadCapture, setSelectedAgentForLeadCapture] =
+    useState<Agent | null>(null);
   // Create Agent form state
   const [agentName, setAgentName] = useState("");
   const [agentDescription, setAgentDescription] = useState("");
@@ -820,11 +824,10 @@ export default function Dashboard() {
                               Get Snippet
                             </button>
                             <button
-                              onClick={() =>
-                                router.push(
-                                  `/dashboard/${agent._id}/lead-capture`,
-                                )
-                              }
+                              onClick={() => {
+                                setSelectedAgentForLeadCapture(agent);
+                                setLeadCaptureModalOpen(true);
+                              }}
                               className="bg-purple-50 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors duration-200 font-medium text-sm"
                             >
                               Lead Capture
@@ -3504,6 +3507,19 @@ window.nexavelWidget.open();`}</code>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Lead Capture Modal */}
+      {leadCaptureModalOpen && selectedAgentForLeadCapture && (
+        <LeadCaptureModal
+          isOpen={leadCaptureModalOpen}
+          onClose={() => {
+            setLeadCaptureModalOpen(false);
+            setSelectedAgentForLeadCapture(null);
+          }}
+          agentId={selectedAgentForLeadCapture._id}
+          agentName={selectedAgentForLeadCapture.name}
+        />
       )}
     </div>
   );
