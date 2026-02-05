@@ -382,12 +382,13 @@ export default function LeadCaptureSettings() {
           </div>
         ) : (
           <div className="space-y-4">
-            {agent?.leadCapture.formFields.length === 0 ? (
+            {!agent?.leadCapture.formFields ||
+            agent.leadCapture.formFields.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
                 No form fields configured
               </div>
             ) : (
-              agent?.leadCapture.formFields.map((field, index) => (
+              agent.leadCapture.formFields.map((field, index) => (
                 <div key={index} className="border rounded-lg p-4">
                   <div className="flex justify-between items-start">
                     <h3 className="font-medium text-gray-900">

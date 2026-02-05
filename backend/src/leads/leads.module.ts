@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Lead, LeadSchema } from './leads.schema';
 import { ChatSession, ChatSessionSchema } from '../agents/chat-session.schema';
+import { Agent, AgentSchema } from '../agents/agents.schema';
 import { LeadsController } from './leads.controller';
 import { LeadsService } from './leads.service';
 
@@ -12,6 +13,7 @@ import { LeadsService } from './leads.service';
     MongooseModule.forFeature([
       { name: ChatSession.name, schema: ChatSessionSchema },
     ]),
+    MongooseModule.forFeature([{ name: Agent.name, schema: AgentSchema }]),
     CacheModule.register(),
   ],
   controllers: [LeadsController],

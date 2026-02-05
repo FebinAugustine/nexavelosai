@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage Redesign Wireframe - NexaVelosAI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Comic Sans MS', cursive;
+            background: #fff;
+            color: #333;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .wireframe-header {
+            background: #f5f5f5;
+            padding: 20px;
+            border: 2px solid #333;
+            margin-bottom: 30px;
+        }
+        .wireframe-header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .wireframe-header p {
+            font-size: 14px;
+            color: #666;
+        }
+        .section {
+            margin-bottom: 40px;
+            border: 2px dashed #999;
+            padding: 20px;
+            background: #fafafa;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #666;
+        }
+        .component-wrapper {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        .badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            z-index: 10;
+            color: white;
+        }
+        .badge-new {
+            background: #FF9800;
+        }
+        .badge-reuse {
+            background: #4CAF50;
+        }
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border: 2px solid #333;
+            background: #fff;
+            margin-bottom: 20px;
+        }
+        .nav-logo {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        .nav-link {
+            padding: 8px 16px;
+            border: 1px solid #666;
+            background: #f5f5f5;
+        }
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+            border: 2px solid #333;
+            background: #fff;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border: 1px solid #666;
+            background: #f5f5f5;
+            margin-bottom: 20px;
+            border-radius: 20px;
+        }
+        .hero-title {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+        .hero-subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .cta-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        .btn-primary {
+            padding: 15px 40px;
+            border: 3px solid #333;
+            background: #333;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn-secondary {
+            padding: 15px 40px;
+            border: 3px solid #333;
+            background: #fff;
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .stat-card {
+            border: 2px solid #666;
+            padding: 20px;
+            text-align: center;
+            background: #f5f5f5;
+        }
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .feature-card {
+            border: 2px solid #666;
+            padding: 25px;
+            background: #fff;
+        }
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #333;
+            background: #f5f5f5;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        .feature-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .feature-desc {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .pricing-card {
+            border: 2px solid #666;
+            padding: 30px;
+            background: #fff;
+        }
+        .pricing-card.featured {
+            border: 4px solid #333;
+            transform: scale(1.05);
+        }
+        .pricing-badge {
+            background: #333;
+            color: #fff;
+            padding: 5px 15px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        .pricing-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .pricing-price {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .pricing-period {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+        .pricing-features li {
+            padding: 8px 0;
+            border-bottom: 1px solid #ccc;
+        }
+        .pricing-features li:before {
+            content: "✓ ";
+            font-weight: bold;
+        }
+        .social-proof {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .testimonial-card {
+            border: 2px solid #666;
+            padding: 25px;
+            background: #fff;
+        }
+        .testimonial-rating {
+            margin-bottom: 15px;
+        }
+        .testimonial-text {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 20px;
+            font-style: italic;
+            line-height: 1.5;
+        }
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .testimonial-avatar {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #333;
+            background: #f5f5f5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        .testimonial-info {
+            flex: 1;
+        }
+        .footer {
+            border: 2px solid #333;
+            padding: 40px;
+            background: #f5f5f5;
+            margin-top: 40px;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+        }
+        .footer-column h4 {
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .footer-links {
+            list-style: none;
+        }
+        .footer-links li {
+            padding: 5px 0;
+        }
+        .note {
+            background: #fff9c4;
+            border: 2px solid #f57f17;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+        .note strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wireframe-header">
+        <h1>🎨 Homepage Redesign Wireframe</h1>
+        <p>Modern, accessible landing page with improved component architecture and user experience</p>
+    </div>
+
+    <div class="note">
+        <strong>💡 Key Improvements:</strong>
+        • Component-based architecture with reusable elements<br>
+        • Enhanced accessibility with proper ARIA labels and semantic HTML<br>
+        • Improved visual hierarchy and content organization<br>
+        • Better mobile responsiveness strategy<br>
+        • Consistent design tokens and spacing
+    </div>
+
+    <!-- Navigation Section -->
+    <div class="section">
+        <div class="section-title">📍 Navigation Bar (Sticky)</div>
+        
+        <!-- NEW COMPONENT: Navbar -->
+        <div class="component-wrapper">
+            <span class="badge badge-new" title="To be created at frontend/components/Navbar.tsx">[NEW] Navbar</span>
+            <div class="nav">
+                <div class="nav-logo">NexaVelosAI Logo + Name</div>
+                <div class="nav-links">
+                    <div class="nav-link">Features</div>
+                    <div class="nav-link">Pricing</div>
+                    <div class="nav-link">Docs</div>
+                    <div class="nav-link">Blog</div>
+                    <!-- NEW: Button Component -->
+                    <div class="component-wrapper" style="display: inline-block;">
+                        <span class="badge badge-new" title="To be created at frontend/components/Button.tsx">[NEW] Button</span>
+                        <div class="btn-primary" style="display: inline-block; padding: 8px 20px;">Get Started</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="section">
+        <div class="section-title">🎯 Hero Section</div>
+        
+        <!-- NEW COMPONENT: Hero -->
+        <div class="component-wrapper">
+            <span class="badge badge-new" title="To be created at frontend/components/Hero.tsx">[NEW] Hero</span>
+            <div class="hero">
+                <!-- NEW: Badge Component -->
+                <div class="component-wrapper" style="display: inline-block;">
+                    <span class="badge badge-new" title="To be created at frontend/components/Badge.tsx">[NEW] Badge</span>
+                    <div class="hero-badge">🚀 Now supporting React & Next.js components</div>
+                </div>
+                
+                <div class="hero-title">
+                    Create Custom AI Chat Agents<br>
+                    <span style="color: #666;">Effortlessly</span>
+                </div>
+                
+                <div class="hero-subtitle">
+                    Empower your website with personalized AI chat widgets. Integrate leading AI providers like Google Gemini, OpenAI ChatGPT, and OpenRouter. Monitor performance and scale with flexible plans.
+                </div>
+                
+                <div class="cta-buttons">
+                    <div class="btn-primary">Start Building Free →</div>
+                    <div class="btn-secondary">Watch Demo Video</div>
+                </div>
+
+                <!-- NEW: StatsGrid Component -->
+                <div class="component-wrapper">
+                    <span class="badge badge-new" title="To be created at frontend/components/StatsGrid.tsx">[NEW] StatsGrid</span>
+                    <div class="stats-grid">
+                        <!-- NEW: StatCard Component -->
+                        <div class="component-wrapper">
+                            <span class="badge badge-new" title="To be created at frontend/components/StatCard.tsx">[NEW] StatCard</span>
+                            <div class="stat-card">
+                                <div class="stat-number">10K+</div>
+                                <div class="stat-label">Active Agents</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">1M+</div>
+                            <div class="stat-label">Conversations</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">99.9%</div>
+                            <div class="stat-label">Uptime</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="section">
+        <div class="section-title">✨ Features Section</div>
+        
+        <div style="text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 32px; font-weight: bold; margin-bottom: 10px;">Why Choose NexaVelosAI?</div>
+            <div style="font-size: 16px; color: #666;">Everything you need to deploy AI chat agents with enterprise-grade security</div>
+        </div>
+
+        <!-- NEW COMPONENT: FeaturesGrid -->
+        <div class="component-wrapper">
+            <span class="badge badge-new" title="To be created at frontend/components/FeaturesGrid.tsx">[NEW] FeaturesGrid</span>
+            <div class="features-grid">
+                <!-- NEW: FeatureCard Component -->
+                <div class="component-wrapper">
+                    <span class="badge badge-new" title="To be created at frontend/components/FeatureCard.tsx">[NEW] FeatureCard</span>
+                    <div class="feature-card">
+                        <div class="feature-icon">[Icon: Lightning]</div>
+                        <div class="feature-title">Lightning Fast Integration</div>
+                        <div class="feature-desc">Generate embeddable JavaScript snippets or React components in seconds. No coding required.</div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">[Icon: Checkmark]</div>
+                    <div class="feature-title">Multiple AI Providers</div>
+                    <div class="feature-desc">Support for Google Gemini, OpenAI ChatGPT, and OpenRouter. Choose the perfect AI model.</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">[Icon: Chart]</div>
+                    <div class="feature-title">Advanced Analytics</div>
+                    <div class="feature-desc">Track chat interactions, user engagement, and agent performance with real-time insights.</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">[Icon: Lock]</div>
+                    <div class="feature-title">Enterprise Security</div>
+                    <div class="feature-desc">SSL encryption, SOC 2 compliance, and data privacy controls built-in from day one.</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">[Icon: Code]</div>
+                    <div class="feature-title">Developer Friendly</div>
+                    <div class="feature-desc">REST API, webhooks, and SDKs for all major frameworks. Full customization support.</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">[Icon: Support]</div>
+                    <div class="feature-title">24/7 Support</div>
+                    <div class="feature-desc">Expert support team available round the clock to help you succeed with your implementation.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Section -->
+    <div class="section">
+        <div class="section-title">💰 Pricing Section</div>
+        
+        <div style="text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 32px; font-weight: bold; margin-bottom: 10px;">Simple, Transparent Pricing</div>
+            <div style="font-size: 16px; color: #666;">Choose the perfect plan for your needs. Scale as you grow.</div>
+        </div>
+
+        <!-- NEW COMPONENT: PricingGrid -->
+        <div class="component-wrapper">
+            <span class="badge badge-new" title="To be created at frontend/components/PricingGrid.tsx">[NEW] PricingGrid</span>
+            <div class="pricing-grid">
+                <!-- NEW: PricingCard Component -->
+                <div class="component-wrapper">
+                    <span class="badge badge-new" title="To be created at frontend/components/PricingCard.tsx">[NEW] PricingCard</span>
+                    <div class="pricing-card">
+                        <div class="pricing-title">Starter</div>
+                        <div class="pricing-price">₹499</div>
+                        <div class="pricing-period">/month</div>
+                        <ul class="pricing-features">
+                            <li>2 AI Agents</li>
+                            <li>Basic Analytics</li>
+                            <li>Email Support</li>
+                            <li>JS & React Components</li>
+                        </ul>
+                        <div class="btn-secondary" style="width: 100%; text-align: center;">Get Started</div>
+                    </div>
+                </div>
+                
+                <div class="pricing-card featured">
+                    <div class="pricing-badge">MOST POPULAR</div>
+                    <div class="pricing-title">Professional</div>
+                    <div class="pricing-price">₹899</div>
+                    <div class="pricing-period">/month</div>
+                    <ul class="pricing-features">
+                        <li>5 AI Agents</li>
+                        <li>Advanced Analytics</li>
+                        <li>Priority Support</li>
+                        <li>Custom Branding</li>
+                        <li>API Access</li>
+                    </ul>
+                    <div class="btn-primary" style="width: 100%; text-align: center;">Get Started</div>
+                </div>
+                
+                <div class="pricing-card">
+                    <div class="pricing-title">Enterprise</div>
+                    <div class="pricing-price">Custom</div>
+                    <div class="pricing-period">Contact sales</div>
+                    <ul class="pricing-features">
+                        <li>Unlimited AI Agents</li>
+                        <li>Custom Analytics</li>
+                        <li>Dedicated Support</li>
+                        <li>White-label Solution</li>
+                        <li>SLA Guarantee</li>
+                    </ul>
+                    <div class="btn-secondary" style="width: 100%; text-align: center;">Contact Sales</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Social Proof Section -->
+    <div class="section">
+        <div class="section-title">💬 Customer Testimonials</div>
+        
+        <div style="text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 32px; font-weight: bold; margin-bottom: 10px;">Loved by Thousands</div>
+            <div style="font-size: 16px; color: #666;">See what our customers say about their experience</div>
+        </div>
+
+        <!-- NEW COMPONENT: TestimonialsGrid -->
+        <div class="component-wrapper">
+            <span class="badge badge-new" title="To be created at frontend/components/TestimonialsGrid.tsx">[NEW] TestimonialsGrid</span>
+            <div class="social-proof">
+                <!-- NEW: TestimonialCard Component -->
+                <div class="component-wrapper">
+                    <span class="badge badge-new" title="To be created at frontend/components/TestimonialCard.tsx">[NEW] TestimonialCard</span>
+                    <div class="testimonial-card">
+                        <div class="testimonial-rating">★★★★★</div>
+                        <div class="testimonial-text">"NexaVelosAI transformed our customer support. The AI agents handle 80% of inquiries automatically, saving countless hours."</div>
+                        <div class="testimonial-author">
+                            <div class="testimonial-avatar">[Photo]</div>
+                            <div class="testimonial-info">
+                                <div style="font-weight: bold;">John Doe</div>
+                                <div style="font-size: 12px; color: #666;">CEO, TechCorp</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <div class="testimonial-rating">★★★★★</div>
+                    <div class="testimonial-text">"The analytics dashboard gives us incredible insights. We've improved conversion rates by 40% since implementing."</div>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">[Photo]</div>
+                        <div class="testimonial-info">
+                            <div style="font-weight: bold;">Jane Smith</div>
+                            <div style="font-size: 12px; color: #666;">Marketing Dir., InnovateCo</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <div class="testimonial-rating">★★★★★</div>
+                    <div class="testimonial-text">"Setup was incredibly easy. Within minutes, we had our first AI agent running. The React components are perfect."</div>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">[Photo]</div>
+                        <div class="testimonial-info">
+                            <div style="font-weight: bold;">Mike Brown</div>
+                            <div style="font-size: 12px; color: #666;">CTO, StartupXYZ</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="section">
+        <div class="section-title">🎯 Final Call-to-Action</div>
+        
+        <div style="text-align: center; padding: 60px 20px; border: 2px solid #333; background: #f5f5f5;">
+            <div style="font-size: 36px; font-weight: bold; margin-bottom: 15px;">Ready to Transform Your Website?</div>
+            <div style="font-size: 18px; color: #666; margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                Join thousands of businesses enhancing customer experience with intelligent AI chat agents. Start building today.
+            </div>
+            <div class="cta-buttons">
+                <div class="btn-primary">Start Free Trial →</div>
+                <div class="btn-secondary">Schedule Demo</div>
+            </div>
+            <div style="margin-top: 20px; font-size: 12px; color: #999;">No credit card required • Free 14-day trial</div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <div class="section">
+        <div class="section-title">🔗 Footer</div>
+        
+        <!-- NEW COMPONENT: Footer -->
+        <div class="component-wrapper">
+            <span class="badge badge-new" title="To be created at frontend/components/Footer.tsx">[NEW] Footer</span>
+            <div class="footer">
+                <div class="footer-grid">
+                    <div class="footer-column">
+                        <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px;">NexaVelosAI</div>
+                        <div style="font-size: 14px; color: #666; line-height: 1.5; margin-bottom: 20px;">
+                            Empowering websites with intelligent AI chat agents. Transform your customer experience with cutting-edge technology.
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <div style="width: 35px; height: 35px; border: 2px solid #333; background: #f5f5f5;">[X]</div>
+                            <div style="width: 35px; height: 35px; border: 2px solid #333; background: #f5f5f5;">[Li]</div>
+                            <div style="width: 35px; height: 35px; border: 2px solid #333; background: #f5f5f5;">[Git]</div>
+                        </div>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h4>Product</h4>
+                        <ul class="footer-links">
+                            <li>Features</li>
+                            <li>Pricing</li>
+                            <li>Integrations</li>
+                            <li>Documentation</li>
+                            <li>API Reference</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h4>Company</h4>
+                        <ul class="footer-links">
+                            <li>About Us</li>
+                            <li>Blog</li>
+                            <li>Careers</li>
+                            <li>Contact</li>
+                            <li>Press Kit</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h4>Legal</h4>
+                        <ul class="footer-links">
+                            <li>Privacy Policy</li>
+                            <li>Terms of Service</li>
+                            <li>Refund Policy</li>
+                            <li>Cookie Policy</li>
+                            <li>GDPR</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div style="border-top: 2px solid #999; margin-top: 30px; padding-top: 20px; text-align: center; color: #666;">
+                    © 2024 NexaVelosAI. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="note">
+        <strong>📝 Component Summary:</strong>
+        <strong>New Components to Create (13):</strong><br>
+        • Navbar, Hero, Badge, Button, StatsGrid, StatCard<br>
+        • FeaturesGrid, FeatureCard, PricingGrid, PricingCard<br>
+        • TestimonialsGrid, TestimonialCard, Footer<br><br>
+        <strong>Benefits:</strong><br>
+        • Reusable across all pages<br>
+        • Easier maintenance and updates<br>
+        • Consistent design language<br>
+        • Better performance through code splitting<br>
+        • Testable components
+    </div>
+</body>
+</html>

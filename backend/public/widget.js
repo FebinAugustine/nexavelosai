@@ -425,20 +425,141 @@
         margin-bottom: 16px;
         display: block;
       }
-      @media (max-width: 480px) {
-        .nexavel-chat-window {
-          width: calc(100vw - 40px);
-          height: calc(100vh - 120px);
-          bottom: 80px;
-          right: 20px;
-          max-width: 380px;
-        }
-        .nexavel-chat-widget {
-          bottom: 20px;
-          right: 20px;
-        }
-      }
-    `;
+       /* Lead Capture Modal */
+       .nexavel-lead-capture-modal {
+         display: none;
+         position: absolute;
+         bottom: 80px;
+         right: 0;
+         width: 380px;
+         background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
+         border-radius: 24px;
+         box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15), 0 10px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.2);
+         backdrop-filter: blur(20px);
+         border: 1px solid rgba(255, 255, 255, 0.3);
+         overflow: hidden;
+         animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+         transform-origin: bottom right;
+       }
+
+       .nexavel-lead-capture-content {
+         padding: 24px;
+       }
+
+       .nexavel-lead-capture-header {
+         margin-bottom: 20px;
+       }
+
+       .nexavel-lead-capture-header h3 {
+         font-size: 18px;
+         font-weight: 700;
+         color: #374151;
+         margin-bottom: 8px;
+       }
+
+       .nexavel-lead-capture-header p {
+         font-size: 14px;
+         color: #6b7280;
+         line-height: 1.5;
+       }
+
+       #nexavel-lead-capture-fields {
+         margin-bottom: 20px;
+       }
+
+       .nexavel-lead-capture-field {
+         margin-bottom: 16px;
+       }
+
+       .nexavel-lead-capture-field label {
+         display: block;
+         font-size: 14px;
+         font-weight: 500;
+         color: #374151;
+         margin-bottom: 8px;
+       }
+
+       .nexavel-lead-capture-field input,
+       .nexavel-lead-capture-field textarea {
+         width: 100%;
+         padding: 12px 16px;
+         border: 2px solid rgba(0, 0, 0, 0.1);
+         border-radius: 12px;
+         font-size: 14px;
+         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+         background: rgba(255, 255, 255, 0.8);
+         color: #374151;
+         outline: none;
+         backdrop-filter: blur(10px);
+         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+       }
+
+       .nexavel-lead-capture-field input:focus,
+       .nexavel-lead-capture-field textarea:focus {
+         border-color: #667eea;
+         background: rgba(255, 255, 255, 0.95);
+         box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 20px rgba(102, 126, 234, 0.15);
+         transform: translateY(-1px);
+       }
+
+       .nexavel-lead-capture-field textarea {
+         resize: vertical;
+         min-height: 80px;
+       }
+
+       .nexavel-lead-capture-submit {
+         width: 100%;
+         padding: 16px;
+         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+         color: white;
+         border: none;
+         border-radius: 16px;
+         font-size: 14px;
+         font-weight: 600;
+         cursor: pointer;
+         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3), 0 2px 10px rgba(0, 0, 0, 0.1);
+         position: relative;
+         overflow: hidden;
+       }
+
+       .nexavel-lead-capture-submit:hover:not(:disabled) {
+         transform: translateY(-2px);
+         box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4), 0 4px 15px rgba(0, 0, 0, 0.15);
+       }
+
+       .nexavel-lead-capture-submit:active {
+         transform: translateY(0);
+         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+       }
+
+       .nexavel-lead-capture-submit:disabled {
+         opacity: 0.6;
+         cursor: not-allowed;
+         transform: none;
+         box-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
+       }
+
+       @media (max-width: 480px) {
+         .nexavel-chat-window {
+           width: calc(100vw - 40px);
+           height: calc(100vh - 120px);
+           bottom: 80px;
+           right: 20px;
+           max-width: 380px;
+         }
+         .nexavel-lead-capture-modal {
+           width: calc(100vw - 40px);
+           bottom: 80px;
+           right: 20px;
+           max-width: 380px;
+         }
+         .nexavel-chat-widget {
+           bottom: 20px;
+           right: 20px;
+         }
+       }
+     `;
 
     // Inject styles
     const styleSheet = document.createElement('style');
@@ -496,6 +617,19 @@
             </button>
           </div>
         </div>
+        <!-- Lead Capture Modal -->
+        <div class="nexavel-lead-capture-modal" id="nexavel-lead-capture-modal">
+          <div class="nexavel-lead-capture-content">
+            <div class="nexavel-lead-capture-header">
+              <h3>Get Started</h3>
+              <p>Tell us a bit about yourself to continue</p>
+            </div>
+            <form id="nexavel-lead-capture-form">
+              <div id="nexavel-lead-capture-fields"></div>
+              <button type="submit" class="nexavel-lead-capture-submit">Continue</button>
+            </form>
+          </div>
+        </div>
       </div>
     `;
 
@@ -509,6 +643,180 @@
     const messagesContainer = document.getElementById('nexavel-chat-messages');
     const inputField = document.getElementById('nexavel-chat-input');
     const sendButton = document.getElementById('nexavel-chat-send');
+    const leadCaptureModal = document.getElementById(
+      'nexavel-lead-capture-modal',
+    );
+    const leadCaptureForm = document.getElementById(
+      'nexavel-lead-capture-form',
+    );
+    const leadCaptureFields = document.getElementById(
+      'nexavel-lead-capture-fields',
+    );
+
+    // Lead capture state
+    let leadCaptureConfig = null;
+    let leadCaptureSubmitted = false;
+    let messageCount = 0;
+
+    // Load agent configuration
+    const loadAgentConfig = async () => {
+      try {
+        const apiUrl = window.nexavelApiUrl || window.location.origin;
+        const response = await fetch(`${apiUrl}/agents/${agentId}`);
+        if (response.ok) {
+          const agent = await response.json();
+          if (agent.leadCapture && agent.leadCapture.enabled) {
+            leadCaptureConfig = agent.leadCapture;
+            // Render lead capture form
+            renderLeadCaptureForm();
+            // Set up trigger
+            setupLeadCaptureTrigger();
+          }
+        }
+      } catch (error) {
+        console.error('Error loading agent config:', error);
+      }
+    };
+
+    // Render lead capture form
+    const renderLeadCaptureForm = () => {
+      if (!leadCaptureConfig) return;
+
+      leadCaptureFields.innerHTML = '';
+
+      // Add default fields if none are configured
+      const fields =
+        leadCaptureConfig.formFields.length > 0
+          ? leadCaptureConfig.formFields
+          : [
+              {
+                name: 'email',
+                label: 'Email',
+                type: 'email',
+                required: true,
+                placeholder: 'Your email',
+              },
+              {
+                name: 'name',
+                label: 'Name',
+                type: 'text',
+                required: false,
+                placeholder: 'Your name',
+              },
+              {
+                name: 'phone',
+                label: 'Phone',
+                type: 'phone',
+                required: false,
+                placeholder: 'Your phone number',
+              },
+              {
+                name: 'company',
+                label: 'Company',
+                type: 'text',
+                required: false,
+                placeholder: 'Your company',
+              },
+            ];
+
+      fields.forEach((field) => {
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'nexavel-lead-capture-field';
+
+        const label = document.createElement('label');
+        label.textContent = field.label + (field.required ? ' *' : '');
+        label.setAttribute('for', `nexavel-lead-field-${field.name}`);
+
+        const input = document.createElement(
+          field.type === 'textarea' ? 'textarea' : 'input',
+        );
+        input.id = `nexavel-lead-field-${field.name}`;
+        input.name = field.name;
+        input.type = field.type === 'textarea' ? 'text' : field.type;
+        input.placeholder = field.placeholder || '';
+        input.required = field.required;
+
+        if (field.type === 'textarea') {
+          input.rows = 3;
+        }
+
+        fieldDiv.appendChild(label);
+        fieldDiv.appendChild(input);
+        leadCaptureFields.appendChild(fieldDiv);
+      });
+    };
+
+    // Set up lead capture trigger
+    const setupLeadCaptureTrigger = () => {
+      if (!leadCaptureConfig) return;
+
+      if (
+        leadCaptureConfig.trigger === 'time' &&
+        leadCaptureConfig.triggerValue > 0
+      ) {
+        // Time delay trigger
+        setTimeout(() => {
+          if (!leadCaptureSubmitted) {
+            showLeadCaptureModal();
+          }
+        }, leadCaptureConfig.triggerValue * 1000);
+      }
+    };
+
+    // Show lead capture modal
+    const showLeadCaptureModal = () => {
+      leadCaptureModal.style.display = 'block';
+      chatWindow.style.display = 'none';
+    };
+
+    // Hide lead capture modal
+    const hideLeadCaptureModal = () => {
+      leadCaptureModal.style.display = 'none';
+      chatWindow.style.display = 'flex';
+    };
+
+    // Handle lead capture form submission
+    const handleLeadCaptureSubmit = async (e) => {
+      e.preventDefault();
+
+      if (!leadCaptureConfig) return;
+
+      // Collect form data
+      const formData = new FormData(leadCaptureForm);
+      const leadData = {
+        agentId: agentId,
+        ...Object.fromEntries(formData.entries()),
+      };
+
+      try {
+        const apiUrl = window.nexavelApiUrl || window.location.origin;
+        const response = await fetch(`${apiUrl}/leads`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(leadData),
+        });
+
+        if (response.ok) {
+          leadCaptureSubmitted = true;
+          hideLeadCaptureModal();
+          // Show welcome message
+          addMessage(
+            "👋 Hi! I'm your AI assistant. How can I help you today?",
+            'bot',
+          );
+        } else {
+          console.error('Error submitting lead:', response.statusText);
+          // Show error message
+          addMessage('Sorry, there was an error. Please try again.', 'bot');
+        }
+      } catch (error) {
+        console.error('Error submitting lead:', error);
+        // Show error message
+        addMessage('Sorry, there was an error. Please try again.', 'bot');
+      }
+    };
 
     // Toggle chat window
     const toggleChat = () => {
@@ -526,6 +834,21 @@
     async function sendMessage() {
       const message = inputField.value.trim();
       if (!message) return;
+
+      // Check if lead capture is required and not yet submitted
+      if (leadCaptureConfig && !leadCaptureSubmitted) {
+        // Check message count trigger
+        if (
+          leadCaptureConfig.trigger === 'messageCount' &&
+          leadCaptureConfig.triggerValue > 0
+        ) {
+          messageCount++;
+          if (messageCount >= leadCaptureConfig.triggerValue) {
+            showLeadCaptureModal();
+            return;
+          }
+        }
+      }
 
       // Add user message
       addMessage(message, 'user');
@@ -633,5 +956,9 @@
         sendMessage();
       }
     });
+    leadCaptureForm.addEventListener('submit', handleLeadCaptureSubmit);
+
+    // Load agent configuration
+    loadAgentConfig();
   }
 })();

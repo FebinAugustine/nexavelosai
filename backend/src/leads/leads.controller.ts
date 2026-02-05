@@ -10,14 +10,49 @@ import {
   UseGuards,
   Request,
   Response,
+  Injectable,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { LeadsService } from './leads.service';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Agent, AgentDocument } from '../agents/agents.schema';
 
 @Controller('leads')
-@UseGuards(JwtAuthGuard)
 export class LeadsController {
-  constructor(private readonly leadsService: LeadsService) {}
+  constructor(
+    private readonly leadsService: LeadsService,
+    @InjectModel(Agent.name) private agentModel: Model<AgentDocument>,
+  ) {}
+
+  @Post()
+  @UseGuards(OptionalJwtAuthGuard)
+  async create(@Body() body: any, @Request() req) {
+    // If user is authenticated, use their userId
+    let userId = req.user?._id?.toString();
+
+    // If no user is authenticated, get userId from agentId
+    if (!userId && body.agentId) {
+      const agent = await this.agentModel.findById(body.agentId).exec();
+      if (agent) {
+        userId = agent.userId.toString();
+      } else {
+        throw new Error('Agent not found');
+      }
+    }
+
+    if (!userId) {
+      throw new Error('User not authenticated and no agentId provided');
+    }
+
+    const leadData = {
+      ...body,
+      userId,
+    };
+
+    return this.leadsService.createLead(leadData);
+  }
 
   @Get()
   async findAll(@Request() req, @Query() query: any) {

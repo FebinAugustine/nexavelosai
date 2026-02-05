@@ -32,7 +32,15 @@ export class Agent {
   @Prop({ default: 0 })
   totalInteractions: number;
 
-  @Prop({ type: Object, default: { enabled: false } })
+  @Prop({
+    type: Object,
+    default: {
+      enabled: false,
+      trigger: 'manual',
+      triggerValue: 0,
+      formFields: [],
+    },
+  })
   leadCapture: {
     enabled: boolean;
     trigger: 'manual' | 'time' | 'messageCount';
