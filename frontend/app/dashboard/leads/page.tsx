@@ -19,6 +19,15 @@ interface Lead {
   createdAt: string;
 }
 
+interface ChatSession {
+  _id: string;
+  status: string;
+  createdAt: string;
+  visitorId: string;
+  ipAddress: string;
+  userAgent: string;
+}
+
 interface LeadStats {
   new: number;
   contacted: number;
@@ -34,6 +43,10 @@ export default function LeadsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
   // Fetch leads
   const {
@@ -135,8 +148,31 @@ export default function LeadsPage() {
     }
   };
 
-  const handleView = (leadId: string) => {
-    router.push(`/dashboard/leads/${leadId}`);
+  const fetchChatSessions = async (leadId: string) => {
+    try {
+      setIsLoadingSessions(true);
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `http://localhost:5000/leads/${leadId}/sessions`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      setChatSessions(response.data);
+    } catch (error: any) {
+      console.error("Error fetching chat sessions:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to fetch chat sessions",
+      );
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  };
+
+  const handleView = async (lead: Lead) => {
+    setSelectedLead(lead);
+    await fetchChatSessions(lead._id);
+    setViewModalOpen(true);
   };
 
   // Error handling
@@ -367,7 +403,7 @@ export default function LeadsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button
-                        onClick={() => handleView(lead._id)}
+                        onClick={() => handleView(lead)}
                         className="text-blue-600 hover:text-blue-900"
                       >
                         View
@@ -414,6 +450,251 @@ export default function LeadsPage() {
           </div>
         )}
       </div>
+
+      {/* View Lead Modal */}
+      {viewModalOpen && selectedLead && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-200/50">
+            <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">
+                      Lead Details
+                    </h3>
+                    <p className="text-indigo-100 text-sm">
+                      {selectedLead.name}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setViewModalOpen(false)}
+                  className="text-white/80 hover:text-white transition-colors duration-200 p-1 hover:bg-white/10 rounded-full"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+              {/* Lead Information */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-gray-200/50">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg
+                      className="w-5 h-5 mr-2 text-indigo-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    Lead Information
+                  </h2>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Name
+                      </label>
+                      <p className="text-gray-900">
+                        {selectedLead.name || "N/A"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email
+                      </label>
+                      <p className="text-gray-900">{selectedLead.email}</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone
+                      </label>
+                      <p className="text-gray-900">
+                        {selectedLead.phone || "N/A"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Company
+                      </label>
+                      <p className="text-gray-900">
+                        {selectedLead.company || "N/A"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Website
+                      </label>
+                      <p className="text-gray-900">
+                        {selectedLead.website ? (
+                          <a
+                            href={selectedLead.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            {selectedLead.website}
+                          </a>
+                        ) : (
+                          "N/A"
+                        )}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Status
+                      </label>
+                      <span
+                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          selectedLead.status === "new"
+                            ? "bg-blue-100 text-blue-800"
+                            : selectedLead.status === "contacted"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : selectedLead.status === "qualified"
+                                ? "bg-purple-100 text-purple-800"
+                                : selectedLead.status === "converted"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {selectedLead.status}
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Notes
+                      </label>
+                      <p className="text-gray-900">
+                        {selectedLead.notes || "N/A"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Created At
+                      </label>
+                      <p className="text-gray-900">
+                        {new Date(selectedLead.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chat Sessions */}
+              <div className="lg:col-span-1">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-gray-200/50">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg
+                      className="w-5 h-5 mr-2 text-indigo-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                      />
+                    </svg>
+                    Chat Sessions
+                  </h2>
+
+                  {isLoadingSessions ? (
+                    <div className="text-center py-4 text-gray-500">
+                      Loading chat sessions...
+                    </div>
+                  ) : chatSessions?.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">
+                      No chat sessions found
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {chatSessions?.map((session) => (
+                        <div
+                          key={session._id}
+                          className="border border-gray-200 rounded-xl p-3 bg-white/50"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <span
+                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                session.status === "active"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {session.status}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {new Date(session.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {session.visitorId && (
+                            <div className="text-sm text-gray-600 mb-1">
+                              Visitor: {session.visitorId}
+                            </div>
+                          )}
+                          {session.ipAddress && (
+                            <div className="text-sm text-gray-600 mb-1">
+                              IP: {session.ipAddress}
+                            </div>
+                          )}
+                          {session.userAgent && (
+                            <div className="text-sm text-gray-600">
+                              Browser: {session.userAgent}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
