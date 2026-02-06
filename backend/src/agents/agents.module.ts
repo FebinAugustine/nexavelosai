@@ -13,6 +13,7 @@ import { ThrottlerModule, ThrottlerStorage } from '@nestjs/throttler';
 import { Reflector } from '@nestjs/core';
 import { User, UserSchema } from '../users/users.schema';
 import { LeadsModule } from '../leads/leads.module';
+import { TeamsModule } from '../teams/teams.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { LeadsModule } from '../leads/leads.module';
     EventsModule,
     AgentQueueModule,
     LeadsModule,
+    TeamsModule,
   ],
   providers: [AgentsService, PlanBasedThrottlerGuard],
   controllers: [AgentsController],

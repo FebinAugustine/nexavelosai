@@ -15,6 +15,7 @@ import { EventsGateway } from '../events/events.gateway';
 import { CreateAgentDto } from './dto/create-agent.dto';
 import { AgentQueueService } from '../agent-queue/agent-queue.service';
 import { LeadsService } from '../leads/leads.service';
+import { TeamsService } from '../teams/teams.service';
 
 @Injectable()
 export class AgentsService {
@@ -27,6 +28,7 @@ export class AgentsService {
     private eventsGateway: EventsGateway,
     private agentQueueService: AgentQueueService, // Inject AgentQueueService
     private leadsService: LeadsService, // Inject LeadsService
+    private teamsService: TeamsService, // Inject TeamsService
   ) {}
 
   async create(
@@ -94,15 +96,63 @@ export class AgentsService {
     if (cachedAgents) {
       return cachedAgents;
     }
-    const agents = await this.agentModel.find({ userId: userId }).exec();
-    console.log('found agents for userId:', userId, agents.length);
-    await this.cacheManager.set(cacheKey, agents, 300000); // 5 minutes
-    return agents;
+
+    // Get user's own agents
+    const userAgents = await this.agentModel.find({ userId: userId }).exec();
+
+    // Get shared agents from teams
+    const userTeams = await this.teamsService.getTeamsByUser(userId);
+    const sharedAgents: any[] = [];
+
+    for (const team of userTeams) {
+      const teamSharedAgents = await this.teamsService.getSharedAgents(
+        team._id.toString(),
+        userId,
+      );
+      sharedAgents.push(...teamSharedAgents);
+    }
+
+    // Combine and remove duplicates (in case an agent is shared multiple times)
+    const allAgents = [...userAgents];
+    const seenIds = new Set(userAgents.map((agent) => agent._id.toString()));
+
+    for (const sharedAgent of sharedAgents) {
+      if (!seenIds.has(sharedAgent._id.toString())) {
+        seenIds.add(sharedAgent._id.toString());
+        allAgents.push(sharedAgent);
+      }
+    }
+
+    console.log('found agents for userId:', userId, allAgents.length);
+    await this.cacheManager.set(cacheKey, allAgents, 300000); // 5 minutes
+    return allAgents;
   }
 
   async findOne(id: string, userId: string): Promise<AgentDocument> {
-    const query = userId ? { _id: id, userId: userId } : { _id: id };
-    const agent = await this.agentModel.findOne(query).exec();
+    // Check if it's the user's own agent
+    let agent = await this.agentModel
+      .findOne({ _id: id, userId: userId })
+      .exec();
+
+    if (!agent) {
+      // Check if it's a shared agent the user has access to
+      const userTeams = await this.teamsService.getTeamsByUser(userId);
+
+      for (const team of userTeams) {
+        const teamSharedAgents = await this.teamsService.getSharedAgents(
+          team._id.toString(),
+          userId,
+        );
+        agent = teamSharedAgents.find(
+          (sharedAgent) => sharedAgent._id.toString() === id,
+        );
+
+        if (agent) {
+          break;
+        }
+      }
+    }
+
     if (!agent) {
       throw new NotFoundException('Agent not found');
     }

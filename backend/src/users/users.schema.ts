@@ -35,6 +35,9 @@ export class User {
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Agent' }], default: [] })
   agents: Types.ObjectId[];
 
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Team' }], default: [] })
+  teams: Types.ObjectId[];
+
   @Prop()
   resetPasswordToken?: string;
 
@@ -43,3 +46,6 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+// Add index for teams
+UserSchema.index({ teams: 1 });

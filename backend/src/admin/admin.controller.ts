@@ -16,6 +16,7 @@ import { CreateUserByAdminDto } from './dto/create-user-by-admin.dto';
 import { UpdateUserByAdminDto } from './dto/update-user-by-admin.dto';
 import { UserDocument } from '../users/users.schema';
 import { AgentDocument } from '../agents/agents.schema';
+import { TeamDocument } from '../teams/teams.schema';
 
 @UseGuards(JwtAuthGuard, AdminAuthGuard)
 @Controller('admin')
@@ -34,7 +35,9 @@ export class AdminController {
   }
 
   @Post('users')
-  async createUser(@Body(ValidationPipe) createUserByAdminDto: CreateUserByAdminDto): Promise<UserDocument> {
+  async createUser(
+    @Body(ValidationPipe) createUserByAdminDto: CreateUserByAdminDto,
+  ): Promise<UserDocument> {
     return this.adminService.createUser(createUserByAdminDto);
   }
 
@@ -55,6 +58,27 @@ export class AdminController {
   @Get('agents')
   async findAllAgents(): Promise<AgentDocument[]> {
     return this.adminService.findAllAgents();
+  }
+
+  // Team Management
+  @Get('teams')
+  async findAllTeams(): Promise<TeamDocument[]> {
+    return this.adminService.findAllTeams();
+  }
+
+  @Get('teams/:id')
+  async findTeamById(@Param('id') id: string): Promise<TeamDocument> {
+    return this.adminService.findTeamById(id);
+  }
+
+  @Delete('teams/:id')
+  async deleteTeam(@Param('id') id: string): Promise<void> {
+    return this.adminService.deleteTeam(id);
+  }
+
+  @Get('users/:id/teams')
+  async findUserTeams(@Param('id') id: string): Promise<TeamDocument[]> {
+    return this.adminService.findUserTeams(id);
   }
 
   // Invoice Management

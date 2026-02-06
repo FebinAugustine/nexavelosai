@@ -109,4 +109,43 @@ export class MailService {
       throw error; // Rethrow to let the controller handle the error
     }
   }
+
+  async sendTeamInvitationEmail(
+    email: string,
+    teamName: string,
+    inviteLink: string,
+    expiresAt: Date,
+  ): Promise<void> {
+    const mailOptions = {
+      from: process.env.FROM_EMAIL,
+      to: email,
+      subject: `You're Invited to Join ${teamName} on NexaVelosAI`,
+      html: `
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+          <h1 style="color: #007bff;">You're Invited!</h1>
+          <p>You have been invited to join the <strong>${teamName}</strong> team on NexaVelosAI.</p>
+          <p>Click the link below to accept your invitation:</p>
+          <p style="text-align: center;">
+            <a href="${inviteLink}" style="display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+              Accept Invitation
+            </a>
+          </p>
+          <p>This invitation will expire on ${expiresAt.toLocaleDateString()} at ${expiresAt.toLocaleTimeString()}.</p>
+          <p>If you didn't expect this invitation, you can safely ignore this email.</p>
+          <p>Best regards,<br>The NexaVelosAI Team</p>
+        </div>
+      `,
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Team invitation email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send team invitation email to ${email}:`,
+        error.message,
+      );
+      // Do not rethrow to avoid failing the invitation process
+    }
+  }
 }

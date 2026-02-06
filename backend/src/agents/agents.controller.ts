@@ -37,6 +37,7 @@ export class AgentsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
   @Get()
   findAll(@Request() req) {
     console.log('agents findAll called, user:', req.user);

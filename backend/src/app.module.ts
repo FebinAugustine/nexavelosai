@@ -19,6 +19,7 @@ import { EventsModule } from './events/events.module';
 import { AgentQueueModule } from './agent-queue/agent-queue.module';
 import { AdminModule } from './admin/admin.module'; // Import AdminModule
 import { LeadsModule } from './leads/leads.module'; // Import Leads module
+import { TeamsModule } from './teams/teams.module'; // Import Teams module
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { LeadsModule } from './leads/leads.module'; // Import Leads module
     AgentQueueModule,
     AdminModule, // Add AdminModule here
     LeadsModule, // Add Leads module here
+    TeamsModule, // Add Teams module here
   ],
   controllers: [AppController],
   providers: [
