@@ -132,7 +132,7 @@ export class LeadsController {
   @Post('export')
   @UseGuards(JwtAuthGuard)
   async exportLeads(
-    @Body() body: { format?: 'csv' | 'json' },
+    @Body() body: { format?: 'csv' | 'json' | 'xlsx' },
     @Request() req,
     @Response() res,
   ) {
@@ -145,6 +145,15 @@ export class LeadsController {
     if (format === 'json') {
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Content-Disposition', 'attachment; filename=leads.json');
+      return res.send(data);
+    }
+
+    if (format === 'xlsx') {
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader('Content-Disposition', 'attachment; filename=leads.xlsx');
       return res.send(data);
     }
 

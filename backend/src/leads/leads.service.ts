@@ -313,8 +313,8 @@ export class LeadsService {
 
   async exportLeads(
     userId: string,
-    format: 'csv' | 'json' = 'csv',
-  ): Promise<string | object[]> {
+    format: 'csv' | 'json' | 'xlsx' = 'csv',
+  ): Promise<string | object[] | Buffer> {
     const leads = await this.leadModel
       .find({ userId: new Types.ObjectId(userId) })
       .sort({ createdAt: -1 })
@@ -322,6 +322,27 @@ export class LeadsService {
 
     if (format === 'json') {
       return leads;
+    }
+
+    if (format === 'xlsx') {
+      const XLSX = require('xlsx');
+
+      // Transform leads data for Excel
+      const excelData = leads.map((lead) => ({
+        Name: lead.name || '',
+        Email: lead.email,
+        Phone: lead.phone || '',
+        Company: lead.company || '',
+        Website: lead.website || '',
+        Status: lead.status,
+        'Created At': lead.createdAt ? lead.createdAt.toISOString() : '',
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
+
+      return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
     }
 
     // Generate CSV
