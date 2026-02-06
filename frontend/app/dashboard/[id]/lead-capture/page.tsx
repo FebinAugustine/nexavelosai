@@ -11,7 +11,7 @@ interface Agent {
   name: string;
   leadCapture: {
     enabled: boolean;
-    trigger: "manual" | "time" | "messageCount";
+    trigger: "time" | "messageCount";
     triggerValue: number;
     formFields: Array<{
       name: string;
@@ -30,7 +30,7 @@ export default function LeadCaptureSettings() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedSettings, setEditedSettings] = useState<Agent["leadCapture"]>({
     enabled: false,
-    trigger: "manual",
+    trigger: "time",
     triggerValue: 0,
     formFields: [],
   });
@@ -216,7 +216,6 @@ export default function LeadCaptureSettings() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 disabled={!editedSettings.enabled}
               >
-                <option value="manual">Manual - Show form manually</option>
                 <option value="time">Time Delay - Show after X seconds</option>
                 <option value="messageCount">
                   Message Count - Show after X messages
@@ -224,7 +223,6 @@ export default function LeadCaptureSettings() {
               </select>
             ) : (
               <p className="text-sm text-gray-600">
-                {agent?.leadCapture.trigger === "manual" && "Manual"}
                 {agent?.leadCapture.trigger === "time" && "Time Delay"}
                 {agent?.leadCapture.trigger === "messageCount" &&
                   "Message Count"}

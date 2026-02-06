@@ -36,14 +36,14 @@ export class Agent {
     type: Object,
     default: {
       enabled: false,
-      trigger: 'manual',
+      trigger: 'time',
       triggerValue: 0,
       formFields: [],
     },
   })
   leadCapture: {
     enabled: boolean;
-    trigger: 'manual' | 'time' | 'messageCount';
+    trigger: 'time' | 'messageCount';
     triggerValue: number;
     formFields: Array<{
       name: string;
