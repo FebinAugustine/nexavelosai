@@ -79,6 +79,8 @@ export default function InvitationPage() {
 
   const handleAccept = async () => {
     try {
+      console.log("Accepting invitation with token:", token);
+
       const res = await fetch(
         `http://localhost:5000/api/teams/invite/${token}/accept`,
         {
@@ -89,7 +91,9 @@ export default function InvitationPage() {
         },
       );
 
+      console.log("Response status:", res.status);
       const data = await res.json();
+      console.log("Response data:", data);
 
       if (res.ok) {
         setResponse({
@@ -107,6 +111,7 @@ export default function InvitationPage() {
         });
       }
     } catch (error) {
+      console.error("Error accepting invitation:", error);
       setResponse({
         success: false,
         message: "Failed to accept invitation",

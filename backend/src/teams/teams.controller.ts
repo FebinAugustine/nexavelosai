@@ -72,8 +72,14 @@ export class TeamsController {
   }
 
   @Post('invite/:token/accept')
-  acceptInvitation(@Param('token') token: string, @Request() req) {
-    return this.teamsService.acceptInvitation(token, req.user._id.toString());
+  async acceptInvitation(@Param('token') token: string, @Request() req) {
+    try {
+      await this.teamsService.acceptInvitation(token, req.user._id.toString());
+      return { message: 'Invitation accepted successfully' };
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      throw error;
+    }
   }
 
   @Post('invite/:token/reject')

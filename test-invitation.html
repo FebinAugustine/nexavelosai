@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Invitation Flow</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .results {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      .error {
+        color: red;
+        background-color: #ffe6e6;
+        padding: 10px;
+        border-radius: 4px;
+      }
+      .success {
+        color: green;
+        background-color: #e6ffe6;
+        padding: 10px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Test Invitation Flow</h1>
+
+      <div class="form-group">
+        <label for="token">Invitation Token:</label>
+        <input type="text" id="token" placeholder="Enter invitation token" />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" placeholder="test@example.com" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password:</label>
+        <input type="password" id="password" placeholder="password" />
+      </div>
+
+      <button onclick="login()">Login</button>
+      <button onclick="getInvitation()">Get Invitation</button>
+      <button onclick="acceptInvitation()">Accept Invitation</button>
+      <button onclick="clearToken()">Clear Token</button>
+
+      <div class="results">
+        <h2>Results:</h2>
+        <pre id="results"></pre>
+      </div>
+    </div>
+
+    <script>
+      let token = null;
+
+      function log(message, type = "info") {
+        const resultsDiv = document.getElementById("results");
+        const timestamp = new Date().toISOString();
+        const color =
+          type === "error" ? "red" : type === "success" ? "green" : "blue";
+        resultsDiv.innerHTML += `<span style="color: ${color}">[${timestamp}]</span> ${message}\n\n`;
+        resultsDiv.scrollTop = resultsDiv.scrollHeight;
+      }
+
+      async function login() {
+        log("Logging in...");
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          const response = await fetch("http://localhost:5000/auth/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `Login failed: ${response.status} ${response.statusText}`,
+            );
+          }
+
+          const data = await response.json();
+          token = data.access_token;
+          log("Login successful. Token stored.", "success");
+        } catch (error) {
+          log(`Error: ${error.message}`, "error");
+        }
+      }
+
+      async function getInvitation() {
+        const invitationToken = document.getElementById("token").value;
+
+        if (!invitationToken) {
+          log("Please enter an invitation token", "error");
+          return;
+        }
+
+        log("Getting invitation details...");
+
+        try {
+          const headers = {};
+          if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+          }
+
+          const response = await fetch(
+            `http://localhost:5000/api/teams/invite/${invitationToken}`,
+            {
+              method: "GET",
+              headers,
+            },
+          );
+
+          if (!response.ok) {
+            throw new Error(
+              `Failed to get invitation: ${response.status} ${response.statusText}`,
+            );
+          }
+
+          const data = await response.json();
+          log(
+            "Invitation details:\n" + JSON.stringify(data, null, 2),
+            "success",
+          );
+        } catch (error) {
+          log(`Error: ${error.message}`, "error");
+        }
+      }
+
+      async function acceptInvitation() {
+        const invitationToken = document.getElementById("token").value;
+
+        if (!invitationToken) {
+          log("Please enter an invitation token", "error");
+          return;
+        }
+
+        if (!token) {
+          log("Please login first", "error");
+          return;
+        }
+
+        log("Accepting invitation...");
+
+        try {
+          const response = await fetch(
+            `http://localhost:5000/api/teams/invite/${invitationToken}/accept`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          );
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.message ||
+                `Acceptance failed: ${response.status} ${response.statusText}`,
+            );
+          }
+
+          log("Invitation accepted successfully!", "success");
+          log("Response:\n" + JSON.stringify(data, null, 2));
+        } catch (error) {
+          log(`Error: ${error.message}`, "error");
+        }
+      }
+
+      function clearToken() {
+        token = null;
+        log("Token cleared", "success");
+      }
+    </script>
+  </body>
+</html>

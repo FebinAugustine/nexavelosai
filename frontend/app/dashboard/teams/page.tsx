@@ -328,17 +328,83 @@ export default function TeamsPage() {
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      onClick={() =>
-                        (window.location.href = `/dashboard/teams/invite/${invitation.token}`)
-                      }
+                      onClick={async () => {
+                        console.log(
+                          "Accepting invitation with token:",
+                          invitation.token,
+                        );
+                        try {
+                          const response = await fetch(
+                            `http://localhost:5000/api/teams/invite/${invitation.token}/accept`,
+                            {
+                              method: "POST",
+                              headers: {
+                                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                              },
+                            },
+                          );
+
+                          console.log("Response status:", response.status);
+                          const data = await response.json();
+                          console.log("Response data:", data);
+
+                          if (response.ok) {
+                            // Refresh invitations list
+                            fetchPendingInvitations();
+                            // Refresh teams list
+                            fetchTeams();
+                          } else {
+                            console.error(
+                              "Error accepting invitation:",
+                              data.message,
+                            );
+                            alert(`Error: ${data.message}`);
+                          }
+                        } catch (error) {
+                          console.error("Error accepting invitation:", error);
+                          alert("Error accepting invitation");
+                        }
+                      }}
                       className="flex-1 bg-green-600 hover:bg-green-700"
                     >
                       Accept
                     </Button>
                     <Button
-                      onClick={() =>
-                        (window.location.href = `/dashboard/teams/invite/${invitation.token}`)
-                      }
+                      onClick={async () => {
+                        console.log(
+                          "Rejecting invitation with token:",
+                          invitation.token,
+                        );
+                        try {
+                          const response = await fetch(
+                            `http://localhost:5000/api/teams/invite/${invitation.token}/reject`,
+                            {
+                              method: "POST",
+                              headers: {
+                                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                              },
+                            },
+                          );
+
+                          console.log("Response status:", response.status);
+                          const data = await response.json();
+                          console.log("Response data:", data);
+
+                          if (response.ok) {
+                            // Refresh invitations list
+                            fetchPendingInvitations();
+                          } else {
+                            console.error(
+                              "Error rejecting invitation:",
+                              data.message,
+                            );
+                            alert(`Error: ${data.message}`);
+                          }
+                        } catch (error) {
+                          console.error("Error rejecting invitation:", error);
+                          alert("Error rejecting invitation");
+                        }
+                      }}
                       className="flex-1 bg-red-600 hover:bg-red-700"
                     >
                       Reject

@@ -252,13 +252,22 @@ export class TeamsService {
   }
 
   async acceptInvitation(token: string, userId: string): Promise<void> {
-    const invitation = await this.invitationModel.findOne({
-      token,
-      status: InvitationStatus.PENDING,
-      expiresAt: { $gt: new Date() },
-    });
+    console.log('=== Accept Invitation Start ===');
+    console.log('Token:', token);
+    console.log('User ID:', userId);
+
+    const invitation = await this.invitationModel
+      .findOne({
+        token,
+        status: InvitationStatus.PENDING,
+        expiresAt: { $gt: new Date() },
+      })
+      .populate('teamId');
+
+    console.log('Found Invitation:', JSON.stringify(invitation, null, 2));
 
     if (!invitation) {
+      console.log('Invalid or expired invitation');
       throw new BadRequestException('Invalid or expired invitation');
     }
 
@@ -272,6 +281,7 @@ export class TeamsService {
     });
 
     if (existingMember) {
+      console.log('User is already a member of this team');
       throw new BadRequestException('User is already a member of this team');
     }
 
@@ -292,14 +302,23 @@ export class TeamsService {
     });
 
     // Update invitation status
-    await this.invitationModel.findByIdAndUpdate(invitation._id, {
-      status: InvitationStatus.ACCEPTED,
-    });
+    const updateResult = await this.invitationModel.findByIdAndUpdate(
+      invitation._id,
+      { status: InvitationStatus.ACCEPTED },
+      { new: true },
+    );
+
+    console.log('Invitation status updated to accepted:', updateResult);
 
     // Add user to team's members array
     await this.teamModel.findByIdAndUpdate(invitation.teamId, {
       $push: { members: userIdObj },
     });
+
+    console.log('=== Accept Invitation Success ===');
+    console.log('Team added to user teams:', userId);
+    console.log('User added to team members:', invitation.teamId._id);
+    console.log('Invitation status updated to accepted');
   }
 
   async rejectInvitation(token: string, userId: string): Promise<void> {
