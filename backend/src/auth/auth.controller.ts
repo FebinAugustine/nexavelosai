@@ -21,7 +21,7 @@ import { ResetDto } from './dto/reset.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 
-@Controller('auth')
+@Controller('/auth')
 @UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -73,15 +73,25 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('change-password')
-  async changePassword(@Body(ValidationPipe) changePasswordDto: ChangePasswordDto, @Request() req) {
+  async changePassword(
+    @Body(ValidationPipe) changePasswordDto: ChangePasswordDto,
+    @Request() req,
+  ) {
     console.log('changePassword called, user:', req.user);
-    await this.authService.changePassword(req.user._id.toString(), changePasswordDto.currentPassword, changePasswordDto.newPassword);
+    await this.authService.changePassword(
+      req.user._id.toString(),
+      changePasswordDto.currentPassword,
+      changePasswordDto.newPassword,
+    );
     return { message: 'Password changed successfully.' };
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('account')
-  async deleteAccount(@Body(ValidationPipe) deleteAccountDto: DeleteAccountDto, @Request() req) {
+  async deleteAccount(
+    @Body(ValidationPipe) deleteAccountDto: DeleteAccountDto,
+    @Request() req,
+  ) {
     await this.authService.deleteAccount(req.user.sub);
     return { message: 'Account deleted successfully.' };
   }

@@ -7,11 +7,24 @@ import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/Alert";
 
+interface Team {
+  _id: string;
+  name: string;
+  description?: string;
+  ownerId: string;
+  members: string[];
+  sharedAgents: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface Invitation {
-  id: string;
+  _id: string;
   email: string;
   role: "owner" | "admin" | "editor" | "viewer";
   createdAt: string;
+  teamId: Team;
+  invitedBy: any;
 }
 
 export default function InvitationPage() {
@@ -34,22 +47,47 @@ export default function InvitationPage() {
       return;
     }
 
-    // We could fetch invitation details here if we had an endpoint
-    // For now, we'll just use the token to simulate the invitation
-    setInvitation({
-      id: token.slice(0, 8),
-      email: user.email,
-      role: "editor",
-      createdAt: new Date().toISOString(),
-    });
-    setLoading(false);
+    // Fetch invitation details from backend
+    const fetchInvitation = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/api/teams/invite/${token}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          },
+        );
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch invitation");
+        }
+
+        const data = await res.json();
+        setInvitation(data);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch invitation",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInvitation();
   }, [user, router, token]);
 
   const handleAccept = async () => {
     try {
-      const res = await fetch(`/api/teams/invite/${token}/accept`, {
-        method: "POST",
-      });
+      const res = await fetch(
+        `http://localhost:5000/api/teams/invite/${token}/accept`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        },
+      );
 
       const data = await res.json();
 
@@ -78,9 +116,15 @@ export default function InvitationPage() {
 
   const handleReject = async () => {
     try {
-      const res = await fetch(`/api/teams/invite/${token}/reject`, {
-        method: "POST",
-      });
+      const res = await fetch(
+        `http://localhost:5000/api/teams/invite/${token}/reject`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        },
+      );
 
       const data = await res.json();
 
@@ -156,6 +200,20 @@ export default function InvitationPage() {
           <div className="bg-gray-50 rounded-lg p-6">
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Team Name
+              </label>
+              <p className="text-gray-900">{invitation?.teamId?.name}</p>
+            </div>
+            {invitation?.teamId?.description && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Team Description
+                </label>
+                <p className="text-gray-900">{invitation.teamId.description}</p>
+              </div>
+            )}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Invited Email
               </label>
               <p className="text-gray-900">{invitation?.email}</p>
@@ -168,9 +226,9 @@ export default function InvitationPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Invitation Token
+                Invited By
               </label>
-              <p className="text-gray-900 font-mono text-sm">{token}</p>
+              <p className="text-gray-900">{invitation?.invitedBy?.email}</p>
             </div>
           </div>
         </div>

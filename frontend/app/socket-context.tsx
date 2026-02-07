@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import toast from "react-hot-toast";
 
 const SocketContext = createContext<Socket | null>(null);
 
@@ -27,7 +28,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         auth: {
           token: `${token}`,
         },
-      }
+      },
     );
 
     setSocket(socketInstance);
@@ -42,6 +43,18 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
     socketInstance.on("error", (error) => {
       console.error("Socket error:", error);
+    });
+
+    // Handle new invitation notifications
+    socketInstance.on("newInvitation", (data: any) => {
+      console.log("New invitation received:", data);
+      toast.success(
+        `You have been invited to join the team "${data.teamName}"!`,
+        {
+          duration: 5000,
+          icon: "👥",
+        },
+      );
     });
 
     return () => {

@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { UserDocument } from '../users/users.schema';
 
@@ -11,7 +17,9 @@ export class AdminAuthGuard implements CanActivate {
     const user: UserDocument = request.user;
 
     if (!user) {
-      throw new UnauthorizedException('Authentication required for this route.');
+      throw new UnauthorizedException(
+        'Authentication required for this route.',
+      );
     }
 
     if (user.role !== 'admin') {

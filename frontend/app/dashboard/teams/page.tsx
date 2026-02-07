@@ -24,9 +24,23 @@ interface Team {
   updatedAt: string;
 }
 
+interface Invitation {
+  _id: string;
+  email: string;
+  role: "owner" | "admin" | "editor" | "viewer";
+  createdAt: string;
+  teamId: Team;
+  invitedBy: any;
+  expiresAt: string;
+  token: string;
+}
+
 export default function TeamsPage() {
   const { user } = useAuth();
   const [teams, setTeams] = useState<Team[]>([]);
+  const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>(
+    [],
+  );
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
@@ -35,12 +49,35 @@ export default function TeamsPage() {
 
   useEffect(() => {
     fetchTeams();
+    fetchPendingInvitations();
   }, []);
+
+  const fetchPendingInvitations = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/teams/invitations/pending",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch pending invitations");
+      }
+
+      const data = await response.json();
+      setPendingInvitations(data);
+    } catch (err) {
+      console.error("Error fetching pending invitations:", err);
+    }
+  };
 
   const fetchTeams = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/teams", {
+      const response = await fetch("http://localhost:5000/api/teams", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -62,7 +99,7 @@ export default function TeamsPage() {
 
   const handleCreateTeam = async (name: string, description?: string) => {
     try {
-      const response = await fetch("/api/teams", {
+      const response = await fetch("http://localhost:5000/api/teams", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -91,7 +128,7 @@ export default function TeamsPage() {
 
   const handleUpdateTeam = async (id: string, data: Partial<Team>) => {
     try {
-      const response = await fetch(`/api/teams/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/teams/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -114,7 +151,7 @@ export default function TeamsPage() {
 
   const handleDeleteTeam = async (id: string) => {
     try {
-      const response = await fetch(`/api/teams/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/teams/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -136,14 +173,17 @@ export default function TeamsPage() {
 
   const handleShareAgent = async (teamId: string, agentId: string) => {
     try {
-      const response = await fetch(`/api/teams/${teamId}/share`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+      const response = await fetch(
+        `http://localhost:5000/api/teams/${teamId}/share`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ agentId }),
         },
-        body: JSON.stringify({ agentId }),
-      });
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -159,12 +199,15 @@ export default function TeamsPage() {
 
   const handleUnshareAgent = async (teamId: string, agentId: string) => {
     try {
-      const response = await fetch(`/api/teams/${teamId}/share/${agentId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+      const response = await fetch(
+        `http://localhost:5000/api/teams/${teamId}/share/${agentId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         },
-      });
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -240,6 +283,69 @@ export default function TeamsPage() {
               <div className="ml-3">
                 <p className="text-sm text-red-700">{error}</p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Pending Invitations */}
+        {pendingInvitations.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Pending Invitations</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pendingInvitations.map((invitation: Invitation) => (
+                <div
+                  key={invitation._id}
+                  className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {invitation.teamId?.name}
+                    </h3>
+                    <span className="px-3 py-1 text-sm bg-yellow-100 text-yellow-800 rounded-full">
+                      Pending
+                    </span>
+                  </div>
+                  {invitation.teamId?.description && (
+                    <p className="text-gray-600 mb-4">
+                      {invitation.teamId.description}
+                    </p>
+                  )}
+                  <div className="space-y-2 text-sm text-gray-500 mb-4">
+                    <div className="flex items-center">
+                      <span className="font-medium mr-2">Role:</span>
+                      <span className="capitalize">{invitation.role}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="font-medium mr-2">Invited by:</span>
+                      <span>{invitation.invitedBy?.email}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="font-medium mr-2">Expires:</span>
+                      <span>
+                        {new Date(invitation.expiresAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() =>
+                        (window.location.href = `/dashboard/teams/invite/${invitation.token}`)
+                      }
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      onClick={() =>
+                        (window.location.href = `/dashboard/teams/invite/${invitation.token}`)
+                      }
+                      className="flex-1 bg-red-600 hover:bg-red-700"
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

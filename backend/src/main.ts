@@ -44,9 +44,13 @@ async function bootstrap() {
 
   app.enableCors({
     origin: true, // Allow all origins for widget embedding
+
     credentials: true,
-    allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization', // Explicitly allow these headers
+
+    allowedHeaders:
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization', // Explicitly allow these headers
   });
+
   await app.listen(process.env.PORT || 5000);
 }
 bootstrap();

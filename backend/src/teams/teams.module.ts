@@ -7,6 +7,7 @@ import { TeamMember, TeamMemberSchema } from './team-members.schema';
 import { Invitation, InvitationSchema } from './invitations.schema';
 import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
+import { EventsModule } from '../events/events.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { MailModule } from '../mail/mail.module';
     ]),
     UsersModule,
     MailModule,
+    EventsModule,
   ],
   controllers: [TeamsController],
   providers: [TeamsService],

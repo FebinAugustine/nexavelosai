@@ -12,8 +12,9 @@ import {
 import { TeamsService } from './teams.service';
 import { TeamRole } from './team-members.schema';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Public } from '../auth/public.decorator';
 
-@Controller('teams')
+@Controller('api/teams')
 @UseGuards(JwtAuthGuard)
 export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
@@ -81,11 +82,16 @@ export class TeamsController {
   }
 
   @Delete(':teamId/members/:memberId')
-  removeMember(
+  async removeMember(
     @Param('teamId') teamId: string,
     @Param('memberId') memberId: string,
     @Request() req,
   ) {
+    console.log('removeMember called with:');
+    console.log('  teamId:', teamId);
+    console.log('  memberId:', memberId);
+    console.log('  adminId:', req.user?._id?.toString());
+
     return this.teamsService.removeMember(
       teamId,
       req.user._id.toString(),
@@ -94,12 +100,18 @@ export class TeamsController {
   }
 
   @Patch(':teamId/members/:memberId/role')
-  updateMemberRole(
+  async updateMemberRole(
     @Param('teamId') teamId: string,
     @Param('memberId') memberId: string,
     @Request() req,
     @Body() body: { role: string },
   ) {
+    console.log('updateMemberRole called with:');
+    console.log('  teamId:', teamId);
+    console.log('  memberId:', memberId);
+    console.log('  adminId:', req.user?._id?.toString());
+    console.log('  body:', body);
+
     return this.teamsService.updateMemberRole(
       teamId,
       req.user._id.toString(),
@@ -138,5 +150,21 @@ export class TeamsController {
   @Get(':id/shared-agents')
   getSharedAgents(@Param('id') teamId: string, @Request() req) {
     return this.teamsService.getSharedAgents(teamId, req.user._id.toString());
+  }
+
+  @Get(':id/members')
+  getTeamMembers(@Param('id') teamId: string, @Request() req) {
+    return this.teamsService.getTeamMembers(teamId, req.user._id.toString());
+  }
+
+  @Get('invitations/pending')
+  getPendingInvitations(@Request() req) {
+    return this.teamsService.getPendingInvitations(req.user._id.toString());
+  }
+
+  @Get('invite/:token')
+  @Public()
+  getInvitationByToken(@Param('token') token: string) {
+    return this.teamsService.getInvitationByToken(token);
   }
 }

@@ -1,4 +1,8 @@
-import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from './public.decorator';
@@ -34,6 +38,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     console.log('JwtAuthGuard handleRequest: err', err);
     console.log('JwtAuthGuard handleRequest: user', user);
     console.log('JwtAuthGuard handleRequest: info', info);
+    console.log('JwtAuthGuard handleRequest: context', context);
 
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),

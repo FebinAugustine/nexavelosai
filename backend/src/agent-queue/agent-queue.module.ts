@@ -12,7 +12,8 @@ import { AgentsModule } from '../agents/agents.module';
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        const redisHost = configService.get<string>('REDIS_HOST') || 'localhost';
+        const redisHost =
+          configService.get<string>('REDIS_HOST') || 'localhost';
         const redisPort = configService.get<number>('REDIS_PORT') || 6379;
         const logger = new Logger('BullModule'); // Create a logger instance
 

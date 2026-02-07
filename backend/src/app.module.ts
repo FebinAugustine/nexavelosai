@@ -23,9 +23,6 @@ import { TeamsModule } from './teams/teams.module'; // Import Teams module
 
 @Module({
   imports: [
-    ServeStaticModule.forRoot({
-      rootPath: path.join(__dirname, '..', 'public'),
-    }),
     ConfigModule.forRoot({ envFilePath: path.resolve(__dirname, '../.env') }),
     MongooseModule.forRoot(
       process.env.MONGODB_URI || 'mongodb://localhost:27017/nexavelosai',
@@ -50,6 +47,13 @@ import { TeamsModule } from './teams/teams.module'; // Import Teams module
     AdminModule, // Add AdminModule here
     LeadsModule, // Add Leads module here
     TeamsModule, // Add Teams module here
+    ServeStaticModule.forRoot({
+      rootPath: path.join(__dirname, '..', 'public'),
+      serveRoot: '/public', // Serve static files from /public path only
+      serveStaticOptions: {
+        index: false, // Disable serving index.html for root path
+      },
+    }),
   ],
   controllers: [AppController],
   providers: [

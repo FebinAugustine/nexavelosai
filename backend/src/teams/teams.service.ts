@@ -20,6 +20,7 @@ import {
 } from './invitations.schema';
 import { User, UserDocument } from '../users/users.schema';
 import { MailService } from '../mail/mail.service';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class TeamsService {
@@ -31,6 +32,7 @@ export class TeamsService {
     private invitationModel: Model<InvitationDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private mailService: MailService,
+    private eventsGateway: EventsGateway,
   ) {}
 
   // Team management operations
@@ -166,8 +168,8 @@ export class TeamsService {
 
     // Check if inviter has permission to invite
     const inviter = await this.teamMemberModel.findOne({
-      userId: inviterId,
-      teamId,
+      userId: new Types.ObjectId(inviterId),
+      teamId: new Types.ObjectId(teamId),
       role: { $in: [TeamRole.OWNER, TeamRole.ADMIN] },
     });
 
@@ -181,7 +183,7 @@ export class TeamsService {
     const existingUser = await this.userModel.findOne({ email }).select('_id');
     if (existingUser) {
       const existingMember = await this.teamMemberModel.findOne({
-        teamId,
+        teamId: new Types.ObjectId(teamId),
         userId: existingUser._id,
       });
 
@@ -192,7 +194,7 @@ export class TeamsService {
 
     // Check if there's already a pending invitation for this email
     const existingInvitation = await this.invitationModel.findOne({
-      teamId,
+      teamId: new Types.ObjectId(teamId),
       email,
       status: InvitationStatus.PENDING,
     });
@@ -208,10 +210,10 @@ export class TeamsService {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
     const invitation = new this.invitationModel({
-      teamId,
+      teamId: new Types.ObjectId(teamId),
       email,
       role,
-      invitedBy: inviterId,
+      invitedBy: new Types.ObjectId(inviterId),
       invitedAt: new Date(),
       token,
       status: InvitationStatus.PENDING,
@@ -229,6 +231,23 @@ export class TeamsService {
       expiresAt,
     );
 
+    // Send real-time notification if user exists
+    if (existingUser) {
+      this.eventsGateway.sendToUser(
+        existingUser._id.toString(),
+        'newInvitation',
+        {
+          teamId: team._id.toString(),
+          teamName: team.name,
+          invitationId: savedInvitation._id.toString(),
+          role: role,
+          invitedBy: inviterId,
+          token: token,
+          expiresAt: expiresAt,
+        },
+      );
+    }
+
     return savedInvitation;
   }
 
@@ -243,9 +262,12 @@ export class TeamsService {
       throw new BadRequestException('Invalid or expired invitation');
     }
 
+    // Convert to ObjectId
+    const userIdObj = new Types.ObjectId(userId);
+
     // Check if user is already a member
     const existingMember = await this.teamMemberModel.findOne({
-      userId,
+      userId: userIdObj,
       teamId: invitation.teamId,
     });
 
@@ -253,10 +275,10 @@ export class TeamsService {
       throw new BadRequestException('User is already a member of this team');
     }
 
-    // Add user as team member
+    // Add user as team member - ensure userId is stored as ObjectId
     await this.teamMemberModel.create({
-      userId,
-      teamId: invitation.teamId,
+      userId: userIdObj,
+      teamId: new Types.ObjectId(invitation.teamId),
       role: invitation.role,
       isActive: true,
       invitedBy: invitation.invitedBy,
@@ -265,7 +287,7 @@ export class TeamsService {
     });
 
     // Add team to user's teams array
-    await this.userModel.findByIdAndUpdate(userId, {
+    await this.userModel.findByIdAndUpdate(userIdObj, {
       $push: { teams: invitation.teamId },
     });
 
@@ -276,7 +298,7 @@ export class TeamsService {
 
     // Add user to team's members array
     await this.teamModel.findByIdAndUpdate(invitation.teamId, {
-      $push: { members: userId },
+      $push: { members: userIdObj },
     });
   }
 
@@ -302,12 +324,33 @@ export class TeamsService {
     adminId: string,
     memberId: string,
   ): Promise<void> {
+    console.log('removeMember service called with:');
+    console.log('  teamId:', teamId);
+    console.log('  adminId:', adminId);
+    console.log('  memberId:', memberId);
+
+    // Validate ObjectIds
+    if (!Types.ObjectId.isValid(teamId)) {
+      console.error('Invalid teamId');
+      throw new BadRequestException('Invalid teamId');
+    }
+    if (!Types.ObjectId.isValid(adminId)) {
+      console.error('Invalid adminId');
+      throw new BadRequestException('Invalid adminId');
+    }
+    if (!Types.ObjectId.isValid(memberId)) {
+      console.error('Invalid memberId');
+      throw new BadRequestException('Invalid memberId');
+    }
+
     // Check if admin has permission
     const admin = await this.teamMemberModel.findOne({
-      userId: adminId,
-      teamId,
+      userId: new Types.ObjectId(adminId),
+      teamId: new Types.ObjectId(teamId),
       role: { $in: [TeamRole.OWNER, TeamRole.ADMIN] },
     });
+
+    console.log('Found admin:', admin);
 
     if (!admin) {
       throw new ForbiddenException(
@@ -315,13 +358,29 @@ export class TeamsService {
       );
     }
 
-    // Check if trying to remove owner
+    // Check if trying to remove owner - query by string and ObjectId to handle inconsistent data
     const memberToRemove = await this.teamMemberModel.findOne({
-      userId: memberId,
-      teamId,
+      $or: [
+        {
+          userId: new Types.ObjectId(memberId),
+          teamId: new Types.ObjectId(teamId),
+        },
+        {
+          userId: memberId,
+          teamId: new Types.ObjectId(teamId),
+        },
+      ],
     });
 
+    console.log('Found memberToRemove:', memberToRemove);
+
     if (!memberToRemove) {
+      // Log all members in the team for debugging
+      const allMembers = await this.teamMemberModel.find({
+        teamId: new Types.ObjectId(teamId),
+      });
+      console.log('All members in team:', allMembers);
+
       throw new NotFoundException('Member not found');
     }
 
@@ -330,16 +389,27 @@ export class TeamsService {
     }
 
     // Remove member from team
-    await this.teamMemberModel.deleteOne({ userId: memberId, teamId });
+    await this.teamMemberModel.deleteOne({
+      $or: [
+        {
+          userId: new Types.ObjectId(memberId),
+          teamId: new Types.ObjectId(teamId),
+        },
+        {
+          userId: memberId,
+          teamId: new Types.ObjectId(teamId),
+        },
+      ],
+    });
 
     // Remove team from user's teams array
     await this.userModel.findByIdAndUpdate(memberId, {
-      $pull: { teams: teamId },
+      $pull: { teams: new Types.ObjectId(teamId) },
     });
 
     // Remove user from team's members array
     await this.teamModel.findByIdAndUpdate(teamId, {
-      $pull: { members: memberId },
+      $pull: { members: new Types.ObjectId(memberId) },
     });
   }
 
@@ -349,12 +419,34 @@ export class TeamsService {
     memberId: string,
     newRole: TeamRole,
   ): Promise<TeamMemberDocument> {
+    console.log('updateMemberRole service called with:');
+    console.log('  teamId:', teamId);
+    console.log('  adminId:', adminId);
+    console.log('  memberId:', memberId);
+    console.log('  newRole:', newRole);
+
+    // Validate ObjectIds
+    if (!Types.ObjectId.isValid(teamId)) {
+      console.error('Invalid teamId');
+      throw new BadRequestException('Invalid teamId');
+    }
+    if (!Types.ObjectId.isValid(adminId)) {
+      console.error('Invalid adminId');
+      throw new BadRequestException('Invalid adminId');
+    }
+    if (!Types.ObjectId.isValid(memberId)) {
+      console.error('Invalid memberId');
+      throw new BadRequestException('Invalid memberId');
+    }
+
     // Check if admin has permission
     const admin = await this.teamMemberModel.findOne({
-      userId: adminId,
-      teamId,
+      userId: new Types.ObjectId(adminId),
+      teamId: new Types.ObjectId(teamId),
       role: { $in: [TeamRole.OWNER, TeamRole.ADMIN] },
     });
+
+    console.log('Found admin:', admin);
 
     if (!admin) {
       throw new ForbiddenException(
@@ -362,13 +454,29 @@ export class TeamsService {
       );
     }
 
-    // Check if trying to change owner's role
+    // Check if trying to change owner's role - query by string and ObjectId to handle inconsistent data
     const member = await this.teamMemberModel.findOne({
-      userId: memberId,
-      teamId,
+      $or: [
+        {
+          userId: new Types.ObjectId(memberId),
+          teamId: new Types.ObjectId(teamId),
+        },
+        {
+          userId: memberId,
+          teamId: new Types.ObjectId(teamId),
+        },
+      ],
     });
 
+    console.log('Found member:', member);
+
     if (!member) {
+      // Log all members in the team for debugging
+      const allMembers = await this.teamMemberModel.find({
+        teamId: new Types.ObjectId(teamId),
+      });
+      console.log('All members in team:', allMembers);
+
       throw new NotFoundException('Member not found');
     }
 
@@ -377,7 +485,18 @@ export class TeamsService {
     }
 
     const updatedMember = await this.teamMemberModel.findOneAndUpdate(
-      { userId: memberId, teamId },
+      {
+        $or: [
+          {
+            userId: new Types.ObjectId(memberId),
+            teamId: new Types.ObjectId(teamId),
+          },
+          {
+            userId: memberId,
+            teamId: new Types.ObjectId(teamId),
+          },
+        ],
+      },
       { role: newRole },
       { new: true },
     );
@@ -402,8 +521,8 @@ export class TeamsService {
 
     // Check if user has permission to share agents
     const teamMember = await this.teamMemberModel.findOne({
-      userId,
-      teamId,
+      userId: new Types.ObjectId(userId),
+      teamId: new Types.ObjectId(teamId),
       role: { $in: [TeamRole.OWNER, TeamRole.ADMIN] },
     });
 
@@ -415,7 +534,7 @@ export class TeamsService {
 
     // Add agent to shared agents
     await this.teamModel.findByIdAndUpdate(teamId, {
-      $addToSet: { sharedAgents: agentId },
+      $addToSet: { sharedAgents: new Types.ObjectId(agentId) },
     });
   }
 
@@ -431,8 +550,8 @@ export class TeamsService {
 
     // Check if user has permission to unshare agents
     const teamMember = await this.teamMemberModel.findOne({
-      userId,
-      teamId,
+      userId: new Types.ObjectId(userId),
+      teamId: new Types.ObjectId(teamId),
       role: { $in: [TeamRole.OWNER, TeamRole.ADMIN] },
     });
 
@@ -444,8 +563,30 @@ export class TeamsService {
 
     // Remove agent from shared agents
     await this.teamModel.findByIdAndUpdate(teamId, {
-      $pull: { sharedAgents: agentId },
+      $pull: { sharedAgents: new Types.ObjectId(agentId) },
     });
+  }
+
+  async getTeamMembers(teamId: string, userId: string): Promise<any[]> {
+    // Check if user is a member of the team
+    const teamMember = await this.teamMemberModel.findOne({
+      userId: new Types.ObjectId(userId),
+      teamId: new Types.ObjectId(teamId),
+    });
+
+    if (!teamMember) {
+      return [];
+    }
+
+    const members = await this.teamMemberModel
+      .find({
+        teamId: new Types.ObjectId(teamId),
+        isActive: true,
+      })
+      .populate('userId');
+
+    console.log('Members:', members);
+    return members;
   }
 
   async getSharedAgents(teamId: string, userId: string): Promise<any[]> {
@@ -469,6 +610,43 @@ export class TeamsService {
   }
 
   // Role-based access control
+  async getPendingInvitations(userId: string): Promise<InvitationDocument[]> {
+    // Get user's email
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Find all pending invitations for this email
+    const invitations = await this.invitationModel
+      .find({
+        email: user.email,
+        status: InvitationStatus.PENDING,
+        expiresAt: { $gt: new Date() },
+      })
+      .populate('teamId')
+      .populate('invitedBy');
+
+    return invitations;
+  }
+
+  async getInvitationByToken(token: string): Promise<InvitationDocument> {
+    const invitation = await this.invitationModel
+      .findOne({
+        token,
+        status: InvitationStatus.PENDING,
+        expiresAt: { $gt: new Date() },
+      })
+      .populate('teamId')
+      .populate('invitedBy');
+
+    if (!invitation) {
+      throw new BadRequestException('Invalid or expired invitation');
+    }
+
+    return invitation;
+  }
+
   async checkAccess(
     userId: string,
     teamId: string,
@@ -484,6 +662,6 @@ export class TeamsService {
       return false;
     }
 
-    return requiredRoles.includes(teamMember.role as TeamRole);
+    return requiredRoles.includes(teamMember.role);
   }
 }

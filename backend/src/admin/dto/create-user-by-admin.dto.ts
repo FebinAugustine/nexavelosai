@@ -1,4 +1,15 @@
-import { IsEmail, IsString, MinLength, MaxLength, IsOptional, IsEnum, IsArray, IsUrl, IsNumber, Min } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  MaxLength,
+  IsOptional,
+  IsEnum,
+  IsArray,
+  IsUrl,
+  IsNumber,
+  Min,
+} from 'class-validator';
 
 export class CreateUserByAdminDto {
   @IsEmail()
