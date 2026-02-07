@@ -98,6 +98,99 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  // Fetch user teams
+  const {
+    data: userTeams,
+    isLoading: teamsLoading,
+    error: teamsError,
+  } = useQuery({
+    queryKey: ["userTeams"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return [];
+      const response = await axios.get("http://localhost:5000/api/teams", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch pending invitations
+  const {
+    data: pendingInvitations,
+    isLoading: invitationsLoading,
+    error: invitationsError,
+    refetch: refetchInvitations,
+  } = useQuery({
+    queryKey: ["pendingInvitations"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return [];
+      const response = await axios.get(
+        "http://localhost:5000/api/teams/invitations/pending",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      return response.data;
+    },
+    enabled: !!user,
+  });
+
+  // Accept invitation mutation
+  const acceptInvitationMutation = useMutation({
+    mutationFn: async (token: string) => {
+      const tokenFromStorage = localStorage.getItem("token");
+      return axios.post(
+        `http://localhost:5000/api/teams/invite/${token}/accept`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${tokenFromStorage}` },
+        },
+      );
+    },
+    onSuccess: () => {
+      toast.success("Invitation accepted successfully!");
+      refetchInvitations();
+      // Invalidate all relevant queries to ensure fresh data is fetched
+      queryClient.invalidateQueries({ queryKey: ["user"] });
+      queryClient.invalidateQueries({ queryKey: ["userTeams"] });
+      queryClient.invalidateQueries({ queryKey: ["agents"] });
+      queryClient.invalidateQueries({ queryKey: ["pendingInvitations"] });
+    },
+    onError: (error: any) => {
+      toast.error(
+        error.response?.data?.message || "Failed to accept invitation",
+      );
+    },
+  });
+
+  // Reject invitation mutation
+  const rejectInvitationMutation = useMutation({
+    mutationFn: async (token: string) => {
+      const tokenFromStorage = localStorage.getItem("token");
+      return axios.post(
+        `http://localhost:5000/api/teams/invite/${token}/reject`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${tokenFromStorage}` },
+        },
+      );
+    },
+    onSuccess: () => {
+      toast.success("Invitation rejected successfully!");
+      refetchInvitations();
+    },
+    onError: (error: any) => {
+      toast.error(
+        error.response?.data?.message || "Failed to reject invitation",
+      );
+    },
+  });
+
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
   // Fetch analytics
   const {
     data: analytics,
@@ -201,11 +294,18 @@ export default function Dashboard() {
         },
       );
 
+      // Real-time notification for new invitations
+      socket.on("newInvitation", (data: any) => {
+        toast.success(`New team invitation: ${data.teamName}`);
+        refetchInvitations();
+      });
+
       return () => {
         socket.off(agentResultEvent);
+        socket.off("newInvitation");
       };
     }
-  }, [socket, user, setMessages, setChatLoading]); // Add dependencies as needed
+  }, [socket, user, setMessages, setChatLoading, refetchInvitations]); // Add dependencies as needed
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -2615,34 +2715,41 @@ window.nexavelWidget.open();`}</code>
                 <span>Leads</span>
               </div>
             </button>
-            <button
-              onClick={() => {
-                setActiveSection("teams");
-                setSidebarOpen(false);
-              }}
-              className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
-                activeSection === "teams"
-                  ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg"
-                  : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
-                <span>Teams</span>
-              </div>
-            </button>
+            {/* Teams section - only visible to:
+                1. Agency plan users
+                2. Users with other roles who are part of a team and have agents assigned to them
+            */}
+            {user?.plan === "agency" ||
+            ((userTeams || []).length > 0 && (agents || []).length > 0) ? (
+              <button
+                onClick={() => {
+                  setActiveSection("teams");
+                  setSidebarOpen(false);
+                }}
+                className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
+                  activeSection === "teams"
+                    ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg"
+                    : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                  <span>Teams</span>
+                </div>
+              </button>
+            ) : null}
             <button
               onClick={() => {
                 setActiveSection("analytics");
@@ -2817,6 +2924,138 @@ window.nexavelWidget.open();`}</code>
                 </button>
               </div>
               <div className="flex items-center space-x-4">
+                {/* Notification Icon */}
+                <div className="relative">
+                  <button
+                    onClick={() => setNotificationsOpen(!notificationsOpen)}
+                    className="p-2 text-gray-700 hover:text-emerald-600 hover:bg-white/60 rounded-lg transition-all duration-200 relative"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                      />
+                    </svg>
+                    {/* Notification Badge */}
+                    {pendingInvitations && pendingInvitations.length > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                        {pendingInvitations.length}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Notifications Dropdown */}
+                  {notificationsOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-[99998]"
+                        onClick={() => setNotificationsOpen(false)}
+                      ></div>
+                      <div className="absolute right-0 mt-2 w-80 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-200/50 z-[99999] max-h-96 overflow-y-auto">
+                        <div className="p-4 border-b border-gray-200/50">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            Notifications
+                          </h3>
+                          <p className="text-sm text-gray-500 mt-1">
+                            You have {pendingInvitations?.length || 0} pending
+                            invitation(s)
+                          </p>
+                        </div>
+                        <div className="p-2">
+                          {pendingInvitations &&
+                          pendingInvitations.length > 0 ? (
+                            pendingInvitations.map((invitation: any) => (
+                              <div
+                                key={invitation._id}
+                                className="bg-white/60 backdrop-blur-sm rounded-lg p-4 mb-2 border border-gray-200/50 hover:shadow-md transition-all duration-200"
+                              >
+                                <div className="flex justify-between items-start mb-3">
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-gray-900">
+                                      Team Invitation
+                                    </h4>
+                                    <p className="text-sm text-gray-600 mt-1">
+                                      You've been invited to join{" "}
+                                      <span className="font-medium text-emerald-600">
+                                        {invitation.teamId?.name}
+                                      </span>
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Role: {invitation.role}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Expires:{" "}
+                                      {new Date(
+                                        invitation.expiresAt,
+                                      ).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() =>
+                                      acceptInvitationMutation.mutate(
+                                        invitation.token,
+                                      )
+                                    }
+                                    disabled={
+                                      acceptInvitationMutation.isPending
+                                    }
+                                    className="flex-1 bg-gradient-to-r from-emerald-600 to-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {acceptInvitationMutation.isPending
+                                      ? "Accepting..."
+                                      : "Accept"}
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      rejectInvitationMutation.mutate(
+                                        invitation.token,
+                                      )
+                                    }
+                                    disabled={
+                                      rejectInvitationMutation.isPending
+                                    }
+                                    className="flex-1 bg-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {rejectInvitationMutation.isPending
+                                      ? "Rejecting..."
+                                      : "Reject"}
+                                  </button>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-8 text-gray-500">
+                              <svg
+                                className="w-12 h-12 mx-auto mb-3 text-gray-300"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                                />
+                              </svg>
+                              <p>No notifications</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
                 <span className="text-gray-700 font-medium hidden sm:block">
                   Welcome, {user?.email?.split("@")[0]}
                 </span>

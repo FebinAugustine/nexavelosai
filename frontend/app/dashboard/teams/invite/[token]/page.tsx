@@ -6,6 +6,9 @@ import { useAuth } from "@/app/hooks/useAuth";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/Alert";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 interface Team {
   _id: string;
@@ -31,9 +34,7 @@ export default function InvitationPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [invitation, setInvitation] = useState<Invitation | null>(null);
+  const queryClient = useQueryClient();
   const [response, setResponse] = useState<{
     success: boolean;
     message: string;
@@ -41,122 +42,110 @@ export default function InvitationPage() {
 
   const token = params.token as string;
 
+  // Fetch invitation details
+  const {
+    data: invitation,
+    isLoading,
+    error,
+  } = useQuery<Invitation>({
+    queryKey: ["invitation", token],
+    queryFn: async () => {
+      const res = await axios.get(
+        `http://localhost:5000/api/teams/invite/${token}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        },
+      );
+      return res.data;
+    },
+    enabled: !!user,
+  });
+
+  // Accept invitation mutation
+  const acceptInvitationMutation = useMutation({
+    mutationFn: async () => {
+      return axios.post(
+        `http://localhost:5000/api/teams/invite/${token}/accept`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
+    },
+    onSuccess: () => {
+      toast.success("Invitation accepted successfully!");
+      // Invalidate all relevant queries to ensure fresh data is fetched
+      queryClient.invalidateQueries({ queryKey: ["user"] });
+      queryClient.invalidateQueries({ queryKey: ["userTeams"] });
+      queryClient.invalidateQueries({ queryKey: ["agents"] });
+      queryClient.invalidateQueries({ queryKey: ["pendingInvitations"] });
+
+      setResponse({
+        success: true,
+        message: "Invitation accepted! You are now part of the team.",
+      });
+
+      setTimeout(() => {
+        router.push("/dashboard/teams");
+      }, 2000);
+    },
+    onError: (error: any) => {
+      setResponse({
+        success: false,
+        message: error.response?.data?.message || "Failed to accept invitation",
+      });
+    },
+  });
+
+  // Reject invitation mutation
+  const rejectInvitationMutation = useMutation({
+    mutationFn: async () => {
+      return axios.post(
+        `http://localhost:5000/api/teams/invite/${token}/reject`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
+    },
+    onSuccess: () => {
+      toast.success("Invitation rejected successfully!");
+      queryClient.invalidateQueries({ queryKey: ["pendingInvitations"] });
+
+      setResponse({
+        success: true,
+        message: "Invitation rejected.",
+      });
+
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 2000);
+    },
+    onError: (error: any) => {
+      setResponse({
+        success: false,
+        message: error.response?.data?.message || "Failed to reject invitation",
+      });
+    },
+  });
+
   useEffect(() => {
     if (!user) {
       router.push("/login");
-      return;
     }
+  }, [user, router]);
 
-    // Fetch invitation details from backend
-    const fetchInvitation = async () => {
-      try {
-        const res = await fetch(
-          `http://localhost:5000/api/teams/invite/${token}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          },
-        );
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch invitation");
-        }
-
-        const data = await res.json();
-        setInvitation(data);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch invitation",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInvitation();
-  }, [user, router, token]);
-
-  const handleAccept = async () => {
-    try {
-      console.log("Accepting invitation with token:", token);
-
-      const res = await fetch(
-        `http://localhost:5000/api/teams/invite/${token}/accept`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        },
-      );
-
-      console.log("Response status:", res.status);
-      const data = await res.json();
-      console.log("Response data:", data);
-
-      if (res.ok) {
-        setResponse({
-          success: true,
-          message: "Invitation accepted! You are now part of the team.",
-        });
-
-        setTimeout(() => {
-          router.push("/dashboard/teams");
-        }, 2000);
-      } else {
-        setResponse({
-          success: false,
-          message: data.message || "Failed to accept invitation",
-        });
-      }
-    } catch (error) {
-      console.error("Error accepting invitation:", error);
-      setResponse({
-        success: false,
-        message: "Failed to accept invitation",
-      });
-    }
+  const handleAccept = () => {
+    acceptInvitationMutation.mutate();
   };
 
-  const handleReject = async () => {
-    try {
-      const res = await fetch(
-        `http://localhost:5000/api/teams/invite/${token}/reject`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        },
-      );
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setResponse({
-          success: true,
-          message: "Invitation rejected.",
-        });
-
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 2000);
-      } else {
-        setResponse({
-          success: false,
-          message: data.message || "Failed to reject invitation",
-        });
-      }
-    } catch (error) {
-      setResponse({
-        success: false,
-        message: "Failed to reject invitation",
-      });
-    }
+  const handleReject = () => {
+    rejectInvitationMutation.mutate();
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
@@ -169,7 +158,11 @@ export default function InvitationPage() {
       <div className="max-w-md mx-auto">
         <Alert variant="destructive">
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>
+            {error instanceof Error
+              ? error.message
+              : "Failed to fetch invitation"}
+          </AlertDescription>
         </Alert>
         <Button className="mt-4" onClick={() => router.push("/dashboard")}>
           Go to Dashboard

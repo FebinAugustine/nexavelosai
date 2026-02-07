@@ -22,6 +22,7 @@ interface Team {
   sharedAgents: string[];
   createdAt: string;
   updatedAt: string;
+  userRole?: string;
 }
 
 interface Invitation {
@@ -252,16 +253,24 @@ export default function TeamsPage() {
           </p>
         </div>
 
-        {/* Create Team Button */}
-        <div className="mb-8">
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bg-indigo-600 hover:bg-indigo-700"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Create New Team
-          </Button>
-        </div>
+        {/* Create Team Button - only visible to:
+            1. Agency plan users
+            2. Team members with admin or owner role
+        */}
+        {user?.plan === "agency" ||
+        teams.some(
+          (team) => team.userRole === "admin" || team.userRole === "owner",
+        ) ? (
+          <div className="mb-8">
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Create New Team
+            </Button>
+          </div>
+        ) : null}
 
         {/* Error Message */}
         {error && (

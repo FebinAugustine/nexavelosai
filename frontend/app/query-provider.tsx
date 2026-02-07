@@ -11,6 +11,11 @@ export function QueryProvider({ children }: { children: ReactNode }) {
       defaultOptions: {
         queries: {
           staleTime: 1000 * 60 * 5, // 5 minutes
+          gcTime: 1000 * 60 * 10, // 10 minutes cache time
+          retry: 1, // Retry failed queries once
+          retryDelay: 500, // 500ms delay between retries
+          refetchOnWindowFocus: false, // Disable refetch on window focus
+          refetchOnReconnect: true, // Refetch on reconnect
         },
       },
     });

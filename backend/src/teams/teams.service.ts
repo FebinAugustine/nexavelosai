@@ -422,6 +422,16 @@ export class TeamsService {
       throw new BadRequestException('Cannot remove team owner');
     }
 
+    // Get user's email to delete corresponding invitation
+    const user = await this.userModel.findById(memberId).select('email');
+    if (user) {
+      console.log('Deleting invitation for email:', user.email);
+      await this.invitationModel.deleteMany({
+        teamId: new Types.ObjectId(teamId),
+        email: user.email,
+      });
+    }
+
     // Remove member from team
     await this.teamMemberModel.deleteOne({
       $or: [
