@@ -683,4 +683,21 @@ export class TeamsService {
 
     return requiredRoles.includes(teamMember.role);
   }
+
+  async getUserRoleInTeam(
+    userId: string,
+    teamId: string,
+  ): Promise<TeamRole | null> {
+    const teamMember = await this.teamMemberModel.findOne({
+      userId: new Types.ObjectId(userId),
+      teamId: new Types.ObjectId(teamId),
+      isActive: true,
+    });
+
+    if (!teamMember) {
+      return null;
+    }
+
+    return teamMember.role;
+  }
 }

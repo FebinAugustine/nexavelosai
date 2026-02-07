@@ -39,6 +39,8 @@ interface Agent {
   domain?: string;
   chatCount: number;
   totalInteractions: number;
+  isShared: boolean;
+  userRole: "owner" | "admin" | "editor" | "viewer";
 }
 
 interface Analytics {
@@ -826,27 +828,37 @@ export default function Dashboard() {
                             >
                               Get Snippet
                             </button>
-                            <button
-                              onClick={() => {
-                                setSelectedAgentForLeadCapture(agent);
-                                setLeadCaptureModalOpen(true);
-                              }}
-                              className="bg-purple-50 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors duration-200 font-medium text-sm"
-                            >
-                              Lead Capture
-                            </button>
-                            <button
-                              onClick={() => handleEditAgent(agent)}
-                              className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg hover:bg-indigo-100 transition-colors duration-200 font-medium text-sm"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteAgent(agent._id)}
-                              className="bg-red-50 text-red-700 px-4 py-2 rounded-lg hover:bg-red-100 transition-colors duration-200 font-medium text-sm"
-                            >
-                              Delete
-                            </button>
+                            {agent.userRole === "owner" ||
+                            agent.userRole === "admin" ||
+                            agent.userRole === "editor" ? (
+                              <button
+                                onClick={() => {
+                                  setSelectedAgentForLeadCapture(agent);
+                                  setLeadCaptureModalOpen(true);
+                                }}
+                                className="bg-purple-50 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors duration-200 font-medium text-sm"
+                              >
+                                Lead Capture
+                              </button>
+                            ) : null}
+                            {agent.userRole === "owner" ||
+                            agent.userRole === "admin" ? (
+                              <button
+                                onClick={() => handleEditAgent(agent)}
+                                className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg hover:bg-indigo-100 transition-colors duration-200 font-medium text-sm"
+                              >
+                                Edit
+                              </button>
+                            ) : null}
+                            {agent.userRole === "owner" ||
+                            agent.userRole === "admin" ? (
+                              <button
+                                onClick={() => handleDeleteAgent(agent._id)}
+                                className="bg-red-50 text-red-700 px-4 py-2 rounded-lg hover:bg-red-100 transition-colors duration-200 font-medium text-sm"
+                              >
+                                Delete
+                              </button>
+                            ) : null}
                           </div>
                         </div>
                       </div>

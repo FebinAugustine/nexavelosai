@@ -90,7 +90,7 @@ export class AgentsService {
     return savedAgent;
   }
 
-  async findAll(userId: string): Promise<AgentDocument[]> {
+  async findAll(userId: string): Promise<any[]> {
     const cacheKey = `agents:${userId}`;
     const cachedAgents = await this.cacheManager.get<AgentDocument[]>(cacheKey);
     if (cachedAgents) {
@@ -99,24 +99,43 @@ export class AgentsService {
 
     // Get user's own agents
     const userAgents = await this.agentModel.find({ userId: userId }).exec();
+    const userAgentsWithMetadata = userAgents.map((agent) => ({
+      ...agent.toObject(),
+      isShared: false,
+      userRole: 'owner',
+    }));
 
     // Get shared agents from teams
     const userTeams = await this.teamsService.getTeamsByUser(userId);
-    const sharedAgents: any[] = [];
+    const sharedAgentsWithMetadata: any[] = [];
 
     for (const team of userTeams) {
       const teamSharedAgents = await this.teamsService.getSharedAgents(
         team._id.toString(),
         userId,
       );
-      sharedAgents.push(...teamSharedAgents);
+
+      const userRole = await this.teamsService.getUserRoleInTeam(
+        userId,
+        team._id.toString(),
+      );
+
+      const agentsWithRole = teamSharedAgents.map((agent) => ({
+        ...agent.toObject(),
+        isShared: true,
+        userRole: userRole,
+      }));
+
+      sharedAgentsWithMetadata.push(...agentsWithRole);
     }
 
     // Combine and remove duplicates (in case an agent is shared multiple times)
-    const allAgents = [...userAgents];
-    const seenIds = new Set(userAgents.map((agent) => agent._id.toString()));
+    const allAgents = [...userAgentsWithMetadata];
+    const seenIds = new Set(
+      userAgentsWithMetadata.map((agent) => agent._id.toString()),
+    );
 
-    for (const sharedAgent of sharedAgents) {
+    for (const sharedAgent of sharedAgentsWithMetadata) {
       if (!seenIds.has(sharedAgent._id.toString())) {
         seenIds.add(sharedAgent._id.toString());
         allAgents.push(sharedAgent);
@@ -164,26 +183,59 @@ export class AgentsService {
     updateAgentDto: any,
     userId: string,
   ): Promise<AgentDocument> {
-    // Get existing agent to check old domain
-    const existingAgent = await this.agentModel
+    // Check if it's the user's own agent
+    let existingAgent = await this.agentModel
       .findOne({ _id: id, userId: userId })
       .exec();
+
     if (!existingAgent) {
-      throw new NotFoundException('Agent not found');
+      // Check if it's a shared agent and user has admin role
+      const userTeams = await this.teamsService.getTeamsByUser(userId);
+
+      let hasPermission = false;
+      for (const team of userTeams) {
+        const teamSharedAgents = await this.teamsService.getSharedAgents(
+          team._id.toString(),
+          userId,
+        );
+
+        const isSharedAgent = teamSharedAgents.some(
+          (sharedAgent) => sharedAgent._id.toString() === id,
+        );
+
+        if (isSharedAgent) {
+          // Check if user has admin role in this team (editor no longer has permission)
+          const userRole = await this.teamsService.getUserRoleInTeam(
+            userId,
+            team._id.toString(),
+          );
+
+          if (userRole === 'admin') {
+            hasPermission = true;
+            existingAgent = await this.agentModel.findById(id).exec();
+            break;
+          }
+        }
+      }
+
+      if (!hasPermission) {
+        throw new NotFoundException('Agent not found');
+      }
     }
 
+    // Update the agent
     const agent = await this.agentModel
-      .findOneAndUpdate({ _id: id, userId: userId }, updateAgentDto, {
-        new: true,
-      })
+      .findByIdAndUpdate(id, updateAgentDto, { new: true })
       .exec();
 
     if (!agent) {
       throw new NotFoundException('Agent not found');
     }
 
-    // Update user's domains if domain changed
+    // Update user's domains if domain changed and it's the user's own agent
     if (
+      existingAgent &&
+      existingAgent.userId.toString() === userId &&
       updateAgentDto.domain &&
       updateAgentDto.domain !== existingAgent.domain
     ) {
@@ -214,11 +266,44 @@ export class AgentsService {
   }
 
   async remove(id: string, userId: string): Promise<void> {
-    const result = await this.agentModel
+    // Check if it's the user's own agent
+    let result = await this.agentModel
       .deleteOne({ _id: id, userId: userId })
       .exec();
+
     if (result.deletedCount === 0) {
-      throw new NotFoundException('Agent not found');
+      // Check if it's a shared agent and user has admin role
+      const userTeams = await this.teamsService.getTeamsByUser(userId);
+
+      let hasPermission = false;
+      for (const team of userTeams) {
+        const teamSharedAgents = await this.teamsService.getSharedAgents(
+          team._id.toString(),
+          userId,
+        );
+
+        const isSharedAgent = teamSharedAgents.some(
+          (sharedAgent) => sharedAgent._id.toString() === id,
+        );
+
+        if (isSharedAgent) {
+          // Check if user has admin role in this team
+          const userRole = await this.teamsService.getUserRoleInTeam(
+            userId,
+            team._id.toString(),
+          );
+
+          if (userRole === 'admin') {
+            hasPermission = true;
+            result = await this.agentModel.deleteOne({ _id: id }).exec();
+            break;
+          }
+        }
+      }
+
+      if (!hasPermission || result.deletedCount === 0) {
+        throw new NotFoundException('Agent not found');
+      }
     }
 
     // Remove agent ID from user's agents array
@@ -259,7 +344,8 @@ export class AgentsService {
     userId: string,
     updateData: any,
   ): Promise<AgentDocument> {
-    const agent = await this.agentModel
+    // Check if it's the user's own agent
+    let agent = await this.agentModel
       .findOneAndUpdate(
         { _id: id, userId: userId },
         { leadCapture: updateData },
@@ -268,7 +354,40 @@ export class AgentsService {
       .exec();
 
     if (!agent) {
-      throw new NotFoundException('Agent not found');
+      // Check if it's a shared agent and user has admin or editor role
+      const userTeams = await this.teamsService.getTeamsByUser(userId);
+
+      let hasPermission = false;
+      for (const team of userTeams) {
+        const teamSharedAgents = await this.teamsService.getSharedAgents(
+          team._id.toString(),
+          userId,
+        );
+
+        const isSharedAgent = teamSharedAgents.some(
+          (sharedAgent) => sharedAgent._id.toString() === id,
+        );
+
+        if (isSharedAgent) {
+          // Check if user has admin or editor role in this team
+          const userRole = await this.teamsService.getUserRoleInTeam(
+            userId,
+            team._id.toString(),
+          );
+
+          if (userRole === 'admin' || userRole === 'editor') {
+            hasPermission = true;
+            agent = await this.agentModel
+              .findByIdAndUpdate(id, { leadCapture: updateData }, { new: true })
+              .exec();
+            break;
+          }
+        }
+      }
+
+      if (!hasPermission || !agent) {
+        throw new NotFoundException('Agent not found');
+      }
     }
 
     // Invalidate cache
