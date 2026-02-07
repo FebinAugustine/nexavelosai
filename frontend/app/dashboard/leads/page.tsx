@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -56,6 +56,57 @@ export default function LeadsPage() {
   const [editLeadData, setEditLeadData] = useState<Partial<Lead>>({});
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [userTeams, setUserTeams] = useState<any[]>([]);
+  const [isLoadingTeams, setIsLoadingTeams] = useState(false);
+
+  // Fetch user teams with roles
+  const fetchUserTeams = async () => {
+    try {
+      setIsLoadingTeams(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:5000/api/teams", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUserTeams(response.data);
+    } catch (error: any) {
+      console.error("Error fetching user teams:", error);
+      toast.error(error.response?.data?.message || "Failed to fetch teams");
+    } finally {
+      setIsLoadingTeams(false);
+    }
+  };
+
+  // Check if user has permission to edit leads
+  const hasEditPermission = () => {
+    // Check if user has admin, owner, or editor role in any team, or if they have global admin role
+    const hasEditRole = userTeams.some(
+      (team) =>
+        team.userRole === "admin" ||
+        team.userRole === "owner" ||
+        team.userRole === "editor",
+    );
+
+    return hasEditRole;
+  };
+
+  const hasDeletePermission = () => {
+    // Check if user has admin or owner role in any team, or if they have global admin role
+    const hasAdminRole = userTeams.some(
+      (team) => team.userRole === "admin" || team.userRole === "owner",
+    );
+
+    return hasAdminRole;
+  };
+
+  // Fetch user teams on mount
+  useEffect(() => {
+    fetchUserTeams();
+  }, []);
 
   // Fetch leads
   const {
@@ -496,13 +547,15 @@ export default function LeadsPage() {
                 </button>
                 <button
                   onClick={() => handleEdit(lead)}
-                  className="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors"
+                  disabled={!hasEditPermission()}
+                  className="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(lead._id)}
-                  className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors"
+                  disabled={!hasDeletePermission()}
+                  className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Delete
                 </button>
@@ -638,13 +691,15 @@ export default function LeadsPage() {
                       </button>
                       <button
                         onClick={() => handleEdit(lead)}
-                        className="text-green-600 hover:text-green-900"
+                        disabled={!hasEditPermission()}
+                        className="text-green-600 hover:text-green-900 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(lead._id)}
-                        className="text-red-600 hover:text-red-900"
+                        disabled={!hasDeletePermission()}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Delete
                       </button>

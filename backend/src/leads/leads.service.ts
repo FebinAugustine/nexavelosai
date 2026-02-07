@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -160,44 +165,30 @@ export class LeadsService {
     userId: string,
     updateData: any,
   ): Promise<LeadDocument> {
-    // Get user's own leads and leads from shared agents
-    const userTeams = await this.teamsService.getTeamsByUser(userId);
-    const sharedAgents: any[] = [];
-
-    for (const team of userTeams) {
-      const teamSharedAgents = await this.teamsService.getSharedAgents(
-        team._id.toString(),
-        userId,
-      );
-      sharedAgents.push(...teamSharedAgents);
-    }
-
-    const lead = await this.leadModel
-      .findOneAndUpdate(
-        {
-          _id: id,
-          $or: [
-            { userId: userId },
-            { userId: new Types.ObjectId(userId) },
-            { agentId: { $in: sharedAgents.map((agent) => agent._id) } },
-          ],
-        },
-        updateData,
-        { new: true },
-      )
-      .exec();
-
+    // Get lead first to determine if it's a shared lead or user's own lead
+    const lead = await this.leadModel.findById(id).exec();
     if (!lead) {
       throw new NotFoundException('Lead not found');
     }
 
-    return lead;
-  }
+    // Check if it's the user's own lead - allow all operations
+    if (
+      lead.userId.toString() === userId ||
+      lead.userId.toString() === new Types.ObjectId(userId).toString()
+    ) {
+      const updatedLead = await this.leadModel
+        .findByIdAndUpdate(id, updateData, { new: true })
+        .exec();
+      if (!updatedLead) {
+        throw new NotFoundException('Lead not found');
+      }
+      return updatedLead;
+    }
 
-  async deleteLead(id: string, userId: string): Promise<void> {
-    // Get user's own leads and leads from shared agents
+    // If it's a shared lead, check user's role
     const userTeams = await this.teamsService.getTeamsByUser(userId);
     const sharedAgents: any[] = [];
+    const userRoles: string[] = [];
 
     for (const team of userTeams) {
       const teamSharedAgents = await this.teamsService.getSharedAgents(
@@ -205,18 +196,104 @@ export class LeadsService {
         userId,
       );
       sharedAgents.push(...teamSharedAgents);
+
+      // Get user's role in this team
+      const teamMember = await this.teamsService.getTeamMember(
+        team._id.toString(),
+        userId,
+      );
+      if (teamMember) {
+        userRoles.push(teamMember.role);
+      }
     }
 
-    const result = await this.leadModel
-      .deleteOne({
-        _id: id,
-        $or: [
-          { userId: userId },
-          { userId: new Types.ObjectId(userId) },
-          { agentId: { $in: sharedAgents.map((agent) => agent._id) } },
-        ],
-      })
+    // Check if lead is associated with any shared agent
+    const isSharedLead = sharedAgents.some(
+      (agent) => agent._id.toString() === lead.agentId?.toString(),
+    );
+
+    if (!isSharedLead) {
+      throw new NotFoundException('Lead not found');
+    }
+
+    // Allow admin, owner, or editor role to update shared leads
+    if (
+      !userRoles.includes('admin') &&
+      !userRoles.includes('owner') &&
+      !userRoles.includes('editor')
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to update this lead',
+      );
+    }
+
+    const updatedLead = await this.leadModel
+      .findByIdAndUpdate(id, updateData, { new: true })
       .exec();
+    if (!updatedLead) {
+      throw new NotFoundException('Lead not found');
+    }
+    return updatedLead;
+  }
+
+  async deleteLead(id: string, userId: string): Promise<void> {
+    // Get lead first to determine if it's a shared lead or user's own lead
+    const lead = await this.leadModel.findById(id).exec();
+    if (!lead) {
+      throw new NotFoundException('Lead not found');
+    }
+
+    // Check if it's the user's own lead - allow all operations
+    if (
+      lead.userId.toString() === userId ||
+      lead.userId.toString() === new Types.ObjectId(userId).toString()
+    ) {
+      const result = await this.leadModel.deleteOne({ _id: id }).exec();
+      if (result.deletedCount === 0) {
+        throw new NotFoundException('Lead not found');
+      }
+      return;
+    }
+
+    // If it's a shared lead, check user's role
+    const userTeams = await this.teamsService.getTeamsByUser(userId);
+    const sharedAgents: any[] = [];
+    const userRoles: string[] = [];
+
+    for (const team of userTeams) {
+      const teamSharedAgents = await this.teamsService.getSharedAgents(
+        team._id.toString(),
+        userId,
+      );
+      sharedAgents.push(...teamSharedAgents);
+
+      // Get user's role in this team
+      const teamMember = await this.teamsService.getTeamMember(
+        team._id.toString(),
+        userId,
+      );
+      if (teamMember) {
+        userRoles.push(teamMember.role);
+      }
+    }
+
+    // Check if lead is associated with any shared agent
+    const isSharedLead = sharedAgents.some(
+      (agent) => agent._id.toString() === lead.agentId?.toString(),
+    );
+
+    if (!isSharedLead) {
+      throw new NotFoundException('Lead not found');
+    }
+
+    // Only allow admin role to delete shared leads
+    if (!userRoles.includes('admin') && !userRoles.includes('owner')) {
+      throw new ForbiddenException(
+        'You do not have permission to delete this lead',
+      );
+    }
+
+    const result = await this.leadModel.deleteOne({ _id: id }).exec();
     if (result.deletedCount === 0) {
       throw new NotFoundException('Lead not found');
     }

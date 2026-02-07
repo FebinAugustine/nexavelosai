@@ -76,11 +76,26 @@ export class TeamsService {
     return savedTeam;
   }
 
-  async getTeamsByUser(userId: string): Promise<TeamDocument[]> {
+  async getTeamsByUser(userId: string): Promise<any[]> {
     const teams = await this.teamModel.find({
       members: new Types.ObjectId(userId),
     });
-    return teams;
+
+    // Get user's role in each team
+    const teamsWithRoles = await Promise.all(
+      teams.map(async (team) => {
+        const teamMember = await this.getTeamMember(
+          team._id.toString(),
+          userId,
+        );
+        return {
+          ...team.toJSON(),
+          userRole: teamMember?.role || null,
+        };
+      }),
+    );
+
+    return teamsWithRoles;
   }
 
   async getTeamById(teamId: string): Promise<TeamDocument> {
@@ -684,20 +699,22 @@ export class TeamsService {
     return requiredRoles.includes(teamMember.role);
   }
 
-  async getUserRoleInTeam(
-    userId: string,
+  async getTeamMember(
     teamId: string,
-  ): Promise<TeamRole | null> {
-    const teamMember = await this.teamMemberModel.findOne({
+    userId: string,
+  ): Promise<TeamMemberDocument | null> {
+    return this.teamMemberModel.findOne({
       userId: new Types.ObjectId(userId),
       teamId: new Types.ObjectId(teamId),
       isActive: true,
     });
+  }
 
-    if (!teamMember) {
-      return null;
-    }
-
-    return teamMember.role;
+  async getUserRoleInTeam(
+    userId: string,
+    teamId: string,
+  ): Promise<TeamRole | null> {
+    const teamMember = await this.getTeamMember(teamId, userId);
+    return teamMember?.role || null;
   }
 }
