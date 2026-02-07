@@ -42,6 +42,9 @@ export class Invitation {
   expiresAt?: Date;
 
   @Prop()
+  invitedAt?: Date;
+
+  @Prop()
   createdAt?: Date;
 
   @Prop()

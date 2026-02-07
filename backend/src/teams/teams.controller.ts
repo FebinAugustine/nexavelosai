@@ -173,4 +173,25 @@ export class TeamsController {
   getInvitationByToken(@Param('token') token: string) {
     return this.teamsService.getInvitationByToken(token);
   }
+
+  // Invitation management
+  @Post('invitations/:id/resend')
+  resendInvitation(@Param('id') id: string, @Request() req) {
+    return this.teamsService.resendInvitation(id, req.user._id.toString());
+  }
+
+  @Post('invitations/:id/cancel')
+  cancelInvitation(@Param('id') id: string, @Request() req) {
+    return this.teamsService.cancelInvitation(id, req.user._id.toString());
+  }
+
+  @Get(':id/invitations')
+  getTeamInvitations(@Param('id') id: string, @Request() req) {
+    return this.teamsService.getTeamInvitations(id, req.user._id.toString());
+  }
+
+  @Get('invitations/history')
+  getInvitationHistory(@Request() req) {
+    return this.teamsService.getInvitationHistory(req.user._id.toString());
+  }
 }

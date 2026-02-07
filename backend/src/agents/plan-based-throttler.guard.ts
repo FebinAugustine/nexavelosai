@@ -22,11 +22,13 @@ export class PlanBasedThrottlerGuard extends ThrottlerGuard {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
+    const handler = context.getHandler();
+    const classRef = context.getClass();
 
-    // Skip rate limiting if @SkipThrottle() decorator is applied
-    const isSkipThrottle = this.reflector.get<boolean>(
+    // Skip rate limiting if @SkipThrottle() decorator is applied (using same approach as default ThrottlerGuard)
+    const isSkipThrottle = this.reflector.getAllAndOverride<boolean>(
       'throttler:skip',
-      context.getHandler(),
+      [handler, classRef],
     );
     if (isSkipThrottle) {
       return true;

@@ -727,4 +727,161 @@ export class TeamsService {
     const teamMember = await this.getTeamMember(teamId, userId);
     return teamMember?.role || null;
   }
+
+  // Invitation management
+  async resendInvitation(
+    invitationId: string,
+    inviterId: string,
+  ): Promise<InvitationDocument> {
+    const invitation = await this.invitationModel.findById(invitationId);
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found');
+    }
+
+    // Check if inviter has permission to resend
+    const inviter = await this.teamMemberModel.findOne({
+      userId: new Types.ObjectId(inviterId),
+      teamId: new Types.ObjectId(invitation.teamId),
+      role: { $in: [TeamRole.OWNER, TeamRole.ADMIN] },
+    });
+
+    if (!inviter) {
+      throw new ForbiddenException(
+        'You do not have permission to resend this invitation',
+      );
+    }
+
+    // Check if invitation is still pending and not expired
+    if (invitation.status !== InvitationStatus.PENDING) {
+      throw new BadRequestException('Only pending invitations can be resent');
+    }
+
+    if (invitation.expiresAt && invitation.expiresAt < new Date()) {
+      throw new BadRequestException('Invitation has expired');
+    }
+
+    // Generate new token and extend expiration
+    const newToken = crypto.randomBytes(32).toString('hex');
+    const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    invitation.token = newToken;
+    invitation.expiresAt = newExpiresAt;
+    invitation.invitedAt = new Date(); // Update invited at time
+
+    const updatedInvitation = await invitation.save();
+
+    // Get team information for email
+    const team = await this.teamModel.findById(invitation.teamId);
+    if (!team) {
+      throw new NotFoundException('Team not found');
+    }
+
+    // Send invitation email
+    const inviteLink = `http://localhost:3000/teams/invite/${newToken}`;
+    await this.mailService.sendTeamInvitationEmail(
+      invitation.email,
+      team.name,
+      inviteLink,
+      newExpiresAt,
+    );
+
+    // Send real-time notification if user exists
+    const existingUser = await this.userModel.findOne({
+      email: invitation.email,
+    });
+    if (existingUser) {
+      this.eventsGateway.sendToUser(
+        existingUser._id.toString(),
+        'newInvitation',
+        {
+          teamId: team._id.toString(),
+          teamName: team.name,
+          invitationId: updatedInvitation._id.toString(),
+          role: invitation.role,
+          invitedBy: inviterId,
+          token: newToken,
+          expiresAt: newExpiresAt,
+        },
+      );
+    }
+
+    return updatedInvitation;
+  }
+
+  async cancelInvitation(invitationId: string, userId: string): Promise<void> {
+    const invitation = await this.invitationModel.findById(invitationId);
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found');
+    }
+
+    // Check if user has permission to cancel
+    const teamMember = await this.teamMemberModel.findOne({
+      userId: new Types.ObjectId(userId),
+      teamId: new Types.ObjectId(invitation.teamId),
+      role: { $in: [TeamRole.OWNER, TeamRole.ADMIN] },
+    });
+
+    if (!teamMember) {
+      throw new ForbiddenException(
+        'You do not have permission to cancel this invitation',
+      );
+    }
+
+    // Check if invitation is still pending
+    if (invitation.status !== InvitationStatus.PENDING) {
+      throw new BadRequestException(
+        'Only pending invitations can be cancelled',
+      );
+    }
+
+    // Update invitation status
+    await this.invitationModel.findByIdAndUpdate(invitationId, {
+      status: InvitationStatus.REJECTED,
+    });
+  }
+
+  async getTeamInvitations(
+    teamId: string,
+    userId: string,
+  ): Promise<InvitationDocument[]> {
+    // Check if user has permission to view invitations
+    const teamMember = await this.teamMemberModel.findOne({
+      userId: new Types.ObjectId(userId),
+      teamId: new Types.ObjectId(teamId),
+      role: { $in: [TeamRole.OWNER, TeamRole.ADMIN] },
+    });
+
+    if (!teamMember) {
+      throw new ForbiddenException(
+        'You do not have permission to view team invitations',
+      );
+    }
+
+    // Get all invitations for the team
+    const invitations = await this.invitationModel
+      .find({
+        teamId: new Types.ObjectId(teamId),
+      })
+      .populate('invitedBy');
+
+    return invitations;
+  }
+
+  async getInvitationHistory(userId: string): Promise<InvitationDocument[]> {
+    // Get user's email
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Get all invitations (accepted, rejected, expired, pending) for this email
+    const invitations = await this.invitationModel
+      .find({
+        email: user.email,
+      })
+      .populate('teamId')
+      .populate('invitedBy');
+
+    return invitations;
+  }
 }
