@@ -6,6 +6,7 @@ import { ChatSession, ChatSessionSchema } from '../agents/chat-session.schema';
 import { Agent, AgentSchema } from '../agents/agents.schema';
 import { LeadsController } from './leads.controller';
 import { LeadsService } from './leads.service';
+import { TeamsModule } from '../teams/teams.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { LeadsService } from './leads.service';
     ]),
     MongooseModule.forFeature([{ name: Agent.name, schema: AgentSchema }]),
     CacheModule.register(),
+    TeamsModule, // Import TeamsModule to resolve TeamsService dependency
   ],
   controllers: [LeadsController],
   providers: [LeadsService],

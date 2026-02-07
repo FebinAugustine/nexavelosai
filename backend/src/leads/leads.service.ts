@@ -8,6 +8,7 @@ import {
   ChatSession,
   ChatSessionDocument,
 } from '../agents/chat-session.schema';
+import { TeamsService } from '../teams/teams.service';
 
 @Injectable()
 export class LeadsService {
@@ -16,6 +17,7 @@ export class LeadsService {
     @InjectModel(ChatSession.name)
     private chatSessionModel: Model<ChatSessionDocument>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private teamsService: TeamsService, // Inject TeamsService
   ) {}
 
   async createLead(data: any): Promise<LeadDocument> {
@@ -78,23 +80,25 @@ export class LeadsService {
       query,
     );
 
-    // Don't cache leads to ensure real-time data after updates
-    // Debug: Check if there are any leads in the database
-    const allLeads = await this.leadModel.find({}).exec();
-    console.log('All leads in DB:', allLeads.length);
-    console.log(
-      'All leads details:',
-      allLeads.map((lead) => ({
-        id: lead._id,
-        userId: lead.userId,
-        email: lead.email,
-        createdAt: lead.createdAt,
-      })),
-    );
+    // Get user's own leads and leads from shared agents
+    const userTeams = await this.teamsService.getTeamsByUser(userId);
+    const sharedAgents: any[] = [];
+
+    for (const team of userTeams) {
+      const teamSharedAgents = await this.teamsService.getSharedAgents(
+        team._id.toString(),
+        userId,
+      );
+      sharedAgents.push(...teamSharedAgents);
+    }
 
     // Query by both string and ObjectId to handle existing data
     const filter: any = {
-      $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
+      $or: [
+        { userId: userId },
+        { userId: new Types.ObjectId(userId) },
+        { agentId: { $in: sharedAgents.map((agent) => agent._id) } },
+      ],
     };
 
     if (query.status) {
@@ -123,10 +127,26 @@ export class LeadsService {
   }
 
   async findOne(id: string, userId: string): Promise<LeadDocument> {
+    // Get user's own leads and leads from shared agents
+    const userTeams = await this.teamsService.getTeamsByUser(userId);
+    const sharedAgents: any[] = [];
+
+    for (const team of userTeams) {
+      const teamSharedAgents = await this.teamsService.getSharedAgents(
+        team._id.toString(),
+        userId,
+      );
+      sharedAgents.push(...teamSharedAgents);
+    }
+
     const lead = await this.leadModel
       .findOne({
         _id: id,
-        $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
+        $or: [
+          { userId: userId },
+          { userId: new Types.ObjectId(userId) },
+          { agentId: { $in: sharedAgents.map((agent) => agent._id) } },
+        ],
       })
       .exec();
     if (!lead) {
@@ -140,11 +160,27 @@ export class LeadsService {
     userId: string,
     updateData: any,
   ): Promise<LeadDocument> {
+    // Get user's own leads and leads from shared agents
+    const userTeams = await this.teamsService.getTeamsByUser(userId);
+    const sharedAgents: any[] = [];
+
+    for (const team of userTeams) {
+      const teamSharedAgents = await this.teamsService.getSharedAgents(
+        team._id.toString(),
+        userId,
+      );
+      sharedAgents.push(...teamSharedAgents);
+    }
+
     const lead = await this.leadModel
       .findOneAndUpdate(
         {
           _id: id,
-          $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
+          $or: [
+            { userId: userId },
+            { userId: new Types.ObjectId(userId) },
+            { agentId: { $in: sharedAgents.map((agent) => agent._id) } },
+          ],
         },
         updateData,
         { new: true },
@@ -159,10 +195,26 @@ export class LeadsService {
   }
 
   async deleteLead(id: string, userId: string): Promise<void> {
+    // Get user's own leads and leads from shared agents
+    const userTeams = await this.teamsService.getTeamsByUser(userId);
+    const sharedAgents: any[] = [];
+
+    for (const team of userTeams) {
+      const teamSharedAgents = await this.teamsService.getSharedAgents(
+        team._id.toString(),
+        userId,
+      );
+      sharedAgents.push(...teamSharedAgents);
+    }
+
     const result = await this.leadModel
       .deleteOne({
         _id: id,
-        $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
+        $or: [
+          { userId: userId },
+          { userId: new Types.ObjectId(userId) },
+          { agentId: { $in: sharedAgents.map((agent) => agent._id) } },
+        ],
       })
       .exec();
     if (result.deletedCount === 0) {
@@ -190,13 +242,45 @@ export class LeadsService {
     leadId: string,
     userId: string,
   ): Promise<ChatSessionDocument[]> {
-    return this.chatSessionModel
-      .find({
-        leadId: new Types.ObjectId(leadId),
-        $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
-      })
-      .sort({ createdAt: -1 })
-      .exec();
+    // Get user's own leads and leads from shared agents
+    const userTeams = await this.teamsService.getTeamsByUser(userId);
+    const sharedAgents: any[] = [];
+
+    for (const team of userTeams) {
+      const teamSharedAgents = await this.teamsService.getSharedAgents(
+        team._id.toString(),
+        userId,
+      );
+      sharedAgents.push(...teamSharedAgents);
+    }
+
+    // First, find the lead to get its agentId (if available)
+    const lead = await this.leadModel.findById(leadId);
+
+    if (!lead) {
+      throw new NotFoundException('Lead not found');
+    }
+
+    // Check if the lead is associated with a shared agent
+    const isSharedLead = sharedAgents.some(
+      (agent) => agent._id.toString() === lead.agentId?.toString(),
+    );
+
+    // If it's a shared lead or user's own lead, return chat sessions
+    if (
+      isSharedLead ||
+      lead.userId.toString() === userId ||
+      lead.userId.toString() === new Types.ObjectId(userId).toString()
+    ) {
+      return this.chatSessionModel
+        .find({
+          leadId: new Types.ObjectId(leadId),
+        })
+        .sort({ createdAt: -1 })
+        .exec();
+    }
+
+    throw new NotFoundException('Lead not found');
   }
 
   async findChatSessionById(
@@ -270,19 +354,51 @@ export class LeadsService {
   }
 
   async getLeadCount(userId: string): Promise<number> {
+    // Get user's own leads and leads from shared agents
+    const userTeams = await this.teamsService.getTeamsByUser(userId);
+    const sharedAgents: any[] = [];
+
+    for (const team of userTeams) {
+      const teamSharedAgents = await this.teamsService.getSharedAgents(
+        team._id.toString(),
+        userId,
+      );
+      sharedAgents.push(...teamSharedAgents);
+    }
+
     return this.leadModel
       .countDocuments({
-        $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
+        $or: [
+          { userId: userId },
+          { userId: new Types.ObjectId(userId) },
+          { agentId: { $in: sharedAgents.map((agent) => agent._id) } },
+        ],
       })
       .exec();
   }
 
   async getLeadStats(userId: string): Promise<any> {
+    // Get user's own leads and leads from shared agents
+    const userTeams = await this.teamsService.getTeamsByUser(userId);
+    const sharedAgents: any[] = [];
+
+    for (const team of userTeams) {
+      const teamSharedAgents = await this.teamsService.getSharedAgents(
+        team._id.toString(),
+        userId,
+      );
+      sharedAgents.push(...teamSharedAgents);
+    }
+
     const stats = await this.leadModel
       .aggregate([
         {
           $match: {
-            $or: [{ userId: userId }, { userId: new Types.ObjectId(userId) }],
+            $or: [
+              { userId: userId },
+              { userId: new Types.ObjectId(userId) },
+              { agentId: { $in: sharedAgents.map((agent) => agent._id) } },
+            ],
           },
         },
         {
@@ -315,8 +431,26 @@ export class LeadsService {
     userId: string,
     format: 'csv' | 'json' | 'xlsx' = 'csv',
   ): Promise<string | object[] | Buffer> {
+    // Get user's own leads and leads from shared agents
+    const userTeams = await this.teamsService.getTeamsByUser(userId);
+    const sharedAgents: any[] = [];
+
+    for (const team of userTeams) {
+      const teamSharedAgents = await this.teamsService.getSharedAgents(
+        team._id.toString(),
+        userId,
+      );
+      sharedAgents.push(...teamSharedAgents);
+    }
+
     const leads = await this.leadModel
-      .find({ userId: new Types.ObjectId(userId) })
+      .find({
+        $or: [
+          { userId: userId },
+          { userId: new Types.ObjectId(userId) },
+          { agentId: { $in: sharedAgents.map((agent) => agent._id) } },
+        ],
+      })
       .sort({ createdAt: -1 })
       .exec();
 
