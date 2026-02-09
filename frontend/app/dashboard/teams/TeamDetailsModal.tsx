@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Users, Plus, Share, Trash2, ExternalLink } from "lucide-react";
+import {
+  X,
+  Users,
+  Plus,
+  Share,
+  Trash2,
+  ExternalLink,
+  Settings,
+} from "lucide-react";
 import { Button } from "@/components/Button";
 import { useAuth } from "@/app/auth-provider";
 import { Toast } from "@/components/Toast";
@@ -410,6 +418,15 @@ export function TeamDetailsModal({
   if (!isOpen || !team) return null;
 
   const isOwner = user?._id === team.ownerId;
+
+  const handleSettingsClick = () => {
+    if (team._id) {
+      onClose();
+      window.location.href = `/dashboard/teams/settings/${team._id}`;
+    } else {
+      console.error("Team id is undefined");
+    }
+  };
   const unsharedAgents = agents.filter(
     (agent) => !team.sharedAgents.includes(agent._id),
   );
@@ -430,12 +447,22 @@ export function TeamDetailsModal({
             <h2 className="text-xl font-semibold text-gray-900">
               Team Details
             </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSettingsClick}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="p-6 space-y-8">

@@ -8,9 +8,11 @@ import {
   Param,
   UseGuards,
   Request,
+  Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { TeamsService } from './teams.service';
-import { TeamRole } from './team-members.schema';
+import { TeamRole, TeamPermission } from './team-members.schema';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Public } from '../auth/public.decorator';
 
@@ -37,8 +39,17 @@ export class TeamsController {
     return this.teamsService.getTeamsByUser(req.user._id.toString());
   }
 
+  // Specific routes before dynamic :id route to avoid conflicts
+  @Get('roles')
+  getRolesWithPermissions() {
+    return this.teamsService.getRolesWithPermissions();
+  }
+
   @Get(':id')
   getTeamById(@Param('id') id: string) {
+    if (!id || id === 'undefined' || id === 'null') {
+      throw new BadRequestException('Invalid teamId');
+    }
     return this.teamsService.getTeamById(id);
   }
 
@@ -193,5 +204,40 @@ export class TeamsController {
   @Get('invitations/history')
   getInvitationHistory(@Request() req) {
     return this.teamsService.getInvitationHistory(req.user._id.toString());
+  }
+
+  // Permissions and settings
+  @Get(':id/permissions')
+  async getUserPermissions(@Param('id') teamId: string, @Request() req) {
+    if (!teamId || teamId === 'undefined' || teamId === 'null') {
+      throw new BadRequestException('Invalid teamId');
+    }
+    const permissions = await this.teamsService.getUserPermissions(
+      req.user._id.toString(),
+      teamId,
+    );
+    return { permissions };
+  }
+
+  @Get(':id/permissions/check')
+  async checkPermission(
+    @Param('id') teamId: string,
+    @Request() req,
+    @Query('permission') permission: string,
+  ) {
+    const hasPermission = await this.teamsService.hasPermission(
+      req.user._id.toString(),
+      teamId,
+      permission as TeamPermission,
+    );
+    return { hasPermission };
+  }
+
+  @Get(':id/roles/:role/permissions')
+  async getRolePermissions(@Param('role') role: string) {
+    const permissions = await this.teamsService.getRolePermissions(
+      role as TeamRole,
+    );
+    return { permissions };
   }
 }

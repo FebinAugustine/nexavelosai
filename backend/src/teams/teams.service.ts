@@ -12,6 +12,8 @@ import {
   TeamMember,
   TeamMemberDocument,
   TeamRole,
+  TeamPermission,
+  ROLE_PERMISSIONS,
 } from './team-members.schema';
 import {
   Invitation,
@@ -99,6 +101,9 @@ export class TeamsService {
   }
 
   async getTeamById(teamId: string): Promise<TeamDocument> {
+    if (!teamId || !Types.ObjectId.isValid(teamId)) {
+      throw new BadRequestException('Invalid teamId');
+    }
     const team = await this.teamModel.findById(teamId).populate('members');
     if (!team) {
       throw new NotFoundException('Team not found');
@@ -713,6 +718,14 @@ export class TeamsService {
     teamId: string,
     userId: string,
   ): Promise<TeamMemberDocument | null> {
+    if (
+      !teamId ||
+      !Types.ObjectId.isValid(teamId) ||
+      !userId ||
+      !Types.ObjectId.isValid(userId)
+    ) {
+      return null;
+    }
     return this.teamMemberModel.findOne({
       userId: new Types.ObjectId(userId),
       teamId: new Types.ObjectId(teamId),
@@ -883,5 +896,76 @@ export class TeamsService {
       .populate('invitedBy');
 
     return invitations;
+  }
+
+  /**
+   * Check if a user has a specific permission in a team
+   */
+  async hasPermission(
+    userId: string,
+    teamId: string,
+    permission: TeamPermission,
+  ): Promise<boolean> {
+    const role = await this.getUserRoleInTeam(userId, teamId);
+    if (!role) {
+      return false;
+    }
+    return ROLE_PERMISSIONS[role].includes(permission);
+  }
+
+  /**
+   * Get all permissions for a specific user in a team
+   */
+  async getUserPermissions(
+    userId: string,
+    teamId: string,
+  ): Promise<TeamPermission[]> {
+    const role = await this.getUserRoleInTeam(userId, teamId);
+    if (!role) {
+      return [];
+    }
+    return ROLE_PERMISSIONS[role];
+  }
+
+  /**
+   * Get all permissions for a specific role
+   */
+  async getRolePermissions(role: TeamRole): Promise<TeamPermission[]> {
+    return ROLE_PERMISSIONS[role];
+  }
+
+  /**
+   * Get all available roles with their permissions
+   */
+  async getRolesWithPermissions(): Promise<
+    {
+      role: TeamRole;
+      permissions: TeamPermission[];
+      description: string;
+    }[]
+  > {
+    const roles = Object.values(TeamRole);
+    return roles.map((role) => ({
+      role,
+      permissions: ROLE_PERMISSIONS[role],
+      description: this.getRoleDescription(role),
+    }));
+  }
+
+  /**
+   * Get a description for a role
+   */
+  private getRoleDescription(role: TeamRole): string {
+    const descriptions: Record<TeamRole, string> = {
+      [TeamRole.OWNER]:
+        'Full control over the team and all its resources. Can manage settings, members, and billing.',
+      [TeamRole.ADMIN]:
+        'Can manage team settings, members, and agents. Cannot manage billing or delete the team.',
+      [TeamRole.EDITOR]:
+        'Can create and edit agents. Can view and edit leads. Cannot manage team settings or members.',
+      [TeamRole.VIEWER]:
+        'Read-only access to agents, leads, and analytics. Cannot make any changes.',
+    };
+    return descriptions[role];
   }
 }

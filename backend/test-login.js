@@ -1,0 +1,1 @@
+﻿localStorage.setItem("token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJzdWIiOiI2OTc3MDZmYWU4MWZlMTcxMjhiYWFjMmMiLCJpYXQiOjE3NzA0Njg1NTYsImV4cCI6MTc3MDQ3MjE1Nn0.tMf-W-52kItmiWOl2TVKrkiN58_TQFJB5WFN9Bzspsk"); window.location.href = "/dashboard/teams/settings/6985990327c25f6c254bf9ac";

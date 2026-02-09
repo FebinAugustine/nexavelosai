@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Login</title>
+    <script>
+      function login() {
+        const token =
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJzdWIiOiI2OTc3MDZmYWU4MWZlMTcxMjhiYWFjMmMiLCJpYXQiOjE3NzA0Njg1NTYsImV4cCI6MTc3MDQ3MjE1Nn0.tMf-W-52kItmiWOl2TVKrkiN58_TQFJB5WFN9Bzspsk";
+        localStorage.setItem("token", token);
+        window.location.href =
+          "http://localhost:3000/dashboard/teams/settings/6985990327c25f6c254bf9ac";
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Test Login Page</h1>
+    <button onclick="login()">Login and Navigate to Team Settings</button>
+  </body>
+</html>
