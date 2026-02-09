@@ -79,6 +79,9 @@ export class TeamsService {
   }
 
   async getTeamsByUser(userId: string): Promise<any[]> {
+    if (!userId || userId.length !== 24) {
+      return [];
+    }
     const teams = await this.teamModel.find({
       members: new Types.ObjectId(userId),
     });

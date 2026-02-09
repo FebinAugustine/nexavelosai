@@ -148,6 +148,15 @@ export class AgentsService {
   }
 
   async findOne(id: string, userId: string): Promise<AgentDocument> {
+    // If userId is empty (anonymous user), just find the agent by id
+    if (!userId) {
+      const agent = await this.agentModel.findOne({ _id: id }).exec();
+      if (!agent) {
+        throw new NotFoundException('Agent not found');
+      }
+      return agent;
+    }
+
     // Check if it's the user's own agent
     let agent = await this.agentModel
       .findOne({ _id: id, userId: userId })

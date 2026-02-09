@@ -18,6 +18,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import LeadsPage from "./leads/page";
 import LeadCaptureModal from "./[id]/lead-capture/LeadCaptureModal";
 import TeamsPage from "./teams/page";
+import WebhooksPage from "./webhooks/page";
 
 interface User {
   _id: string;
@@ -634,6 +635,8 @@ export default function Dashboard() {
     switch (activeSection) {
       case "leads":
         return <LeadsPage />;
+      case "webhooks":
+        return <WebhooksPage />;
       case "teams":
         return <TeamsPage />;
       case "dashboard":
@@ -2715,6 +2718,36 @@ window.nexavelWidget.open();`}</code>
                 <span>Leads</span>
               </div>
             </button>
+            {user?.plan === "agency" && (
+              <button
+                onClick={() => {
+                  setActiveSection("webhooks");
+                  setSidebarOpen(false);
+                }}
+                className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
+                  activeSection === "webhooks"
+                    ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg"
+                    : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                  <span>Webhooks</span>
+                </div>
+              </button>
+            )}
             {/* Teams section - only visible to:
                 1. Agency plan users
                 2. Users with other roles who are part of a team and have agents assigned to them

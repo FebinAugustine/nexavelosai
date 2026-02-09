@@ -5,6 +5,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { PassportModule } from '@nestjs/passport';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { BullModule } from '@nestjs/bull';
 import * as redisStore from 'cache-manager-redis-store';
 import * as path from 'path';
 import { Connection } from 'mongoose';
@@ -20,6 +21,8 @@ import { AgentQueueModule } from './agent-queue/agent-queue.module';
 import { AdminModule } from './admin/admin.module'; // Import AdminModule
 import { LeadsModule } from './leads/leads.module'; // Import Leads module
 import { TeamsModule } from './teams/teams.module'; // Import Teams module
+import { WebhooksModule } from './webhooks/webhooks.module'; // Import Webhooks module
+import { ApiModule } from './api/api.module'; // Import API module
 
 @Module({
   imports: [
@@ -36,6 +39,12 @@ import { TeamsModule } from './teams/teams.module'; // Import Teams module
       port: process.env.REDIS_PORT || 6379,
       ttl: 300, // 5 minutes default TTL
     }),
+    BullModule.forRoot({
+      redis: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379,
+      },
+    }),
     PassportModule,
     UsersModule,
     MailModule,
@@ -47,9 +56,11 @@ import { TeamsModule } from './teams/teams.module'; // Import Teams module
     AdminModule, // Add AdminModule here
     LeadsModule, // Add Leads module here
     TeamsModule, // Add Teams module here
+    WebhooksModule, // Add Webhooks module here
+    ApiModule, // Add API module here
     ServeStaticModule.forRoot({
       rootPath: path.join(__dirname, '..', 'public'),
-      serveRoot: '/public', // Serve static files from /public path only
+      serveRoot: '/', // Serve static files from root path so widget.js is accessible at /widget.js
       serveStaticOptions: {
         index: false, // Disable serving index.html for root path
       },

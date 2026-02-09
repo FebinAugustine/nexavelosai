@@ -113,30 +113,39 @@ This document tracks the implementation progress of NexaVelosAI features based o
 
 ## In Progress Features
 
-### 1. **Agent Training with Knowledge Base** ⏳
+### 1. **API & Webhook Integration** 🚀
+
+- **Status**: Implementation plan created, ready to start
+- **Description**: Robust API and webhook system for integrating chat data with external tools
+- **Implementation Timeline**: 5-6 weeks
+- **Key Features**:
+  - RESTful API with standardized responses
+  - Webhook system with real-time event notifications
+  - Support for multiple event types (chat started, message sent, lead captured, etc.)
+  - Webhook signature verification for security
+  - Failed delivery handling and retry mechanisms
+  - API documentation with Swagger/OpenAPI
+- **Implementation File**: [API_WEBHOOKS_IMPLEMENTATION.md](API_WEBHOOKS_IMPLEMENTATION.md)
+
+### 2. **Agent Training with Knowledge Base** ⏳
 
 - **Status**: Not implemented
 - **Description**: Allow users to upload documents, URLs, or text content to train AI agents with a knowledge base for context-aware responses
 
-### 2. **Multi-Agent Chatbot Flow Builder** ⏳
+### 3. **Multi-Agent Chatbot Flow Builder** ⏳
 
 - **Status**: Not implemented
 - **Description**: Visual flow builder for designing conversational chatbot flows with multiple AI agents and decision trees
 
-### 3. **Widget Customization Marketplace** ⏳
+### 4. **Widget Customization Marketplace** ⏳
 
 - **Status**: Not implemented
 - **Description**: Marketplace for pre-built widget templates and customizations
 
-### 4. **A/B Testing for Chat Widgets** ⏳
+### 5. **A/B Testing for Chat Widgets** ⏳
 
 - **Status**: Not implemented
 - **Description**: Run A/B tests on chat widgets to optimize performance
-
-### 5. **API & Webhook Integration** ⏳
-
-- **Status**: Not implemented
-- **Description**: Robust API and webhook system for integrating chat data with external tools
 
 ### 6. **Chat Analytics Dashboard** ⏳
 
@@ -193,13 +202,20 @@ This document tracks the implementation progress of NexaVelosAI features based o
 
 ## What's Next?
 
-### **Priority 1 - Quick Wins (3-4 weeks)**
+### **Current Priority - API & Webhook Integration (5-6 weeks) 🚀**
 
 1. **API & Webhook Integration** - Enable ecosystem integration
-2. **Chat Analytics Dashboard** - Improve product stickiness
+   - RESTful API with standardized responses
+   - Webhook system with real-time event notifications
+   - Support for multiple event types (chat started, message sent, lead captured, etc.)
+   - Webhook signature verification for security
+   - Failed delivery handling and retry mechanisms
+   - API documentation with Swagger/OpenAPI
+   - **Implementation File**: [API_WEBHOOKS_IMPLEMENTATION.md](API_WEBHOOKS_IMPLEMENTATION.md)
 
 ### **Priority 2 - Key Features (4-8 weeks)**
 
+2. **Chat Analytics Dashboard** - Improve product stickiness
 3. **Agent Training with Knowledge Base** - Enterprise feature
 4. **Multi-Agent Chatbot Flow Builder** - Unique differentiation
 
