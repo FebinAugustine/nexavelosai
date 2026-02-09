@@ -85,4 +85,30 @@ export class WebhooksService {
       });
     }
   }
+
+  async triggerSpecificWebhook(
+    webhookId: string,
+    event: WebhookEventType,
+    payload: any,
+  ): Promise<void> {
+    // Trigger a specific webhook regardless of active status or event subscription (for testing purposes)
+    console.log('triggerSpecificWebhook called with:', {
+      webhookId,
+      event,
+      payload,
+    });
+    const webhook = await this.webhookModel.findById(webhookId).exec();
+    console.log('Found webhook in service:', webhook);
+
+    if (webhook) {
+      console.log('Adding to queue');
+      await this.webhookQueue.add('send-webhook', {
+        webhookId: webhook._id.toString(),
+        event,
+        payload,
+      });
+    } else {
+      console.log('Webhook not found');
+    }
+  }
 }

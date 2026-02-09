@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/Button";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 interface Webhook {
   _id: string;
@@ -150,11 +151,15 @@ export default function WebhooksPage() {
         },
       );
 
-      if (response.status === 200) {
-        alert("Webhook test triggered successfully");
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Webhook test triggered successfully");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to test webhook:", error);
+      toast.error(
+        "Failed to test webhook: " +
+          (error.response?.data?.message || error.message || "Unknown error"),
+      );
     }
   };
 
@@ -203,9 +208,9 @@ export default function WebhooksPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-          {webhooks.length === 0 ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {webhooks.length === 0 ? (
+          <div className="col-span-full">
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <TestTube className="w-8 h-8 text-gray-400" />
@@ -222,130 +227,137 @@ export default function WebhooksPage() {
                 Create Webhook
               </Button>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      URL
-                    </th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Events
-                    </th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Failures
-                    </th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Last Success
-                    </th>
-                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {webhooks.map((webhook) => (
-                    <tr key={webhook._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <a
-                          href={webhook.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                        >
-                          {webhook.url}
-                        </a>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {webhook.events.map((event) => (
-                            <span
-                              key={event}
-                              className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800"
-                            >
-                              {event}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() =>
-                            toggleWebhookActive(webhook._id, !webhook.active)
-                          }
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            webhook.active
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {webhook.active ? (
-                            <>
-                              <ToggleRight className="w-4 h-4 mr-1" />
-                              Active
-                            </>
-                          ) : (
-                            <>
-                              <ToggleLeft className="w-4 h-4 mr-1" />
-                              Inactive
-                            </>
-                          )}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`text-xs font-medium ${
-                            webhook.failureCount > 0
-                              ? "text-red-600"
-                              : "text-green-600"
-                          }`}
-                        >
-                          {webhook.failureCount}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {webhook.lastSuccessAt
-                          ? new Date(webhook.lastSuccessAt).toLocaleDateString()
-                          : "-"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleTestWebhook(webhook._id)}
-                        >
-                          <TestTube className="w-4 h-4 mr-1" />
-                          Test
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedWebhook(webhook)}
-                        >
-                          <Edit2 className="w-4 h-4 mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteWebhook(webhook._id)}
-                          className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Delete
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          </div>
+        ) : (
+          webhooks.map((webhook) => (
+            <div
+              key={webhook._id}
+              className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
+            >
+              <div className="p-6">
+                {/* Webhook URL */}
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
+                    Webhook URL
+                  </h3>
+                  <a
+                    href={webhook.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-900 text-sm font-medium break-all"
+                  >
+                    {webhook.url}
+                  </a>
+                </div>
+
+                {/* Events */}
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
+                    Events
+                  </h3>
+                  <div className="flex flex-wrap gap-1">
+                    {webhook.events.map((event) => (
+                      <span
+                        key={event}
+                        className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                      >
+                        {event}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
+                    Status
+                  </h3>
+                  <button
+                    onClick={() =>
+                      toggleWebhookActive(webhook._id, !webhook.active)
+                    }
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      webhook.active
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {webhook.active ? (
+                      <>
+                        <ToggleRight className="w-4 h-4 mr-2" />
+                        Active
+                      </>
+                    ) : (
+                      <>
+                        <ToggleLeft className="w-4 h-4 mr-2" />
+                        Inactive
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Failure Count */}
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
+                    Failures
+                  </h3>
+                  <span
+                    className={`text-sm font-medium ${
+                      webhook.failureCount > 0
+                        ? "text-red-600"
+                        : "text-green-600"
+                    }`}
+                  >
+                    {webhook.failureCount}
+                  </span>
+                </div>
+
+                {/* Last Success */}
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
+                    Last Success
+                  </h3>
+                  <span className="text-sm text-gray-500">
+                    {webhook.lastSuccessAt
+                      ? new Date(webhook.lastSuccessAt).toLocaleDateString()
+                      : "-"}
+                  </span>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleTestWebhook(webhook._id)}
+                    className="flex-1"
+                  >
+                    <TestTube className="w-4 h-4 mr-1" />
+                    Test
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSelectedWebhook(webhook)}
+                    className="flex-1"
+                  >
+                    <Edit2 className="w-4 h-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDeleteWebhook(webhook._id)}
+                    className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 flex-1"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
+          ))
+        )}
       </div>
 
       {isCreateModalOpen && (

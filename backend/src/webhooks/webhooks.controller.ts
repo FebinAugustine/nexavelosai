@@ -8,11 +8,14 @@ import {
   Param,
   UseGuards,
   Request,
+  BadRequestException,
 } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
 import { WebhookEventType } from './webhooks.schema';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AgencyPlanGuard } from './agency-plan.guard';
+import axios from 'axios';
+import * as crypto from 'crypto';
 
 @Controller('api/webhooks')
 @UseGuards(JwtAuthGuard, AgencyPlanGuard)
@@ -74,15 +77,68 @@ export class WebhooksController {
       req.user._id.toString(),
     );
 
-    await this.webhooksService.triggerWebhook(WebhookEventType.CHAT_STARTED, {
-      event: WebhookEventType.CHAT_STARTED,
+    const testEvent =
+      webhook.events.length > 0
+        ? webhook.events[0]
+        : WebhookEventType.CHAT_STARTED;
+
+    const testPayload = {
+      event: testEvent,
       timestamp: new Date().toISOString(),
       chatSessionId: 'test-session-id',
       agentId: 'test-agent-id',
       visitorId: 'test-visitor-id',
       test: true,
-    });
+    };
 
-    return { message: 'Webhook test triggered' };
+    // Send test webhook synchronously to get immediate feedback
+    try {
+      const headers: any = {
+        'Content-Type': 'application/json',
+        'X-NexaVelosAI-Event': testEvent,
+        'X-NexaVelosAI-Timestamp': new Date().toISOString(),
+      };
+
+      if (webhook.secret) {
+        const signature = crypto
+          .createHmac('sha256', webhook.secret)
+          .update(JSON.stringify(testPayload))
+          .digest('hex');
+        headers['X-NexaVelosAI-Signature'] = signature;
+      }
+
+      console.log('Sending test webhook to:', webhook.url);
+      const response = await axios.post(webhook.url, testPayload, {
+        headers,
+        timeout: 10000,
+      });
+      console.log('Test webhook response status:', response.status);
+
+      webhook.failureCount = 0;
+      webhook.lastSuccessAt = new Date();
+      await webhook.save();
+
+      return {
+        message: 'Webhook test succeeded',
+        status: response.status,
+        statusText: response.statusText,
+      };
+    } catch (error) {
+      console.error('Test webhook failed:', error);
+      webhook.failureCount += 1;
+      webhook.lastFailureAt = new Date();
+
+      if (webhook.failureCount >= 5) {
+        webhook.active = false;
+      }
+
+      await webhook.save();
+
+      throw new BadRequestException({
+        message: 'Webhook test failed',
+        error: error.response?.status || error.code,
+        errorMessage: error.response?.statusText || error.message,
+      });
+    }
   }
 }

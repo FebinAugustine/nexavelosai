@@ -10,9 +10,11 @@ Provide a robust API and webhook system for integrating chat data with external 
 
 ## Implementation Timeline
 
-**Total Estimated Time**: 5-6 weeks
+**Total Estimated Time**: 5-6 weeks  
+**Completed**: 2 weeks  
+**Remaining**: 3-4 weeks
 
-## Phase 1: API Design & Architecture (1 week)
+## Phase 1: API Design & Architecture (Completed ✅)
 
 ### 1.1 API Architecture Planning
 
@@ -42,7 +44,7 @@ export class PaginationDto {
 }
 ```
 
-## Phase 2: Webhook System Design (1 week)
+## Phase 2: Webhook System Design (Completed ✅)
 
 ### 2.1 Webhook Schema
 
@@ -139,7 +141,7 @@ export interface LeadCapturedPayload {
 // Other event payloads...
 ```
 
-## Phase 3: Backend Implementation (2 weeks)
+## Phase 3: Backend Implementation (Completed ✅)
 
 ### 3.1 Webhooks Module Setup
 
@@ -418,7 +420,7 @@ export class WebhooksController {
 }
 ```
 
-## Phase 4: API Endpoint Implementation (1 week)
+## Phase 4: API Endpoint Implementation (Completed ✅)
 
 ### 4.1 Agents API
 
@@ -466,7 +468,117 @@ export class LeadsController {
 
 The existing teams API will be included in the v1 API with standardized responses.
 
-## Phase 5: Frontend Implementation (1 week)
+## Phase 5: Frontend Implementation (Completed ✅)
+
+## Phase 6: Webhook Triggers & Documentation (3-4 weeks remaining) 🚀
+
+### 6.1 Webhook Event Payloads (In Progress)
+
+```typescript
+// backend/src/webhooks/dto/webhook-payloads.dto.ts
+export interface ChatStartedPayload {
+  event: "chat_started";
+  timestamp: string;
+  chatSessionId: string;
+  agentId: string;
+  visitorId: string;
+  ipAddress?: string;
+  userAgent?: string;
+  referringUrl?: string;
+  pageUrl?: string;
+}
+
+export interface MessageSentPayload {
+  event: "message_sent";
+  timestamp: string;
+  chatSessionId: string;
+  agentId: string;
+  visitorId: string;
+  role: "user" | "agent";
+  content: string;
+}
+
+export interface MessageReceivedPayload {
+  event: "message_received";
+  timestamp: string;
+  chatSessionId: string;
+  agentId: string;
+  visitorId: string;
+  role: "user" | "agent";
+  content: string;
+}
+
+export interface ChatEndedPayload {
+  event: "chat_ended";
+  timestamp: string;
+  chatSessionId: string;
+  agentId: string;
+  visitorId: string;
+  duration: number; // in seconds
+  messageCount: number;
+}
+
+export interface LeadCapturedPayload {
+  event: "lead_captured";
+  timestamp: string;
+  leadId: string;
+  agentId: string;
+  visitorId: string;
+  data: any; // Custom lead fields
+}
+
+export interface AgentCreatedPayload {
+  event: "agent_created";
+  timestamp: string;
+  agentId: string;
+  name: string;
+  description?: string;
+}
+
+export interface AgentUpdatedPayload {
+  event: "agent_updated";
+  timestamp: string;
+  agentId: string;
+  name?: string;
+  description?: string;
+  updatedFields: string[];
+}
+
+export interface AgentDeletedPayload {
+  event: "agent_deleted";
+  timestamp: string;
+  agentId: string;
+  name: string;
+}
+
+// Union type for all payloads
+export type WebhookPayload =
+  | ChatStartedPayload
+  | MessageSentPayload
+  | MessageReceivedPayload
+  | ChatEndedPayload
+  | LeadCapturedPayload
+  | AgentCreatedPayload
+  | AgentUpdatedPayload
+  | AgentDeletedPayload;
+```
+
+### 6.2 Webhook Triggers (In Progress)
+
+- Add triggers to AgentsService for agent events
+- Add triggers to LeadsService for lead and chat events
+- Ensure all event types are properly triggered
+
+### 6.3 Swagger Documentation (In Progress)
+
+- Add Swagger decorators to all API endpoints
+- Configure Swagger in main.ts
+- Generate API documentation
+
+### 6.4 Webhook Signature Verification Examples (In Progress)
+
+- Add documentation for signature verification
+- Provide code examples for Node.js, Python, and other languages
 
 ### 5.1 Webhooks Management Page
 

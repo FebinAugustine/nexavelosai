@@ -14,11 +14,15 @@ export class WebhookProcessor {
 
   @Process('send-webhook')
   async handleWebhook(job: Job) {
+    console.log('Webhook processor received job:', job.data);
     const { webhookId, event, payload } = job.data;
 
     const webhook = await this.webhookModel.findById(webhookId).exec();
+    console.log('Found webhook:', webhook);
 
-    if (!webhook || !webhook.active) {
+    // Allow test events to be sent even if webhook is inactive
+    if (!webhook || (!webhook.active && !payload.test)) {
+      console.log('Webhook is not active and not a test event, skipping');
       return;
     }
 
@@ -37,14 +41,17 @@ export class WebhookProcessor {
         headers['X-NexaVelosAI-Signature'] = signature;
       }
 
-      await axios.post(webhook.url, payload, {
+      console.log('Sending webhook to:', webhook.url);
+      const response = await axios.post(webhook.url, payload, {
         headers,
         timeout: 10000,
       });
+      console.log('Webhook response status:', response.status);
 
       webhook.failureCount = 0;
       webhook.lastSuccessAt = new Date();
     } catch (error) {
+      console.error('Webhook failed:', error);
       webhook.failureCount += 1;
       webhook.lastFailureAt = new Date();
 
