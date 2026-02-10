@@ -191,6 +191,7 @@ export default function Dashboard() {
   });
 
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   // Fetch analytics
   const {
@@ -265,6 +266,28 @@ export default function Dashboard() {
   }, [socket, queryClient]);
 
   // New useEffect to listen for agent response via WebSocket
+  // Fetch initial notifications
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          "http://localhost:5000/api/webhooks/events?limit=10",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        setNotifications(response.data);
+      } catch (error: any) {
+        console.error("Failed to fetch notifications:", error);
+      }
+    };
+
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user]);
+
   useEffect(() => {
     if (socket && user) {
       const agentResultEvent = `agent-result-${user._id}`;
@@ -301,9 +324,16 @@ export default function Dashboard() {
         refetchInvitations();
       });
 
+      // Real-time notification for webhook events
+      socket.on("webhookEvent", (data: any) => {
+        toast.success(`Webhook event: ${data.eventType}`);
+        setNotifications((prev) => [data, ...prev]);
+      });
+
       return () => {
         socket.off(agentResultEvent);
         socket.off("newInvitation");
+        socket.off("webhookEvent");
       };
     }
   }, [socket, user, setMessages, setChatLoading, refetchInvitations]); // Add dependencies as needed
@@ -2616,12 +2646,12 @@ window.nexavelWidget.open();`}</code>
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 flex flex-col md:flex-row">
       {/* Sidebar */}
       <div
         className={`bg-white/80 backdrop-blur-md shadow-xl border-r border-gray-200/50 ${
           sidebarOpen ? "block" : "hidden"
-        } md:block w-64 h-screen fixed inset-y-0 left-0 z-50 overflow-y-auto`}
+        } md:block w-64 h-screen fixed inset-y-0 left-0 z-50 overflow-y-auto md:fixed md:translate-x-0 transition-transform duration-300`}
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-center h-16 bg-gradient-to-r from-emerald-600 to-green-600">
@@ -2931,9 +2961,9 @@ window.nexavelWidget.open();`}</code>
       )}
 
       {/* Main Content */}
-      <div className="flex-1 md:ml-0">
+      <div className="flex-1 flex flex-col md:ml-64">
         {/* Top Navigation */}
-        <nav className="relative z-40 bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200/50 md:ml-64">
+        <nav className="relative z-40 bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
               <div className="flex items-center">
@@ -2977,9 +3007,10 @@ window.nexavelWidget.open();`}</code>
                       />
                     </svg>
                     {/* Notification Badge */}
-                    {pendingInvitations && pendingInvitations.length > 0 && (
+                    {(pendingInvitations.length > 0 ||
+                      notifications.length > 0) && (
                       <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                        {pendingInvitations.length}
+                        {pendingInvitations.length + notifications.length}
                       </span>
                     )}
                   </button>
@@ -2997,74 +3028,127 @@ window.nexavelWidget.open();`}</code>
                             Notifications
                           </h3>
                           <p className="text-sm text-gray-500 mt-1">
-                            You have {pendingInvitations?.length || 0} pending
-                            invitation(s)
+                            You have{" "}
+                            {pendingInvitations.length + notifications.length}{" "}
+                            notification(s)
                           </p>
                         </div>
                         <div className="p-2">
-                          {pendingInvitations &&
-                          pendingInvitations.length > 0 ? (
-                            pendingInvitations.map((invitation: any) => (
-                              <div
-                                key={invitation._id}
-                                className="bg-white/60 backdrop-blur-sm rounded-lg p-4 mb-2 border border-gray-200/50 hover:shadow-md transition-all duration-200"
-                              >
-                                <div className="flex justify-between items-start mb-3">
-                                  <div>
-                                    <h4 className="text-sm font-semibold text-gray-900">
-                                      Team Invitation
-                                    </h4>
-                                    <p className="text-sm text-gray-600 mt-1">
-                                      You've been invited to join{" "}
-                                      <span className="font-medium text-emerald-600">
-                                        {invitation.teamId?.name}
-                                      </span>
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Role: {invitation.role}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Expires:{" "}
-                                      {new Date(
-                                        invitation.expiresAt,
-                                      ).toLocaleDateString()}
-                                    </p>
+                          {pendingInvitations.length > 0 ||
+                          notifications.length > 0 ? (
+                            <>
+                              {/* Display pending invitations first */}
+                              {pendingInvitations.length > 0 &&
+                                pendingInvitations.map((invitation: any) => (
+                                  <div
+                                    key={invitation._id}
+                                    className="bg-white/60 backdrop-blur-sm rounded-lg p-4 mb-2 border border-gray-200/50 hover:shadow-md transition-all duration-200"
+                                  >
+                                    <div className="flex justify-between items-start mb-3">
+                                      <div>
+                                        <h4 className="text-sm font-semibold text-gray-900">
+                                          Team Invitation
+                                        </h4>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                          You've been invited to join{" "}
+                                          <span className="font-medium text-emerald-600">
+                                            {invitation.teamId?.name}
+                                          </span>
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          Role: {invitation.role}
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          Expires:{" "}
+                                          {new Date(
+                                            invitation.expiresAt,
+                                          ).toLocaleDateString()}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex space-x-2">
+                                      <button
+                                        onClick={() =>
+                                          acceptInvitationMutation.mutate(
+                                            invitation.token,
+                                          )
+                                        }
+                                        disabled={
+                                          acceptInvitationMutation.isPending
+                                        }
+                                        className="flex-1 bg-gradient-to-r from-emerald-600 to-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {acceptInvitationMutation.isPending
+                                          ? "Accepting..."
+                                          : "Accept"}
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          rejectInvitationMutation.mutate(
+                                            invitation.token,
+                                          )
+                                        }
+                                        disabled={
+                                          rejectInvitationMutation.isPending
+                                        }
+                                        className="flex-1 bg-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {rejectInvitationMutation.isPending
+                                          ? "Rejecting..."
+                                          : "Reject"}
+                                      </button>
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={() =>
-                                      acceptInvitationMutation.mutate(
-                                        invitation.token,
-                                      )
-                                    }
-                                    disabled={
-                                      acceptInvitationMutation.isPending
-                                    }
-                                    className="flex-1 bg-gradient-to-r from-emerald-600 to-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                ))}
+
+                              {/* Display webhook event notifications */}
+                              {notifications.length > 0 &&
+                                notifications.map((notification: any) => (
+                                  <div
+                                    key={notification._id}
+                                    className="bg-white/60 backdrop-blur-sm rounded-lg p-4 mb-2 border border-gray-200/50 hover:shadow-md transition-all duration-200"
                                   >
-                                    {acceptInvitationMutation.isPending
-                                      ? "Accepting..."
-                                      : "Accept"}
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      rejectInvitationMutation.mutate(
-                                        invitation.token,
-                                      )
-                                    }
-                                    disabled={
-                                      rejectInvitationMutation.isPending
-                                    }
-                                    className="flex-1 bg-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {rejectInvitationMutation.isPending
-                                      ? "Rejecting..."
-                                      : "Reject"}
-                                  </button>
-                                </div>
-                              </div>
-                            ))
+                                    <div className="flex justify-between items-start mb-3">
+                                      <div>
+                                        <h4 className="text-sm font-semibold text-gray-900">
+                                          Webhook Event
+                                        </h4>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                          Event Type:{" "}
+                                          <span className="font-medium text-emerald-600">
+                                            {notification.eventType}
+                                          </span>
+                                        </p>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                          Status:{" "}
+                                          <span
+                                            className={`font-medium ${
+                                              notification.status === "success"
+                                                ? "text-green-600"
+                                                : notification.status ===
+                                                    "failure"
+                                                  ? "text-red-600"
+                                                  : "text-yellow-600"
+                                            }`}
+                                          >
+                                            {notification.status}
+                                          </span>
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          {new Date(
+                                            notification.createdAt,
+                                          ).toLocaleString()}
+                                        </p>
+                                        {notification.errorMessage && (
+                                          <p className="text-xs text-red-500 mt-1">
+                                            Error: {notification.errorMessage}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                            </>
                           ) : (
                             <div className="text-center py-8 text-gray-500">
                               <svg
@@ -3226,7 +3310,7 @@ window.nexavelWidget.open();`}</code>
           </div>
         </nav>
 
-        <main className="flex-1 max-w-7xl mx-auto py-8 sm:px-6 lg:px-8 overflow-y-auto md:ml-64">
+        <main className="flex-1 max-w-7xl mx-auto py-8 sm:px-6 lg:px-8 overflow-y-auto min-h-0">
           <div className="px-4 py-6 sm:px-0">{renderContent()}</div>
         </main>
       </div>

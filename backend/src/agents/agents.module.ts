@@ -14,6 +14,7 @@ import { Reflector } from '@nestjs/core';
 import { User, UserSchema } from '../users/users.schema';
 import { LeadsModule } from '../leads/leads.module';
 import { TeamsModule } from '../teams/teams.module';
+import { WebhooksModule } from '../webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { TeamsModule } from '../teams/teams.module';
     AgentQueueModule,
     LeadsModule,
     TeamsModule,
+    WebhooksModule,
   ],
   providers: [AgentsService, PlanBasedThrottlerGuard],
   controllers: [AgentsController],

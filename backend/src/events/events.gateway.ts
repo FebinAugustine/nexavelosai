@@ -10,6 +10,9 @@ import {
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { TeamMember, TeamMemberDocument } from '../teams/team-members.schema';
 
 @WebSocketGateway({
   cors: {
@@ -22,7 +25,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private readonly logger = new Logger(EventsGateway.name);
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    @InjectModel(TeamMember.name)
+    private teamMemberModel: Model<TeamMemberDocument>,
+  ) {}
 
   async handleConnection(client: Socket, ...args: any[]) {
     this.logger.log(`New client connection: ${client.id}`);
@@ -69,5 +76,48 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   sendToUser(userId: string, event: string, data: any) {
     this.logger.log(`Sending event '${event}' to user room '${userId}'`);
     this.server.to(userId).emit(event, data);
+  }
+
+  // Method to send a message to all members of a team
+  async sendToTeamMembers(teamId: string, event: string, data: any) {
+    this.logger.log(`Sending event '${event}' to team room '${teamId}'`);
+
+    // Get all active team members
+    const teamMembers = await this.teamMemberModel
+      .find({
+        teamId: new Types.ObjectId(teamId),
+        isActive: true,
+      })
+      .select('userId');
+
+    // Send notification to each team member
+    for (const member of teamMembers) {
+      this.server.to(member.userId.toString()).emit(event, data);
+    }
+  }
+
+  // Method to send webhook event notifications
+  sendWebhookEventNotification(userId: string, webhookEvent: any) {
+    this.sendToUser(userId, 'webhookEvent', webhookEvent);
+  }
+
+  // Method to send webhook event notifications to all team members
+  async sendWebhookEventNotificationToTeam(userId: string, webhookEvent: any) {
+    // Get all teams the user is part of
+    const userTeams = await this.teamMemberModel
+      .find({
+        userId: new Types.ObjectId(userId),
+        isActive: true,
+      })
+      .select('teamId');
+
+    // Send notification to each team
+    for (const team of userTeams) {
+      await this.sendToTeamMembers(
+        team.teamId.toString(),
+        'webhookEvent',
+        webhookEvent,
+      );
+    }
   }
 }

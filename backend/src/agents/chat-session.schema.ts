@@ -16,6 +16,12 @@ export class ChatMessage {
 
 @Schema({ timestamps: true })
 export class ChatSession {
+  @Prop({ type: Date, default: Date.now })
+  createdAt?: Date;
+
+  @Prop({ type: Date, default: Date.now })
+  updatedAt?: Date;
+
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 

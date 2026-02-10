@@ -14,6 +14,8 @@ import {
   ChatSessionDocument,
 } from '../agents/chat-session.schema';
 import { TeamsService } from '../teams/teams.service';
+import { WebhooksService } from '../webhooks/webhooks.service';
+import { WebhookEventType } from '../webhooks/webhooks.schema';
 
 @Injectable()
 export class LeadsService {
@@ -23,6 +25,7 @@ export class LeadsService {
     private chatSessionModel: Model<ChatSessionDocument>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private teamsService: TeamsService, // Inject TeamsService
+    private webhooksService: WebhooksService, // Inject WebhooksService
   ) {}
 
   async createLead(data: any): Promise<LeadDocument> {
@@ -73,6 +76,16 @@ export class LeadsService {
     // Invalidate cache
     const cacheKey = `leads:${data.userId}`;
     await this.cacheManager.del(cacheKey);
+
+    // Trigger lead_captured webhook
+    await this.webhooksService.triggerWebhook(WebhookEventType.LEAD_CAPTURED, {
+      event: WebhookEventType.LEAD_CAPTURED,
+      timestamp: new Date().toISOString(),
+      leadId: savedLead._id.toString(),
+      agentId: savedLead.agentId?.toString(),
+      visitorId: data.visitorId,
+      data: savedLead.customFields,
+    });
 
     return savedLead;
   }
@@ -312,6 +325,20 @@ export class LeadsService {
       ];
     }
     const savedSession = await session.save();
+
+    // Trigger chat_started webhook
+    await this.webhooksService.triggerWebhook(WebhookEventType.CHAT_STARTED, {
+      event: WebhookEventType.CHAT_STARTED,
+      timestamp: new Date().toISOString(),
+      chatSessionId: savedSession._id.toString(),
+      agentId: savedSession.agentId.toString(),
+      visitorId: savedSession.visitorId,
+      ipAddress: savedSession.ipAddress,
+      userAgent: savedSession.userAgent,
+      referringUrl: savedSession.referringUrl,
+      pageUrl: savedSession.pageUrl,
+    });
+
     return savedSession;
   }
 
@@ -390,6 +417,24 @@ export class LeadsService {
       throw new NotFoundException('Chat session not found');
     }
 
+    // If status is being set to 'ended', trigger chat_ended webhook
+    if (updateData.status === 'ended') {
+      const duration = Math.floor(
+        (new Date().getTime() -
+          (session.createdAt?.getTime() || new Date().getTime())) /
+          1000,
+      );
+      await this.webhooksService.triggerWebhook(WebhookEventType.CHAT_ENDED, {
+        event: WebhookEventType.CHAT_ENDED,
+        timestamp: new Date().toISOString(),
+        chatSessionId: session._id.toString(),
+        agentId: session.agentId.toString(),
+        visitorId: session.visitorId,
+        duration,
+        messageCount: session.messages.length,
+      });
+    }
+
     return session;
   }
 
@@ -426,6 +471,31 @@ export class LeadsService {
     if (!session) {
       throw new NotFoundException('Chat session not found');
     }
+
+    // Trigger message_sent webhook
+    await this.webhooksService.triggerWebhook(WebhookEventType.MESSAGE_SENT, {
+      event: WebhookEventType.MESSAGE_SENT,
+      timestamp: new Date().toISOString(),
+      chatSessionId: sessionId,
+      agentId: session.agentId.toString(),
+      visitorId: session.visitorId,
+      role: message.role,
+      content: message.content,
+    });
+
+    // Also trigger message_received webhook (for compatibility)
+    await this.webhooksService.triggerWebhook(
+      WebhookEventType.MESSAGE_RECEIVED,
+      {
+        event: WebhookEventType.MESSAGE_RECEIVED,
+        timestamp: new Date().toISOString(),
+        chatSessionId: sessionId,
+        agentId: session.agentId.toString(),
+        visitorId: session.visitorId,
+        role: message.role,
+        content: message.content,
+      },
+    );
 
     return session;
   }

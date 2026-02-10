@@ -16,6 +16,8 @@ import { CreateAgentDto } from './dto/create-agent.dto';
 import { AgentQueueService } from '../agent-queue/agent-queue.service';
 import { LeadsService } from '../leads/leads.service';
 import { TeamsService } from '../teams/teams.service';
+import { WebhooksService } from '../webhooks/webhooks.service';
+import { WebhookEventType } from '../webhooks/webhooks.schema';
 
 @Injectable()
 export class AgentsService {
@@ -29,6 +31,7 @@ export class AgentsService {
     private agentQueueService: AgentQueueService, // Inject AgentQueueService
     private leadsService: LeadsService, // Inject LeadsService
     private teamsService: TeamsService, // Inject TeamsService
+    private webhooksService: WebhooksService, // Inject WebhooksService
   ) {}
 
   async create(
@@ -86,6 +89,15 @@ export class AgentsService {
     await this.cacheManager.del(analyticsCacheKey);
     // Note: Detailed analytics cache invalidation would require knowing all possible month parameters
     // For now, we'll rely on the 5-minute TTL
+
+    // Trigger agent_created webhook
+    await this.webhooksService.triggerWebhook(WebhookEventType.AGENT_CREATED, {
+      event: WebhookEventType.AGENT_CREATED,
+      timestamp: new Date().toISOString(),
+      agentId: savedAgent._id.toString(),
+      name: savedAgent.name,
+      description: savedAgent.description,
+    });
 
     return savedAgent;
   }
@@ -271,6 +283,18 @@ export class AgentsService {
     // For now, we'll rely on the 5-minute TTL
     // Note: Snippet cache invalidation would require knowing all possible type and version combinations
     // For now, we'll rely on the 5-minute TTL
+
+    // Trigger agent_updated webhook
+    const updatedFields = Object.keys(updateAgentDto);
+    await this.webhooksService.triggerWebhook(WebhookEventType.AGENT_UPDATED, {
+      event: WebhookEventType.AGENT_UPDATED,
+      timestamp: new Date().toISOString(),
+      agentId: agent._id.toString(),
+      name: agent.name,
+      description: agent.description,
+      updatedFields,
+    });
+
     return agent;
   }
 
@@ -329,6 +353,20 @@ export class AgentsService {
     // For now, we'll rely on the 5-minute TTL
     // Note: Snippet cache invalidation would require knowing all possible type and version combinations
     // For now, we'll rely on the 5-minute TTL
+
+    // Trigger agent_deleted webhook (we need to get the agent details before deletion)
+    const deletedAgent = await this.agentModel.findById(id).exec();
+    if (deletedAgent) {
+      await this.webhooksService.triggerWebhook(
+        WebhookEventType.AGENT_DELETED,
+        {
+          event: WebhookEventType.AGENT_DELETED,
+          timestamp: new Date().toISOString(),
+          agentId: id,
+          name: deletedAgent.name,
+        },
+      );
+    }
   }
 
   async removeAllByUserId(userId: string): Promise<void> {

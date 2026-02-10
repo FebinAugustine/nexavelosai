@@ -470,7 +470,156 @@ The existing teams API will be included in the v1 API with standardized response
 
 ## Phase 5: Frontend Implementation (Completed ✅)
 
-## Phase 6: Webhook Triggers & Documentation (3-4 weeks remaining) 🚀
+## Phase 6: Webhook Event Logging (Completed ✅)
+
+### 6.1 Webhook Event Schema
+
+```typescript
+// backend/src/webhooks/webhook-events.schema.ts
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
+
+export type WebhookEventDocument = WebhookEvent & Document;
+
+export enum WebhookEventStatus {
+  SUCCESS = 'success',
+  FAILURE = 'failure',
+  PENDING = 'pending',
+}
+
+@Schema({ timestamps: true })
+export class WebhookEvent {
+  @Prop({ type: Types.ObjectId, ref: 'Webhook', required: true })
+  webhookId: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  userId: Types.ObjectId;
+
+  @Prop({ required: true })
+  eventType: string;
+
+  @Prop({ required: true, type: Object })
+  payload: any;
+
+  @Prop({ required: true })
+  status: WebhookEventStatus;
+
+  @Prop()
+  responseStatus?: number;
+
+  @Prop({ type: Object })
+  responseBody?: any;
+
+  @Prop()
+  errorMessage?: string;
+
+  @Prop({ default: 0 })
+  retryCount: number;
+
+  @Prop()
+  deliveredAt?: Date;
+}
+
+export const WebhookEventSchema = SchemaFactory.createForClass(WebhookEvent);
+
+WebhookEventSchema.index({ webhookId: 1, status: 1 });
+WebhookEventSchema.index({ userId: 1, createdAt: -1 });
+WebhookEventSchema.index({ eventType: 1, createdAt: -1 });
+```
+
+### 6.2 Webhook Event Service Methods
+
+```typescript
+// backend/src/webhooks/webhooks.service.ts (extended)
+async createWebhookEvent(webhookId: string, eventType: string, payload: any): Promise<WebhookEventDocument> {
+  // Creates a new webhook event log
+}
+
+async updateWebhookEvent(eventId: string, updateData: Partial<WebhookEvent>): Promise<WebhookEventDocument> {
+  // Updates an existing webhook event log
+}
+
+async getWebhookEventsByWebhookId(webhookId: string, userId: string, query: any = {}): Promise<any> {
+  // Gets events for a specific webhook with pagination and filtering
+}
+
+async getWebhookEventsByUserId(userId: string, query: any = {}): Promise<any> {
+  // Gets all events for a user with pagination and filtering
+}
+
+async getWebhookEventById(eventId: string, userId: string): Promise<WebhookEventDocument> {
+  // Gets a specific webhook event by ID
+}
+
+async deleteWebhookEventsByWebhookId(webhookId: string, userId: string): Promise<void> {
+  // Deletes all events for a specific webhook
+}
+```
+
+### 6.3 Webhook Event API Endpoints
+
+```typescript
+// backend/src/webhooks/webhooks.controller.ts (extended)
+@Get(':id/events')
+async getWebhookEvents(@Param('id') id: string, @Request() req, @Query() query: any) {
+  // Gets events for a specific webhook
+}
+
+@Get('events')
+async getAllWebhookEvents(@Request() req, @Query() query: any) {
+  // Gets all events for current user
+}
+
+@Get('events/:eventId')
+async getWebhookEventById(@Param('eventId') eventId: string, @Request() req) {
+  // Gets a specific event by ID
+}
+```
+
+### 6.4 Frontend Event History UI
+
+```typescript
+// frontend/app/dashboard/webhooks/page.tsx (extended)
+interface WebhookEvent {
+  _id: string;
+  webhookId: string;
+  eventType: string;
+  payload: any;
+  status: 'success' | 'failure' | 'pending';
+  responseStatus?: number;
+  responseBody?: any;
+  errorMessage?: string;
+  retryCount: number;
+  deliveredAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// EventsModal component
+function EventsModal({
+  isOpen,
+  onClose,
+  webhook,
+  events,
+  loading,
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  webhook: Webhook;
+  events: WebhookEvent[];
+  loading: boolean;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  // Modal component for displaying event history
+}
+```
+
+## Phase 7: Webhook Triggers & Documentation (1-2 weeks remaining) 🚀
 
 ### 6.1 Webhook Event Payloads (In Progress)
 

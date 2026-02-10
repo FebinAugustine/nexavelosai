@@ -29,6 +29,12 @@ export class Webhook {
   })
   events: WebhookEventType[];
 
+  @Prop()
+  domain?: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'Agent' })
+  agentId?: Types.ObjectId;
+
   @Prop({ default: true })
   active: boolean;
 
@@ -48,4 +54,6 @@ export class Webhook {
 export const WebhookSchema = SchemaFactory.createForClass(Webhook);
 
 WebhookSchema.index({ userId: 1 });
+WebhookSchema.index({ domain: 1, events: 1, active: 1 });
+WebhookSchema.index({ agentId: 1, events: 1, active: 1 });
 WebhookSchema.index({ active: 1, events: 1 });

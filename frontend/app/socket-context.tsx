@@ -57,6 +57,32 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
       );
     });
 
+    // Handle webhook event notifications
+    socketInstance.on("webhookEvent", (data: any) => {
+      console.log("Webhook event received:", data);
+      const eventType = data.eventType;
+      const status = data.status;
+
+      let message = `Webhook event: ${eventType}`;
+      let icon = "🔔";
+
+      if (status === "success") {
+        message = `Webhook event succeeded: ${eventType}`;
+        icon = "✅";
+      } else if (status === "failure") {
+        message = `Webhook event failed: ${eventType}`;
+        icon = "❌";
+      } else if (status === "pending") {
+        message = `Webhook event pending: ${eventType}`;
+        icon = "⏳";
+      }
+
+      toast(message, {
+        duration: 5000,
+        icon: icon,
+      });
+    });
+
     return () => {
       socketInstance.disconnect();
     };

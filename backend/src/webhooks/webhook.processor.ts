@@ -3,13 +3,22 @@ import { Job } from 'bull';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Webhook, WebhookDocument } from './webhooks.schema';
+import {
+  WebhookEvent,
+  WebhookEventDocument,
+  WebhookEventStatus,
+} from './webhook-events.schema';
 import axios from 'axios';
 import * as crypto from 'crypto';
+import { WebhooksService } from './webhooks.service';
 
 @Processor('webhooks')
 export class WebhookProcessor {
   constructor(
     @InjectModel(Webhook.name) private webhookModel: Model<WebhookDocument>,
+    @InjectModel(WebhookEvent.name)
+    private webhookEventModel: Model<WebhookEventDocument>,
+    private webhooksService: WebhooksService,
   ) {}
 
   @Process('send-webhook')
@@ -25,6 +34,13 @@ export class WebhookProcessor {
       console.log('Webhook is not active and not a test event, skipping');
       return;
     }
+
+    // Create event log using service to emit notifications
+    const eventLog = await this.webhooksService.createWebhookEvent(
+      webhookId,
+      event,
+      payload,
+    );
 
     try {
       const headers: any = {
@@ -48,10 +64,28 @@ export class WebhookProcessor {
       });
       console.log('Webhook response status:', response.status);
 
+      // Update event log with success using service to emit notifications
+      await this.webhooksService.updateWebhookEvent(eventLog._id.toString(), {
+        status: WebhookEventStatus.SUCCESS,
+        responseStatus: response.status,
+        responseBody: response.data,
+        deliveredAt: new Date(),
+      });
+
       webhook.failureCount = 0;
       webhook.lastSuccessAt = new Date();
     } catch (error) {
       console.error('Webhook failed:', error);
+
+      // Update event log with failure using service to emit notifications
+      await this.webhooksService.updateWebhookEvent(eventLog._id.toString(), {
+        status: WebhookEventStatus.FAILURE,
+        errorMessage: error.message,
+        responseStatus: error.response?.status,
+        responseBody: error.response?.data,
+        deliveredAt: new Date(),
+      });
+
       webhook.failureCount += 1;
       webhook.lastFailureAt = new Date();
 

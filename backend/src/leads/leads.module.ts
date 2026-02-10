@@ -7,6 +7,7 @@ import { Agent, AgentSchema } from '../agents/agents.schema';
 import { LeadsController } from './leads.controller';
 import { LeadsService } from './leads.service';
 import { TeamsModule } from '../teams/teams.module';
+import { WebhooksModule } from '../webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { TeamsModule } from '../teams/teams.module';
     MongooseModule.forFeature([{ name: Agent.name, schema: AgentSchema }]),
     CacheModule.register(),
     TeamsModule, // Import TeamsModule to resolve TeamsService dependency
+    WebhooksModule, // Import WebhooksModule to resolve WebhooksService dependency
   ],
   controllers: [LeadsController],
   providers: [LeadsService],
