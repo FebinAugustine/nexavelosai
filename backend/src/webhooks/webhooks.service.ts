@@ -276,21 +276,7 @@ export class WebhooksService {
 
     const savedEvent = await event.save();
 
-    // Emit real-time notification to the user
-    this.eventsGateway.sendWebhookEventNotification(
-      webhook.userId.toString(),
-      savedEvent.toJSON(),
-    );
-
-    // Emit real-time notification to all team members
-    this.eventsGateway.sendWebhookEventNotificationToTeam(
-      webhook.userId.toString(),
-      savedEvent.toJSON(),
-    );
-
-    // Send email notification
-    this.sendWebhookEventEmail(webhook.userId.toString(), savedEvent, webhook);
-
+    // Don't send notification for PENDING status to avoid duplicates
     return savedEvent;
   }
 

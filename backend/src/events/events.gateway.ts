@@ -13,6 +13,7 @@ import { Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { TeamMember, TeamMemberDocument } from '../teams/team-members.schema';
+import { Team, TeamDocument } from '../teams/teams.schema';
 
 @WebSocketGateway({
   cors: {
@@ -29,6 +30,8 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly jwtService: JwtService,
     @InjectModel(TeamMember.name)
     private teamMemberModel: Model<TeamMemberDocument>,
+    @InjectModel(Team.name)
+    private teamModel: Model<TeamDocument>,
   ) {}
 
   async handleConnection(client: Socket, ...args: any[]) {
@@ -101,8 +104,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.sendToUser(userId, 'webhookEvent', webhookEvent);
   }
 
-  // Method to send webhook event notifications to all team members
+  // Method to send webhook event notifications to all team members with access to the agent
   async sendWebhookEventNotificationToTeam(userId: string, webhookEvent: any) {
+    // Check if webhook event is related to a specific agent
+    const { agentId } = webhookEvent.payload || {};
+
     // Get all teams the user is part of
     const userTeams = await this.teamMemberModel
       .find({
@@ -111,13 +117,21 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       })
       .select('teamId');
 
-    // Send notification to each team
+    // For each team, check if the agent is shared with that team before sending notification
     for (const team of userTeams) {
-      await this.sendToTeamMembers(
-        team.teamId.toString(),
-        'webhookEvent',
-        webhookEvent,
-      );
+      const teamDoc = await this.teamModel.findById(team.teamId);
+
+      // If event is not related to any specific agent, or agent is shared with the team
+      if (
+        !agentId ||
+        (teamDoc && teamDoc.sharedAgents.includes(new Types.ObjectId(agentId)))
+      ) {
+        await this.sendToTeamMembers(
+          team.teamId.toString(),
+          'webhookEvent',
+          webhookEvent,
+        );
+      }
     }
   }
 }

@@ -11,6 +11,7 @@ import {
   BadRequestException,
   Query,
 } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { WebhooksService } from './webhooks.service';
 import { WebhookEventType } from './webhooks.schema';
 import { WebhookEventStatus } from './webhook-events.schema';
@@ -29,13 +30,14 @@ import {
 } from '@nestjs/swagger';
 
 @Controller('api/webhooks')
-@UseGuards(JwtAuthGuard, AgencyPlanGuard)
+@UseGuards(JwtAuthGuard)
 @ApiTags('Webhooks')
 @ApiBearerAuth()
 export class WebhooksController {
   constructor(private readonly webhooksService: WebhooksService) {}
 
   @Post()
+  @UseGuards(AgencyPlanGuard)
   @ApiOperation({ summary: 'Create a new webhook' })
   @ApiResponse({ status: 201, description: 'Webhook created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
@@ -89,12 +91,55 @@ export class WebhooksController {
   }
 
   @Get()
+  @UseGuards(AgencyPlanGuard)
   @ApiOperation({ summary: 'Get all webhooks for the current user' })
   @ApiResponse({ status: 200, description: 'List of webhooks' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Agency plan required' })
   async getWebhooks(@Request() req) {
     return this.webhooksService.getWebhooksByUser(req.user._id.toString());
+  }
+
+  @Get('events')
+  @ApiOperation({ summary: 'Get all webhook events for current user' })
+  @ApiResponse({ status: 200, description: 'List of all webhook events' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiQuery({
+    name: 'page',
+    type: 'number',
+    required: false,
+    description: 'Page number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    type: 'number',
+    required: false,
+    description: 'Items per page',
+  })
+  @ApiQuery({
+    name: 'status',
+    type: 'string',
+    required: false,
+    description: 'Event status (success/failure/pending)',
+  })
+  @ApiQuery({
+    name: 'startDate',
+    type: 'string',
+    required: false,
+    description: 'Start date (ISO format)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    type: 'string',
+    required: false,
+    description: 'End date (ISO format)',
+  })
+  @SkipThrottle() // Add this to disable throttling for this endpoint
+  async getAllWebhookEvents(@Request() req, @Query() query: any) {
+    return this.webhooksService.getWebhookEventsByUserId(
+      req.user._id.toString(),
+      query,
+    );
   }
 
   @Get(':id')
@@ -109,6 +154,7 @@ export class WebhooksController {
   }
 
   @Patch(':id')
+  @UseGuards(AgencyPlanGuard)
   @ApiOperation({ summary: 'Update a webhook' })
   @ApiResponse({ status: 200, description: 'Webhook updated successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
@@ -163,6 +209,7 @@ export class WebhooksController {
   }
 
   @Delete(':id')
+  @UseGuards(AgencyPlanGuard)
   @ApiOperation({ summary: 'Delete a webhook' })
   @ApiResponse({ status: 200, description: 'Webhook deleted successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -175,6 +222,7 @@ export class WebhooksController {
   }
 
   @Post(':id/test')
+  @UseGuards(AgencyPlanGuard)
   @ApiOperation({ summary: 'Test a webhook' })
   @ApiResponse({ status: 200, description: 'Webhook test succeeded' })
   @ApiResponse({ status: 400, description: 'Webhook test failed' })
@@ -343,13 +391,6 @@ export class WebhooksController {
     required: false,
     description: 'End date (ISO format)',
   })
-  async getAllWebhookEvents(@Request() req, @Query() query: any) {
-    return this.webhooksService.getWebhookEventsByUserId(
-      req.user._id.toString(),
-      query,
-    );
-  }
-
   @Get('events/:eventId')
   @ApiOperation({ summary: 'Get webhook event by ID' })
   @ApiResponse({ status: 200, description: 'Webhook event details' })

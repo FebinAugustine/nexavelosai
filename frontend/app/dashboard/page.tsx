@@ -192,6 +192,9 @@ export default function Dashboard() {
 
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [readNotifications, setReadNotifications] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Fetch analytics
   const {
@@ -277,9 +280,13 @@ export default function Dashboard() {
             headers: { Authorization: `Bearer ${token}` },
           },
         );
-        setNotifications(response.data);
+        // The API returns { items: [], page: 1, limit: 10, ... }
+        setNotifications(
+          Array.isArray(response.data.items) ? response.data.items : [],
+        );
       } catch (error: any) {
         console.error("Failed to fetch notifications:", error);
+        setNotifications([]);
       }
     };
 
@@ -2990,7 +2997,20 @@ window.nexavelWidget.open();`}</code>
                 {/* Notification Icon */}
                 <div className="relative">
                   <button
-                    onClick={() => setNotificationsOpen(!notificationsOpen)}
+                    onClick={() => {
+                      // Mark all unread notifications as read when opening dropdown
+                      if (!notificationsOpen) {
+                        const unreadIds = notifications
+                          .filter((n) => !readNotifications.has(n._id))
+                          .map((n) => n._id);
+                        setReadNotifications((prev) => {
+                          const newRead = new Set(prev);
+                          unreadIds.forEach((id) => newRead.add(id));
+                          return newRead;
+                        });
+                      }
+                      setNotificationsOpen(!notificationsOpen);
+                    }}
                     className="p-2 text-gray-700 hover:text-emerald-600 hover:bg-white/60 rounded-lg transition-all duration-200 relative"
                   >
                     <svg
@@ -3007,10 +3027,15 @@ window.nexavelWidget.open();`}</code>
                       />
                     </svg>
                     {/* Notification Badge */}
-                    {(pendingInvitations.length > 0 ||
-                      notifications.length > 0) && (
+                    {((pendingInvitations || []).length > 0 ||
+                      (notifications || []).filter(
+                        (n) => !readNotifications.has(n._id),
+                      ).length > 0) && (
                       <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                        {pendingInvitations.length + notifications.length}
+                        {(pendingInvitations || []).length +
+                          (notifications || []).filter(
+                            (n) => !readNotifications.has(n._id),
+                          ).length}
                       </span>
                     )}
                   </button>

@@ -58,10 +58,10 @@ export class PlanBasedThrottlerGuard extends ThrottlerGuard {
 
     // Define rate limits per plan
     const planLimits = {
-      free: { limit: 10, ttl: 1800000 }, // 10 requests per 30 minutes
-      regular: { limit: 500, ttl: 60000 }, // 500 requests per minute
-      special: { limit: 1000, ttl: 60000 }, // 1000 requests per minute (fixed from 100 per 30 minutes)
-      agency: { limit: 5000, ttl: 60000 }, // 5000 requests per minute
+      free: { limit: 1000, ttl: 60000 }, // 1000 requests per minute
+      regular: { limit: 5000, ttl: 60000 }, // 5000 requests per minute
+      special: { limit: 10000, ttl: 60000 }, // 10000 requests per minute
+      agency: { limit: 50000, ttl: 60000 }, // 50000 requests per minute
     };
 
     const limitConfig = user

@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { EventsGateway } from './events.gateway';
 import { TeamMember, TeamMemberSchema } from '../teams/team-members.schema';
+import { Team, TeamSchema } from '../teams/teams.schema';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { TeamMember, TeamMemberSchema } from '../teams/team-members.schema';
     }),
     MongooseModule.forFeature([
       { name: TeamMember.name, schema: TeamMemberSchema },
+      { name: Team.name, schema: TeamSchema },
     ]),
   ],
   providers: [EventsGateway],
