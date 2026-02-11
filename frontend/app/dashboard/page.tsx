@@ -35,6 +35,12 @@ import LeadCaptureModal from "./[id]/lead-capture/LeadCaptureModal";
 import TeamsPage from "./teams/page";
 import WebhooksPage from "./webhooks/page";
 import AnalyticsDashboard from "./analytics/page";
+import EmailAutomationOverviewPage from "./email-automation/overview/page";
+import EmailAccountsPage from "./email-automation/accounts/page";
+import ContactsPage from "./email-automation/contacts/page";
+import EmailTemplatesPage from "./email-automation/templates/page";
+import EmailCampaignsPage from "./email-automation/campaigns/page";
+import EmailHistoryPage from "./email-automation/history/page";
 
 interface User {
   _id: string;
@@ -3124,6 +3130,19 @@ window.nexavelWidget.open();`}</code>
             </div>
           </>
         );
+      case "email-automation":
+      case "email-automation-overview":
+        return <EmailAutomationOverviewPage />;
+      case "email-automation-accounts":
+        return <EmailAccountsPage />;
+      case "email-automation-contacts":
+        return <ContactsPage />;
+      case "email-automation-templates":
+        return <EmailTemplatesPage />;
+      case "email-automation-campaigns":
+        return <EmailCampaignsPage />;
+      case "email-automation-history":
+        return <EmailHistoryPage />;
       default:
         return null;
     }
@@ -3377,6 +3396,141 @@ window.nexavelWidget.open();`}</code>
                 </div>
               </button>
             ) : null}
+            <div className="space-y-1">
+              <button
+                onClick={() =>
+                  setActiveSection(
+                    activeSection === "email-automation"
+                      ? ""
+                      : "email-automation",
+                  )
+                }
+                className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium flex items-center justify-between ${
+                  activeSection === "email-automation" ||
+                  activeSection.startsWith("email-automation-")
+                    ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg"
+                    : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <span>Email Automation</span>
+                </div>
+                <svg
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    activeSection === "email-automation" ||
+                    activeSection.startsWith("email-automation-")
+                      ? "rotate-180"
+                      : ""
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              {(activeSection === "email-automation" ||
+                activeSection.startsWith("email-automation-")) && (
+                <div className="ml-4 space-y-1">
+                  <button
+                    onClick={() => {
+                      setActiveSection("email-automation-overview");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "email-automation-overview"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Overview
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("email-automation-accounts");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "email-automation-accounts"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Accounts
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("email-automation-contacts");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "email-automation-contacts"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Contacts
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("email-automation-templates");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "email-automation-templates"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Templates
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("email-automation-campaigns");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "email-automation-campaigns"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Campaigns
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("email-automation-history");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "email-automation-history"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    History
+                  </button>
+                </div>
+              )}
+            </div>
             <button
               onClick={() => {
                 setActiveSection("analytics");
