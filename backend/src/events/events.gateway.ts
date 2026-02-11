@@ -126,11 +126,21 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         !agentId ||
         (teamDoc && teamDoc.sharedAgents.includes(new Types.ObjectId(agentId)))
       ) {
-        await this.sendToTeamMembers(
-          team.teamId.toString(),
-          'webhookEvent',
-          webhookEvent,
-        );
+        // Get all active team members except the owner to avoid duplicate notifications
+        const teamMembers = await this.teamMemberModel
+          .find({
+            teamId: new Types.ObjectId(team.teamId),
+            isActive: true,
+            userId: { $ne: new Types.ObjectId(userId) }, // Exclude the owner user
+          })
+          .select('userId');
+
+        // Send notification to each team member (excluding owner)
+        for (const member of teamMembers) {
+          this.server
+            .to(member.userId.toString())
+            .emit('webhookEvent', webhookEvent);
+        }
       }
     }
   }

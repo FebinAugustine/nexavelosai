@@ -65,9 +65,10 @@ export class LeadsService {
 
     const savedLead = await lead.save();
 
-    // Update chat session with leadId
+    // Update chat session with leadId and mark as converted
     if (chatSession) {
       chatSession.leadId = savedLead._id;
+      chatSession.convertedToLead = true;
       await chatSession.save();
     }
 
@@ -342,6 +343,35 @@ export class LeadsService {
     return savedSession;
   }
 
+  async fixChatSessions(userId: string): Promise<number> {
+    // Find all chat sessions without agentId
+    const sessionsWithoutAgentId = await this.chatSessionModel.find({
+      userId: new Types.ObjectId(userId),
+      agentId: { $exists: false },
+    });
+
+    console.log(
+      'Chat sessions without agentId:',
+      sessionsWithoutAgentId.length,
+    );
+
+    // For each session without agentId, try to find the corresponding lead and get agentId from there
+    let fixedCount = 0;
+    for (const session of sessionsWithoutAgentId) {
+      if (session.leadId) {
+        const lead = await this.leadModel.findById(session.leadId);
+        if (lead && lead.agentId) {
+          session.agentId = lead.agentId;
+          await session.save();
+          console.log('Updated session:', session._id);
+          fixedCount++;
+        }
+      }
+    }
+
+    return fixedCount;
+  }
+
   async findChatSessionsByLead(
     leadId: string,
     userId: string,
@@ -453,19 +483,55 @@ export class LeadsService {
       }
     }
 
-    const session = await this.chatSessionModel
-      .findOneAndUpdate(
-        query,
-        {
-          $push: {
-            messages: {
-              ...message,
-              timestamp: message.timestamp || new Date(),
-            },
-          },
+    // Get the current session to calculate response time if it's an agent message
+    const currentSession = await this.chatSessionModel.findOne(query).exec();
+    if (!currentSession) {
+      throw new NotFoundException('Chat session not found');
+    }
+
+    const updateData: any = {
+      $push: {
+        messages: {
+          ...message,
+          timestamp: message.timestamp || new Date(),
         },
-        { new: true },
-      )
+      },
+      $inc: {
+        messageCount: 1,
+        [message.role === 'user' ? 'userMessageCount' : 'agentMessageCount']: 1,
+      },
+    };
+
+    // Calculate response time if it's an agent message
+    if (message.role === 'agent') {
+      const lastUserMessage = currentSession.messages
+        .filter((msg) => msg.role === 'user')
+        .pop();
+
+      if (lastUserMessage) {
+        const responseTime =
+          (message.timestamp || new Date()).getTime() -
+          (lastUserMessage.timestamp || new Date()).getTime();
+
+        updateData.$push = {
+          ...updateData.$push,
+          responseTimes: responseTime,
+        };
+
+        // Calculate new average response time
+        const existingResponseTimes = currentSession.responseTimes || [];
+        const newResponseTimes = [...existingResponseTimes, responseTime];
+        const avgResponseTime =
+          newResponseTimes.reduce((sum, time) => sum + time, 0) /
+          newResponseTimes.length;
+        updateData.$set = {
+          avgResponseTime: Math.floor(avgResponseTime),
+        };
+      }
+    }
+
+    const session = await this.chatSessionModel
+      .findOneAndUpdate(query, updateData, { new: true })
       .exec();
 
     if (!session) {

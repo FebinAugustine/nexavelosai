@@ -162,6 +162,28 @@ export class LeadsController {
     return res.send(data);
   }
 
+  @Post('fix-sessions')
+  @UseGuards(JwtAuthGuard)
+  async fixChatSessions(@Request() req) {
+    try {
+      const fixedCount = await this.leadsService.fixChatSessions(
+        req.user._id.toString(),
+      );
+      return {
+        statusCode: 200,
+        message: `Fixed ${fixedCount} chat sessions`,
+        data: null,
+      };
+    } catch (error) {
+      console.error('Error fixing chat sessions:', error);
+      return {
+        statusCode: 500,
+        message: 'Error fixing chat sessions',
+        data: null,
+      };
+    }
+  }
+
   @Get(':id/sessions')
   @UseGuards(JwtAuthGuard)
   async getChatSessions(@Param('id') id: string, @Request() req) {

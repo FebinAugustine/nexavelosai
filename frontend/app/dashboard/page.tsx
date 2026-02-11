@@ -14,11 +14,27 @@ import {
   isValidDomain,
   isValidPassword,
 } from "../../lib/sanitization";
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import LeadsPage from "./leads/page";
 import LeadCaptureModal from "./[id]/lead-capture/LeadCaptureModal";
 import TeamsPage from "./teams/page";
 import WebhooksPage from "./webhooks/page";
+import AnalyticsDashboard from "./analytics/page";
 
 interface User {
   _id: string;
@@ -60,6 +76,17 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const socket = useSocket();
+
+  // Analytics state
+  const [timeRange, setTimeRange] = useState("7d");
+  const [metricType, setMetricType] = useState("chatVolume");
+  const [showReports, setShowReports] = useState(false);
+  const [reportConfig, setReportConfig] = useState({
+    metrics: ["chatVolume", "responseTime", "conversionRate"],
+    dimensions: ["time", "agent", "geo"],
+    timeRange: "30d",
+    format: "csv",
+  });
 
   // Fetch user profile
   const {
@@ -193,10 +220,144 @@ export default function Dashboard() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [readNotifications, setReadNotifications] = useState<Set<string>>(
-    new Set(),
+    () => {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("readNotifications");
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+      }
+      return new Set();
+    },
   );
 
-  // Fetch analytics
+  // Socket listeners for real-time analytics updates
+  useEffect(() => {
+    socket?.on("analytics:update", (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    });
+
+    return () => {
+      socket?.off("analytics:update");
+    };
+  }, [socket, queryClient]);
+
+  // Chat Volume Trends Query
+  const { data: chatVolumeData } = useQuery({
+    queryKey: ["chatVolume", timeRange],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const params = new URLSearchParams({
+        timeRange,
+      });
+
+      const response = await axios.get(
+        `http://localhost:5000/analytics/chat-volume?${params}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      return response.data.data;
+    },
+    enabled: !!user,
+  });
+
+  // Response Time Metrics Query
+  const { data: responseTimeData } = useQuery({
+    queryKey: ["responseTime", timeRange],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+
+      const response = await axios.get(
+        "http://localhost:5000/analytics/response-times",
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      return response.data.data;
+    },
+    enabled: !!user,
+  });
+
+  // Lead Conversion Metrics Query
+  const { data: conversionData } = useQuery({
+    queryKey: ["conversionRate", timeRange],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+
+      const response = await axios.get(
+        "http://localhost:5000/analytics/conversion-rates",
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      return response.data.data;
+    },
+    enabled: !!user,
+  });
+
+  // Engagement Metrics Query
+  const { data: engagementData } = useQuery({
+    queryKey: ["engagement", timeRange],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+
+      const response = await axios.get(
+        "http://localhost:5000/analytics/engagement",
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      return response.data.data;
+    },
+    enabled: !!user,
+  });
+
+  // Geographic Data Query
+  const { data: geographicData } = useQuery({
+    queryKey: ["geographic", timeRange],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+
+      const response = await axios.get(
+        "http://localhost:5000/analytics/geographic",
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      return response.data.data;
+    },
+    enabled: !!user,
+  });
+
+  // Agent Performance Query
+  const { data: agentPerformanceData } = useQuery({
+    queryKey: ["agentPerformance", timeRange],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        "http://localhost:5000/analytics/agent-performance",
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      return response.data.data;
+    },
+    enabled: !!user,
+  });
+
+  // Generate Report Mutation
+  const generateReport = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        "http://localhost:5000/analytics/reports",
+        reportConfig,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: "blob",
+        },
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      const url = window.URL.createObjectURL(new Blob([data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `analytics-report-${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    },
+  });
+
+  // Fetch basic analytics (for existing dashboard section)
   const {
     data: analytics,
     isLoading: analyticsLoading,
@@ -216,6 +377,63 @@ export default function Dashboard() {
     },
     enabled: !!user,
   });
+
+  // Helper Components
+  const MetricCard = ({
+    title,
+    value,
+    change,
+    trend,
+  }: {
+    title: string;
+    value: string | number;
+    change: string;
+    trend: "up" | "down";
+  }) => (
+    <div className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200">
+      <h4 className="text-sm font-semibold text-gray-600 mb-2">{title}</h4>
+      <div className="text-2xl font-bold text-gray-900 mb-2">{value}</div>
+      <div
+        className={`text-sm font-medium flex items-center ${
+          trend === "up" ? "text-green-600" : "text-red-600"
+        }`}
+      >
+        <svg
+          className="w-4 h-4 mr-1"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d={
+              trend === "up"
+                ? "M5 10l7-7m0 0l7 7m-7-7v18"
+                : "M19 14l-7 7m0 0l-7-7m7 7V3"
+            }
+          />
+        </svg>
+        {change}
+      </div>
+    </div>
+  );
+
+  const ChartCard = ({
+    title,
+    children,
+    height = 300,
+  }: {
+    title: string;
+    children: React.ReactNode;
+    height?: number;
+  }) => (
+    <div className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+      <div style={{ height }}>{children}</div>
+    </div>
+  );
 
   const loading = userLoading || agentsLoading || analyticsLoading;
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -1011,185 +1229,14 @@ export default function Dashboard() {
         );
       case "analytics":
         return (
-          <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
-            <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-white">
-                  Analytics Overview
-                </h3>
-              </div>
-            </div>
-            <div className="px-6 py-8 sm:p-8">
-              {analytics ? (
-                <div className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 rounded-2xl border border-emerald-200/50 shadow-lg">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
-                          <svg
-                            className="w-6 h-6 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-semibold text-emerald-700">
-                            Total Agents
-                          </h4>
-                        </div>
-                      </div>
-                      <p className="text-3xl font-bold text-emerald-900">
-                        {analytics.totalAgents}
-                      </p>
-                    </div>
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-2xl border border-green-200/50 shadow-lg">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
-                          <svg
-                            className="w-6 h-6 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-semibold text-green-700">
-                            Total Chats
-                          </h4>
-                        </div>
-                      </div>
-                      <p className="text-3xl font-bold text-green-900">
-                        {analytics.totalChats}
-                      </p>
-                    </div>
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl border border-blue-200/50 shadow-lg">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
-                          <svg
-                            className="w-6 h-6 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-9 0V1m10 3V1m0 3l1 1v16a2 2 0 01-2 2H6a2 2 0 01-2-2V5l1-1z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-semibold text-blue-700">
-                            Total Interactions
-                          </h4>
-                        </div>
-                      </div>
-                      <p className="text-3xl font-bold text-blue-900">
-                        {analytics.totalInteractions}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                      <svg
-                        className="w-5 h-5 mr-2 text-indigo-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                        />
-                      </svg>
-                      Agent Performance
-                    </h4>
-                    <div className="space-y-4">
-                      {analytics.agents.map((agent) => (
-                        <div
-                          key={agent.id}
-                          className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200"
-                        >
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center space-x-4">
-                              <div className="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
-                                <svg
-                                  className="w-6 h-6 text-[#0C7779]"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                                  />
-                                </svg>
-                              </div>
-                              <div>
-                                <span className="font-semibold text-gray-900 text-lg">
-                                  {agent.name}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm text-gray-600 mb-1">
-                                <span className="font-medium">Chats:</span>{" "}
-                                {agent.chatCount}
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                <span className="font-medium">
-                                  Interactions:
-                                </span>{" "}
-                                {agent.totalInteractions}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 animate-spin">
+          <div className="space-y-8">
+            {/* Old Analytics Overview */}
+            <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
+              <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                     <svg
-                      className="w-8 h-8 text-gray-400"
+                      className="w-6 h-6 text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -1198,15 +1245,525 @@ export default function Dashboard() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                       />
                     </svg>
                   </div>
-                  <p className="text-gray-600 text-lg font-medium">
-                    Loading analytics...
-                  </p>
+                  <h3 className="text-xl font-semibold text-white">
+                    Analytics Overview
+                  </h3>
                 </div>
-              )}
+              </div>
+              <div className="px-6 py-8 sm:p-8">
+                {analytics ? (
+                  <div className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 rounded-2xl border border-emerald-200/50 shadow-lg">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
+                            <svg
+                              className="w-6 h-6 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                              />
+                            </svg>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-semibold text-emerald-700">
+                              Total Agents
+                            </h4>
+                          </div>
+                        </div>
+                        <p className="text-3xl font-bold text-emerald-900">
+                          {analytics.totalAgents}
+                        </p>
+                      </div>
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-2xl border border-green-200/50 shadow-lg">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
+                            <svg
+                              className="w-6 h-6 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                              />
+                            </svg>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-semibold text-green-700">
+                              Total Chats
+                            </h4>
+                          </div>
+                        </div>
+                        <p className="text-3xl font-bold text-green-900">
+                          {analytics.totalChats}
+                        </p>
+                      </div>
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl border border-blue-200/50 shadow-lg">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                            <svg
+                              className="w-6 h-6 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-9 0V1m10 3V1m0 3l1 1v16a2 2 0 01-2 2H6a2 2 0 01-2-2V5l1-1z"
+                              />
+                            </svg>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-semibold text-blue-700">
+                              Total Interactions
+                            </h4>
+                          </div>
+                        </div>
+                        <p className="text-3xl font-bold text-blue-900">
+                          {analytics.totalInteractions}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                        <svg
+                          className="w-5 h-5 mr-2 text-indigo-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                          />
+                        </svg>
+                        Agent Performance
+                      </h4>
+                      <div className="space-y-4">
+                        {analytics.agents.map((agent) => (
+                          <div
+                            key={agent.id}
+                            className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200"
+                          >
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center space-x-4">
+                                <div className="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
+                                  <svg
+                                    className="w-6 h-6 text-[#0C7779]"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                                    />
+                                  </svg>
+                                </div>
+                                <div>
+                                  <span className="font-semibold text-gray-900 text-lg">
+                                    {agent.name}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-sm text-gray-600 mb-1">
+                                  <span className="font-medium">Chats:</span>{" "}
+                                  {agent.chatCount}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  <span className="font-medium">
+                                    Interactions:
+                                  </span>{" "}
+                                  {agent.totalInteractions}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 animate-spin">
+                      <svg
+                        className="w-8 h-8 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-gray-600 text-lg font-medium">
+                      Loading analytics...
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* New Advanced Analytics Dashboard */}
+            <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50">
+              <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-white">
+                      Advanced Analytics Dashboard
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setShowReports(!showReports)}
+                    className="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
+                  >
+                    {showReports ? "Hide Reports" : "Generate Report"}
+                  </button>
+                </div>
+              </div>
+              <div className="px-6 py-8 sm:p-8 space-y-6">
+                {/* Time Range Selector */}
+                <div className="flex space-x-2">
+                  {["24h", "7d", "30d", "90d", "1y"].map((range) => (
+                    <button
+                      key={range}
+                      onClick={() => setTimeRange(range)}
+                      className={`px-4 py-2 rounded-lg ${
+                        timeRange === range
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {range}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom Reports Section */}
+                {showReports && (
+                  <div className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Generate Custom Report
+                    </h3>
+
+                    {/* Metrics Selection */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Metrics
+                      </label>
+                      <div className="space-x-2">
+                        {[
+                          "chatVolume",
+                          "responseTime",
+                          "conversionRate",
+                          "engagement",
+                        ].map((metric) => (
+                          <label
+                            key={metric}
+                            className="inline-flex items-center"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={reportConfig.metrics.includes(metric)}
+                              onChange={(e) => {
+                                setReportConfig((prev) => ({
+                                  ...prev,
+                                  metrics: e.target.checked
+                                    ? [...prev.metrics, metric]
+                                    : prev.metrics.filter((m) => m !== metric),
+                                }));
+                              }}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="ml-2 text-sm text-gray-600">
+                              {metric.charAt(0).toUpperCase() + metric.slice(1)}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Dimensions Selection */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Dimensions
+                      </label>
+                      <div className="space-x-2">
+                        {["time", "agent", "geo"].map((dimension) => (
+                          <label
+                            key={dimension}
+                            className="inline-flex items-center"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={reportConfig.dimensions.includes(
+                                dimension,
+                              )}
+                              onChange={(e) => {
+                                setReportConfig((prev) => ({
+                                  ...prev,
+                                  dimensions: e.target.checked
+                                    ? [...prev.dimensions, dimension]
+                                    : prev.dimensions.filter(
+                                        (d) => d !== dimension,
+                                      ),
+                                }));
+                              }}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="ml-2 text-sm text-gray-600">
+                              {dimension.charAt(0).toUpperCase() +
+                                dimension.slice(1)}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Time Range */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Time Range
+                      </label>
+                      <select
+                        value={reportConfig.timeRange}
+                        onChange={(e) =>
+                          setReportConfig((prev) => ({
+                            ...prev,
+                            timeRange: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                        <option value="90d">Last 90 Days</option>
+                        <option value="1y">Last Year</option>
+                      </select>
+                    </div>
+
+                    {/* Format Selection */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Format
+                      </label>
+                      <select
+                        value={reportConfig.format}
+                        onChange={(e) =>
+                          setReportConfig((prev) => ({
+                            ...prev,
+                            format: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="csv">CSV</option>
+                        <option value="excel">Excel</option>
+                      </select>
+                    </div>
+
+                    {/* Generate Button */}
+                    <button
+                      onClick={() => generateReport.mutate()}
+                      disabled={generateReport.isPending}
+                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-300"
+                    >
+                      {generateReport.isPending
+                        ? "Generating..."
+                        : "Generate Report"}
+                    </button>
+                  </div>
+                )}
+
+                {/* Main Metrics Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <MetricCard
+                    title="Total Chats"
+                    value={conversionData?.totalSessions || 0}
+                    change="+12.5%"
+                    trend="up"
+                  />
+                  <MetricCard
+                    title="Avg Response Time"
+                    value={`${(responseTimeData?.avg || 0).toFixed(0)}ms`}
+                    change="-8.2%"
+                    trend="down"
+                  />
+                  <MetricCard
+                    title="Lead Conversion"
+                    value={`${(conversionData?.conversionRate || 0).toFixed(1)}%`}
+                    change="+3.2%"
+                    trend="up"
+                  />
+                  <MetricCard
+                    title="Avg Messages"
+                    value={(engagementData?.avgMessages || 0).toFixed(1)}
+                    change="+15.3%"
+                    trend="up"
+                  />
+                </div>
+
+                {/* Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Chat Volume Trends */}
+                  <ChartCard title="Chat Volume Trends" height={300}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chatVolumeData}>
+                        <defs>
+                          <linearGradient
+                            id="colorCount"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="5%"
+                              stopColor="#3b82f6"
+                              stopOpacity={0.8}
+                            />
+                            <stop
+                              offset="95%"
+                              stopColor="#3b82f6"
+                              stopOpacity={0}
+                            />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Area
+                          type="monotone"
+                          dataKey="count"
+                          stroke="#3b82f6"
+                          fillOpacity={1}
+                          fill="url(#colorCount)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
+
+                  {/* Response Time Distribution */}
+                  <ChartCard title="Response Time Distribution" height={300}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={[
+                          { range: "0-1s", count: 150 },
+                          { range: "1-2s", count: 280 },
+                          { range: "2-3s", count: 120 },
+                          { range: "3-4s", count: 80 },
+                          { range: "4s+", count: 50 },
+                        ]}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="range" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="count" fill="#10b981" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
+
+                  {/* Lead Conversion Rate */}
+                  <ChartCard title="Lead Conversion Rate" height={300}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={conversionData?.daily || []}>
+                        <defs>
+                          <linearGradient
+                            id="colorRate"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="5%"
+                              stopColor="#8b5cf6"
+                              stopOpacity={0.8}
+                            />
+                            <stop
+                              offset="95%"
+                              stopColor="#8b5cf6"
+                              stopOpacity={0}
+                            />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Area
+                          type="monotone"
+                          dataKey="conversionRate"
+                          stroke="#8b5cf6"
+                          fillOpacity={1}
+                          fill="url(#colorRate)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
+
+                  {/* Agent Performance */}
+                  <ChartCard title="Agent Performance" height={300}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={agentPerformanceData || []}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="agent" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="chatCount" fill="#3b82f6" name="Chats" />
+                        <Bar
+                          dataKey="avgResponseTime"
+                          fill="#10b981"
+                          name="Avg Response Time (ms)"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -3006,6 +3563,10 @@ window.nexavelWidget.open();`}</code>
                         setReadNotifications((prev) => {
                           const newRead = new Set(prev);
                           unreadIds.forEach((id) => newRead.add(id));
+                          localStorage.setItem(
+                            "readNotifications",
+                            JSON.stringify([...newRead]),
+                          );
                           return newRead;
                         });
                       }

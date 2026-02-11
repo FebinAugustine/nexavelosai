@@ -23,6 +23,7 @@ import { LeadsModule } from './leads/leads.module'; // Import Leads module
 import { TeamsModule } from './teams/teams.module'; // Import Teams module
 import { WebhooksModule } from './webhooks/webhooks.module'; // Import Webhooks module
 import { ApiModule } from './api/api.module'; // Import API module
+import { AnalyticsModule } from './analytics/analytics.module'; // Import Analytics module
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { ApiModule } from './api/api.module'; // Import API module
     TeamsModule, // Add Teams module here
     WebhooksModule, // Add Webhooks module here
     ApiModule, // Add API module here
+    AnalyticsModule, // Add Analytics module here
     ServeStaticModule.forRoot({
       rootPath: path.join(__dirname, '..', 'public'),
       serveRoot: '/', // Serve static files from root path so widget.js is accessible at /widget.js

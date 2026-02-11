@@ -1,0 +1,40 @@
+  @Post('fix-sessions')
+  async fixChatSessions(@Request() req: any) {
+    try {
+      const userId = req.user._id;
+      
+      // Find all chat sessions without agentId
+      const sessionsWithoutAgentId = await this.chatSessionModel.find({ 
+        userId: new Types.ObjectId(userId),
+        agentId: { $exists: false } 
+      });
+      
+      console.log('Chat sessions without agentId:', sessionsWithoutAgentId.length);
+      
+      // For each session without agentId, try to find the corresponding lead and get agentId from there
+      for (const session of sessionsWithoutAgentId) {
+        if (session.leadId) {
+          const lead = await this.leadModel.findById(session.leadId);
+          if (lead && lead.agentId) {
+            session.agentId = lead.agentId;
+            await session.save();
+            console.log('Updated session:', session._id);
+          }
+        }
+      }
+      
+      return {
+        statusCode: 200,
+        message: `Fixed ${sessionsWithoutAgentId.length} chat sessions`,
+        data: null
+      };
+      
+    } catch (error) {
+      console.error('Error fixing chat sessions:', error);
+      return {
+        statusCode: 500,
+        message: 'Error fixing chat sessions',
+        data: null
+      };
+    }
+  }
