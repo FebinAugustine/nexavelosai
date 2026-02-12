@@ -232,4 +232,19 @@ export class AuthService {
     const cacheKey = `user:${userId}`;
     await this.cacheManager.del(cacheKey);
   }
+
+  async decodeToken(token: string): Promise<any> {
+    try {
+      console.log('Attempting to decode token:', token);
+      const secret =
+        process.env.JWT_SECRET ||
+        '6437c8cd3f8e2dae772934d61d42eda8b399c71dc363d320a2611456c58e68b5';
+      const decoded = this.jwtService.verify(token, { secret });
+      console.log('Token decoded successfully:', decoded);
+      return decoded;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  }
 }

@@ -21,16 +21,16 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       context.getClass(),
     ]);
 
+    if (isPublic) {
+      // Skip authentication entirely for public routes
+      return true;
+    }
+
+    // For non-public routes, proceed with authentication
     try {
-      // Always attempt authentication. Let handleRequest decide whether to throw for non-public routes.
       return (await super.canActivate(context)) as boolean;
     } catch (error) {
-      if (isPublic && error instanceof UnauthorizedException) {
-        // If it's a public route and authentication failed (e.g., no token),
-        // we still allow access, but req.user will be null/undefined.
-        return true;
-      }
-      throw error; // Re-throw other errors or Unauthorized for non-public routes
+      throw error;
     }
   }
 

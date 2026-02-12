@@ -10,13 +10,19 @@ export class Contact {
   email: string;
 
   @Prop()
-  name?: string;
+  firstName?: string;
+
+  @Prop()
+  lastName?: string;
 
   @Prop()
   company?: string;
 
   @Prop()
   phone?: string;
+
+  @Prop({ type: [String] })
+  tags?: string[];
 
   @Prop({ type: Object })
   customFields?: Record<string, any>;

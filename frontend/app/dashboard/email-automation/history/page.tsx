@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import { Search, Download } from "lucide-react";
 
 interface EmailHistoryItem {
@@ -14,9 +16,21 @@ interface EmailHistoryItem {
 }
 
 export default function EmailHistoryPage() {
-  const [history, setHistory] = useState<EmailHistoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState("7d");
+
+  // Fetch email history
+  const { data: history = [], isLoading } = useQuery({
+    queryKey: ["email-history", searchQuery, dateRange],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("http://localhost:5000/email/history", {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { search: searchQuery, dateRange },
+      });
+      return response.data;
+    },
+  });
 
   return (
     <div className="space-y-6">
@@ -105,7 +119,7 @@ export default function EmailHistoryPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {history.map((email) => (
+                {history.map((email: EmailHistoryItem) => (
                   <tr key={email._id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">

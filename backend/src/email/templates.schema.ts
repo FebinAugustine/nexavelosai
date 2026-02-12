@@ -23,6 +23,9 @@ export class EmailTemplate {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ default: 'basic' })
+  category: string;
 }
 
 export type EmailTemplateDocument = EmailTemplate & Document;

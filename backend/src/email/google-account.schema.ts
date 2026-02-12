@@ -18,8 +18,8 @@ export class GoogleAccount {
   @Prop({ required: true })
   accessToken: string;
 
-  @Prop({ required: true })
-  refreshToken: string;
+  @Prop()
+  refreshToken?: string;
 
   @Prop({ default: true })
   isActive: boolean;

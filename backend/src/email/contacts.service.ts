@@ -37,8 +37,9 @@ export class ContactsService {
     };
   }
 
-  async getContacts(userId: string, filters: any): Promise<any[]> {
-    return this.contactModel.find({ userId, ...filters });
+  async getContacts(userId: string, filters: any): Promise<any> {
+    const contacts = await this.contactModel.find({ userId, ...filters });
+    return { data: contacts };
   }
 
   async deleteContact(userId: string, contactId: string): Promise<void> {

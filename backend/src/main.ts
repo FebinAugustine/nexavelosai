@@ -3,10 +3,21 @@ import helmet from 'helmet';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import session from 'express-session';
 
 async function bootstrap() {
   console.log('JWT_SECRET in main:', process.env.JWT_SECRET);
   const app = await NestFactory.create(AppModule);
+
+  // Configure session middleware
+  app.use(
+    session({
+      secret: 'nexavelosai-secret-key', // Should use process.env.SESSION_SECRET
+      resave: false,
+      saveUninitialized: false,
+      cookie: { maxAge: 3600000 }, // 1 hour
+    }),
+  );
 
   // Global validation pipe with sanitization
   app.useGlobalPipes(

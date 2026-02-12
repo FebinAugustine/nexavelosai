@@ -18,8 +18,10 @@ import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GoogleAccountService } from './google-account.service';
 import { ContactsService } from './contacts.service';
+import { ContactListsService } from './contact-lists.service';
 import { EmailTemplatesService } from './templates.service';
 import { EmailCampaignsService } from './campaigns.service';
+import { EmailHistoryService } from './email-history.service';
 
 @Controller('email')
 @UseGuards(JwtAuthGuard)
@@ -27,8 +29,10 @@ export class EmailController {
   constructor(
     private readonly googleAccountService: GoogleAccountService,
     private readonly contactsService: ContactsService,
+    private readonly contactListsService: ContactListsService,
     private readonly emailTemplatesService: EmailTemplatesService,
     private readonly emailCampaignsService: EmailCampaignsService,
+    private readonly emailHistoryService: EmailHistoryService,
   ) {}
 
   // Google Account endpoints
@@ -49,10 +53,94 @@ export class EmailController {
   }
 
   @Post('contacts/upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (
+          file.mimetype === 'text/csv' ||
+          file.originalname.endsWith('.csv')
+        ) {
+          cb(null, true);
+        } else {
+          cb(new Error('Only CSV files are accepted'), false);
+        }
+      },
+    }),
+  )
   async uploadContacts(@Request() req, @UploadedFile() file) {
-    // TODO: Implement file parsing (CSV, Excel)
-    return { message: 'File upload not implemented yet' };
+    try {
+      const csvParser = require('csv-parser');
+      const fs = require('fs');
+      const results: any[] = [];
+
+      await new Promise((resolve, reject) => {
+        fs.createReadStream(file.path)
+          .pipe(csvParser())
+          .on('data', (data) => results.push(data))
+          .on('end', () => {
+            fs.unlinkSync(file.path);
+            resolve(results);
+          })
+          .on('error', (error) => {
+            fs.unlinkSync(file.path);
+            reject(error);
+          });
+      });
+
+      const processedContacts = results.map((contact) => ({
+        email: contact.email || contact.Email || '',
+        firstName: contact.firstName || contact['First Name'] || '',
+        lastName: contact.lastName || contact['Last Name'] || '',
+        phone: contact.phone || contact.Phone || '',
+        tags:
+          contact.tags || contact.Tags
+            ? contact.tags.split(',').map((tag: string) => tag.trim())
+            : [],
+      }));
+
+      const result = await this.contactsService.uploadContacts(
+        req.user._id,
+        processedContacts,
+      );
+
+      // Create contact list
+      await this.contactListsService.createContactList(
+        req.user._id,
+        file.originalname,
+        processedContacts,
+      );
+
+      return {
+        message: `Contacts uploaded successfully`,
+        ...result,
+      };
+    } catch (error) {
+      console.error('Error parsing CSV file:', error);
+      return { message: 'Error parsing CSV file', error: error.message };
+    }
+  }
+
+  @Get('contacts/lists')
+  async getContactLists(@Request() req) {
+    return this.contactListsService.getContactLists(req.user._id);
+  }
+
+  @Get('contacts/lists/:id/preview')
+  async getContactListPreview(@Request() req, @Param('id') id: string) {
+    return this.contactListsService.getContactListPreview(req.user._id, id);
+  }
+
+  @Delete('contacts/lists/:id')
+  async deleteContactList(@Request() req, @Param('id') id: string) {
+    return this.contactListsService.deleteContactList(req.user._id, id);
   }
 
   @Get('contacts')
@@ -120,5 +208,16 @@ export class EmailController {
   @Post('campaigns/:id/send')
   async sendCampaign(@Request() req, @Param('id') id: string) {
     return this.emailCampaignsService.sendCampaign(req.user._id, id);
+  }
+
+  // Email History endpoints
+  @Get('history')
+  async getEmailHistory(@Request() req, @Query() query) {
+    return this.emailHistoryService.getEmailHistory(req.user._id, query);
+  }
+
+  @Delete('history/:id')
+  async deleteEmailHistory(@Request() req, @Param('id') id: string) {
+    return this.emailHistoryService.deleteEmailHistory(id);
   }
 }

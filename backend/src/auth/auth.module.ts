@@ -9,6 +9,9 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
 import { AgentsModule } from '../agents/agents.module';
+import { GoogleAuthController } from './google-auth.controller';
+import { GoogleStrategy } from './google-auth.strategy';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -16,6 +19,7 @@ import { AgentsModule } from '../agents/agents.module';
     UsersModule,
     MailModule,
     forwardRef(() => AgentsModule),
+    EmailModule,
     PassportModule,
     JwtModule.register({
       secret:
@@ -23,8 +27,8 @@ import { AgentsModule } from '../agents/agents.module';
       signOptions: { expiresIn: '1h' },
     }),
   ],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard],
-  controllers: [AuthController],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, GoogleStrategy],
+  controllers: [AuthController, GoogleAuthController],
   exports: [AuthService, JwtAuthGuard],
 })
 export class AuthModule {}

@@ -1,55 +1,55 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Upload, Trash2, Search } from "lucide-react";
 
-interface Contact {
+interface ContactList {
   _id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  tags: string[];
+  fileName: string;
+  contactCount: number;
   createdAt: string;
-  updatedAt: string;
+  columns: string[];
 }
 
 export default function ContactsPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [tagsFilter, setTagsFilter] = useState<string[]>([]);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [previewFileName, setPreviewFileName] = useState("");
   const queryClient = useQueryClient();
 
-  // Fetch contacts
-  const { data: contacts = [], isLoading } = useQuery({
-    queryKey: ["email-contacts"],
+  // Fetch contact lists
+  const { data: contactLists = [], isLoading } = useQuery({
+    queryKey: ["contact-lists"],
     queryFn: async () => {
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5000/email/contacts", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        "http://localhost:5000/email/contacts/lists",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       return response.data.data;
     },
   });
 
-  // Delete contact mutation
-  const deleteContact = useMutation({
+  // Delete contact list mutation
+  const deleteContactList = useMutation({
     mutationFn: async (id: string) => {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/email/contacts/${id}`, {
+      await axios.delete(`http://localhost:5000/email/contacts/lists/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["email-contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["contact-lists"] });
     },
   });
 
-  // Upload contacts mutation
-  const uploadContacts = useMutation({
+  // Upload contact list mutation
+  const uploadContactList = useMutation({
     mutationFn: async (file: File) => {
       const token = localStorage.getItem("token");
       const formData = new FormData();
@@ -67,32 +67,11 @@ export default function ContactsPage() {
       );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["email-contacts"] });
-      setIsUploadModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["contact-lists"] });
       setSelectedFile(null);
+      setIsUploading(false);
     },
   });
-
-  // Filter contacts
-  const filteredContacts = contacts.filter((contact: Contact) => {
-    const matchesSearch =
-      !searchQuery ||
-      contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.phone.includes(searchQuery);
-
-    const matchesTags =
-      tagsFilter.length === 0 ||
-      tagsFilter.some((tag) => contact.tags.includes(tag));
-
-    return matchesSearch && matchesTags;
-  });
-
-  // Get all unique tags
-  const allTags: string[] = Array.from(
-    new Set(contacts.flatMap((contact: Contact) => contact.tags)),
-  );
 
   // Handle file selection
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,11 +80,30 @@ export default function ContactsPage() {
     }
   };
 
-  // Handle tag filter toggle
-  const toggleTagFilter = (tag: string) => {
-    setTagsFilter((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
+  // Handle file upload
+  const handleUpload = async () => {
+    if (selectedFile) {
+      setIsUploading(true);
+      uploadContactList.mutate(selectedFile);
+    }
+  };
+
+  // Handle preview contact list
+  const handlePreview = async (id: string, fileName: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `http://localhost:5000/email/contacts/lists/${id}/preview`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      setPreviewData(response.data.data);
+      setPreviewFileName(fileName);
+      setPreviewModalOpen(true);
+    } catch (error) {
+      console.error("Error previewing contact list:", error);
+    }
   };
 
   if (isLoading) {
@@ -119,213 +117,213 @@ export default function ContactsPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Manage your email contacts and contact lists
+          <h1 className="text-2xl font-bold">Contact Lists</h1>
+          <p className="text-gray-600">
+            Upload Excel or CSV files with your email contacts
           </p>
         </div>
-        <div className="flex space-x-3">
-          <button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      </div>
+
+      {/* Upload Area */}
+      <div className="bg-white rounded-lg shadow-lg p-8 text-center border-2 border-dashed border-gray-200 rounded-xl">
+        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg
+            className="w-8 h-8 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <Upload className="w-4 h-4 mr-2" />
-            Upload CSV
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+            />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium mb-2">Drag & drop your file here</h3>
+        <p className="text-gray-500 mb-1">or click to browse</p>
+        <p className="text-sm text-gray-500">
+          Supports Excel (.xlsx, .xls) and CSV files
+          <br />
+          File must contain an 'email' column
+        </p>
+
+        <input
+          type="file"
+          id="file-upload"
+          className="sr-only"
+          accept=".csv,.xlsx,.xls"
+          onChange={handleFileSelect}
+        />
+        <label
+          htmlFor="file-upload"
+          className="mt-6 inline-block px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-200 cursor-pointer"
+        >
+          {selectedFile ? selectedFile.name : "Select File"}
+        </label>
+
+        {selectedFile && (
+          <button
+            onClick={handleUpload}
+            disabled={isUploading}
+            className="mt-4 inline-block px-6 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isUploading ? "Uploading..." : "Upload File"}
           </button>
-        </div>
+        )}
       </div>
 
-      {/* Search and Filter */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-          {/* Search */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search contacts..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Tags Filter */}
-          <div className="flex-1">
-            <div className="flex flex-wrap gap-2">
-              {allTags.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => toggleTagFilter(tag)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    tagsFilter.includes(tag)
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Contacts Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">
-            Contacts ({filteredContacts.length})
-          </h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Email
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Name
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Phone
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Tags
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Created At
-                </th>
-                <th scope="col" className="relative px-6 py-3">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredContacts.map((contact: Contact) => (
-                <tr key={contact._id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {contact.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {contact.firstName} {contact.lastName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {contact.phone}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex flex-wrap gap-1">
-                      {contact.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(contact.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => deleteContact.mutate(contact._id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Upload Contacts Modal */}
-      {isUploadModalOpen && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Upload Contacts CSV
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Upload a CSV file with your contacts. The CSV should include
-              columns for email, first name, last name, phone, and tags.
-            </p>
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="file-upload"
-                  className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
-                >
-                  <div className="text-center">
-                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                    <p className="mt-2 text-sm text-gray-600">
-                      <span className="font-semibold">Click to upload</span> or
-                      drag and drop
-                    </p>
-                    <p className="text-xs text-gray-500">CSV file only</p>
-                  </div>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    className="sr-only"
-                    accept=".csv"
-                    onChange={handleFileSelect}
-                  />
-                </label>
-              </div>
-              {selectedFile && (
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-900">
-                    {selectedFile.name}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {(selectedFile.size / 1024).toFixed(2)} KB
-                  </p>
+      {/* Contact Lists */}
+      <div className="space-y-4">
+        {contactLists.map((list: ContactList) => (
+          <div key={list._id} className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-indigo-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
                 </div>
-              )}
-              <div className="flex space-x-3">
+                <div>
+                  <h3 className="text-lg font-medium">{list.fileName}</h3>
+                  <div className="flex items-center space-x-4 mt-1">
+                    <span className="text-sm text-gray-500">
+                      {list.contactCount} contacts
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      {new Date(list.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 mt-2">
+                    {list.columns.slice(0, 3).map((column) => (
+                      <span
+                        key={column}
+                        className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium"
+                      >
+                        {column}
+                      </span>
+                    ))}
+                    {list.columns.length > 3 && (
+                      <span className="text-xs text-gray-500">
+                        +{list.columns.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
                 <button
-                  onClick={() => {
-                    setIsUploadModalOpen(false);
-                    setSelectedFile(null);
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={() => handlePreview(list._id, list.fileName)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                 >
-                  Cancel
+                  Preview
                 </button>
                 <button
-                  onClick={() =>
-                    selectedFile && uploadContacts.mutate(selectedFile)
-                  }
-                  disabled={!selectedFile}
-                  className="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  onClick={() => deleteContactList.mutate(list._id)}
+                  className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                  title="Delete Contact List"
                 >
-                  Upload
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
                 </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Preview Modal */}
+      {previewModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b border-gray-200">
+              <div>
+                <h3 className="text-xl font-semibold">{previewFileName}</h3>
+                <p className="text-sm text-gray-500">
+                  {previewData.length} contacts
+                </p>
+              </div>
+              <button
+                onClick={() => setPreviewModalOpen(false)}
+                className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        #
+                      </th>
+                      {previewData.length > 0 &&
+                        Object.keys(previewData[0]).map((key) => (
+                          <th
+                            key={key}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            {key}
+                          </th>
+                        ))}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {previewData.map((contact, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {index + 1}
+                        </td>
+                        {Object.values(contact).map((value, idx) => (
+                          <td
+                            key={idx}
+                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                          >
+                            {value as React.ReactNode}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
