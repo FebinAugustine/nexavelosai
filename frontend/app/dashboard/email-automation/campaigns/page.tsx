@@ -36,9 +36,9 @@ interface EmailTemplate {
 
 interface ContactList {
   _id: string;
-  name: string;
+  fileName: string;
   contactCount: number;
-  fields: string[];
+  columns: string[];
 }
 
 interface GoogleAccount {
@@ -114,7 +114,7 @@ export default function EmailCampaignsPage() {
       const response = await axios.get("http://localhost:5000/email/accounts", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return response.data ? [response.data] : [];
+      return response.data || [];
     },
   });
 
@@ -236,6 +236,17 @@ export default function EmailCampaignsPage() {
                 >
                   {currentStep > step.number ? "✓" : step.number}
                 </div>
+                <div
+                  className={`text-xs mt-2 font-medium ${
+                    currentStep > step.number
+                      ? "text-green-500"
+                      : currentStep === step.number
+                        ? "text-gray-800"
+                        : "text-gray-500"
+                  }`}
+                >
+                  {step.label}
+                </div>
               </div>
               {step.number < 3 && (
                 <div
@@ -257,7 +268,7 @@ export default function EmailCampaignsPage() {
       case 1:
         return (
           <div className="space-y-4">
-            <h4 className="text-lg font-medium text-gray-900">
+            <h4 className="text-lg font-medium text-gray-800">
               Campaign Details
             </h4>
             <p className="text-sm text-gray-600 mb-4">
@@ -273,7 +284,7 @@ export default function EmailCampaignsPage() {
                 name="name"
                 value={formData.name}
                 onChange={handleFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800"
                 placeholder="e.g., January Newsletter"
               />
             </div>
@@ -286,7 +297,7 @@ export default function EmailCampaignsPage() {
                 name="fromAccount"
                 value={formData.fromAccount}
                 onChange={handleFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800"
               >
                 <option value="">Select an account</option>
                 {googleAccounts.map((account: GoogleAccount) => (
@@ -302,7 +313,7 @@ export default function EmailCampaignsPage() {
       case 2:
         return (
           <div className="space-y-4">
-            <h4 className="text-lg font-medium text-gray-900">
+            <h4 className="text-lg font-medium text-gray-800">
               Select Contact List
             </h4>
             <p className="text-sm text-gray-600 mb-4">
@@ -310,43 +321,49 @@ export default function EmailCampaignsPage() {
             </p>
 
             <div className="space-y-3">
-              {contactLists.map((list: ContactList) => (
-                <div
-                  key={list._id}
-                  onClick={() =>
-                    setFormData({ ...formData, contactListId: list._id })
-                  }
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                    formData.contactListId === list._id
-                      ? "border-indigo-500 bg-indigo-50"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Users className="w-5 h-5 mr-3 text-gray-500" />
-                      <div>
-                        <h5 className="font-medium text-gray-900">
-                          {list.name}
-                        </h5>
-                        <p className="text-sm text-gray-600">
-                          {list.contactCount} contacts
-                        </p>
+              {contactLists && contactLists.length > 0 ? (
+                contactLists.map((list: ContactList) => (
+                  <div
+                    key={list._id}
+                    onClick={() =>
+                      setFormData({ ...formData, contactListId: list._id })
+                    }
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                      formData.contactListId === list._id
+                        ? "border-indigo-500 bg-indigo-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Users className="w-5 h-5 mr-3 text-gray-500" />
+                        <div>
+                          <h5 className="font-medium text-gray-800">
+                            {list.fileName}
+                          </h5>
+                          <p className="text-sm text-gray-600">
+                            {list.contactCount} contacts
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {list.columns.slice(0, 3).map((column: string) => (
+                          <span
+                            key={column}
+                            className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+                          >
+                            {column}
+                          </span>
+                        ))}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {list.fields.slice(0, 3).map((field) => (
-                        <span
-                          key={field}
-                          className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
-                        >
-                          {field}
-                        </span>
-                      ))}
-                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No contact lists available. Please create one first.
                 </div>
-              ))}
+              )}
             </div>
           </div>
         );
@@ -354,7 +371,7 @@ export default function EmailCampaignsPage() {
       case 3:
         return (
           <div className="space-y-4">
-            <h4 className="text-lg font-medium text-gray-900">
+            <h4 className="text-lg font-medium text-gray-800">
               Select Email Template
             </h4>
             <p className="text-sm text-gray-600 mb-4">
@@ -378,7 +395,7 @@ export default function EmailCampaignsPage() {
                     <div className="flex items-center">
                       <FileText className="w-5 h-5 mr-3 text-gray-500" />
                       <div>
-                        <h5 className="font-medium text-gray-900">
+                        <h5 className="font-medium text-gray-800">
                           {template.name}
                         </h5>
                         <p className="text-sm text-gray-600">
@@ -585,7 +602,9 @@ export default function EmailCampaignsPage() {
         <div className="text-center py-12">
           <div className="bg-white rounded-lg shadow p-8 max-w-md mx-auto">
             <div className="text-6xl mb-4">✉️</div>
-            <h3 className="text-lg font-semibold mb-2">No campaigns yet</h3>
+            <h3 className="text-lg font-semibold mb-2 text-gray-700">
+              No campaigns yet
+            </h3>
             <p className="text-gray-600 mb-6">
               Create your first email campaign to get started
             </p>
@@ -710,7 +729,7 @@ export default function EmailCampaignsPage() {
             <div className="p-6 border-b">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">
+                  <h3 className="text-xl font-semibold text-gray-800">
                     Create Campaign
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">

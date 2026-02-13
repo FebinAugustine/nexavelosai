@@ -23,6 +23,9 @@ export class GoogleAccount {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ default: false })
+  isDefault: boolean;
 }
 
 export type GoogleAccountDocument = GoogleAccount & Document;

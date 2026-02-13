@@ -46,6 +46,10 @@ export default function ContactsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contact-lists"] });
     },
+    onError: (error: any) => {
+      console.error("Error deleting contact list:", error);
+      alert("Failed to delete contact list. Please try again.");
+    },
   });
 
   // Upload contact list mutation
@@ -119,7 +123,7 @@ export default function ContactsPage() {
       {/* Page Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold">Contact Lists</h1>
+          <h1 className="text-2xl font-bold text-black">Contact Lists</h1>
           <p className="text-gray-600">
             Upload Excel or CSV files with your email contacts
           </p>
@@ -143,7 +147,9 @@ export default function ContactsPage() {
             />
           </svg>
         </div>
-        <h3 className="text-lg font-medium mb-2">Drag & drop your file here</h3>
+        <h3 className="text-lg font-medium mb-2 text-gray-700">
+          Drag & drop your file here
+        </h3>
         <p className="text-gray-500 mb-1">or click to browse</p>
         <p className="text-sm text-gray-500">
           Supports Excel (.xlsx, .xls) and CSV files
@@ -198,7 +204,9 @@ export default function ContactsPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium">{list.fileName}</h3>
+                  <h3 className="text-lg font-medium text-gray-800">
+                    {list.fileName}
+                  </h3>
                   <div className="flex items-center space-x-4 mt-1">
                     <span className="text-sm text-gray-500">
                       {list.contactCount} contacts

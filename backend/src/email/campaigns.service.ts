@@ -6,18 +6,39 @@ import {
   EmailCampaignDocument,
   CampaignStatus,
 } from './campaigns.schema';
+import { EmailTemplatesService } from './templates.service';
+import { ContactsService } from './contacts.service';
 
 @Injectable()
 export class EmailCampaignsService {
   constructor(
     @InjectModel(EmailCampaign.name)
     private campaignModel: Model<EmailCampaignDocument>,
+    private readonly emailTemplatesService: EmailTemplatesService,
+    private readonly contactsService: ContactsService,
   ) {}
 
   async createCampaign(userId: string, data: any): Promise<EmailCampaign> {
+    // Get template details to extract subject and content
+    const template = await this.emailTemplatesService.getTemplate(
+      userId,
+      data.templateId,
+    );
+
+    // Get contacts for the selected contact list
+    const contactsResult = await this.contactsService.getContacts(userId, {
+      contactListId: data.contactListId,
+    });
+    const contactIds = contactsResult.data.map((contact) =>
+      contact._id.toString(),
+    );
+
     const campaign = new this.campaignModel({
       userId,
       ...data,
+      subject: template.subject,
+      content: template.content,
+      contactIds,
       stats: {
         sent: 0,
         delivered: 0,

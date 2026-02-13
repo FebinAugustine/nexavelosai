@@ -18,6 +18,7 @@ interface EmailTemplate {
 export default function EmailTemplatesPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] =
     useState<EmailTemplate | null>(null);
   const [formData, setFormData] = useState({
@@ -130,21 +131,21 @@ export default function EmailTemplatesPage() {
     setIsEditModalOpen(true);
   };
 
-  // Render preview content
-  const renderPreview = () => {
-    const { subject, content } = formData;
+  // Render preview content for a specific template
+  const renderPreview = (template?: EmailTemplate) => {
+    const { subject, content } = template || formData;
     const previewSubject = subject.replace(/\{\{([^}]+)\}\}/g, "[${1}]");
     const previewContent = content.replace(/\{\{([^}]+)\}\}/g, "[${1}]");
 
     return (
       <div className="h-full flex flex-col">
-        <div className="bg-white rounded-lg border p-4 flex-1 overflow-auto">
+        <div className="bg-white rounded-lg border p-4 flex-1 overflow-auto text-gray-800">
           <div className="mb-4">
             <div className="text-sm text-gray-500 mb-1">Subject:</div>
             <div className="font-medium">{previewSubject || "No subject"}</div>
           </div>
           <div
-            className="prose max-w-none"
+            className="prose prose-gray max-w-none"
             dangerouslySetInnerHTML={{
               __html: previewContent || "<p>No content</p>",
             }}
@@ -152,6 +153,12 @@ export default function EmailTemplatesPage() {
         </div>
       </div>
     );
+  };
+
+  // Open preview modal
+  const openPreviewModal = (template: EmailTemplate) => {
+    setSelectedTemplate(template);
+    setIsPreviewModalOpen(true);
   };
 
   return (
@@ -178,7 +185,9 @@ export default function EmailTemplatesPage() {
         <div className="text-center py-12">
           <div className="bg-white rounded-lg shadow p-8 max-w-md mx-auto">
             <div className="text-6xl mb-4">📝</div>
-            <h3 className="text-lg font-semibold mb-2">No templates yet</h3>
+            <h3 className="text-lg font-semibold mb-2 text-gray-700">
+              No templates yet
+            </h3>
             <p className="text-gray-600 mb-6">Create one to get started</p>
             <button
               onClick={() => setIsCreateModalOpen(true)}
@@ -218,7 +227,7 @@ export default function EmailTemplatesPage() {
 
               <div className="flex gap-2">
                 <button
-                  onClick={() => {}}
+                  onClick={() => openPreviewModal(template)}
                   className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors flex items-center justify-center"
                 >
                   <Eye className="w-4 h-4 mr-1" />
@@ -304,7 +313,7 @@ export default function EmailTemplatesPage() {
                         name="name"
                         value={formData.name}
                         onChange={handleFormChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-800"
                         placeholder="Enter template name"
                       />
                     </div>
@@ -317,7 +326,7 @@ export default function EmailTemplatesPage() {
                         name="category"
                         value={formData.category}
                         onChange={handleFormChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-800"
                       >
                         <option value="">Select category</option>
                         <option value="introduction">Introduction</option>
@@ -337,7 +346,7 @@ export default function EmailTemplatesPage() {
                         name="subject"
                         value={formData.subject}
                         onChange={handleFormChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-800"
                         placeholder="Enter email subject"
                       />
                     </div>
@@ -350,7 +359,7 @@ export default function EmailTemplatesPage() {
                         name="content"
                         value={formData.content}
                         onChange={handleFormChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm text-gray-800"
                         rows={12}
                         placeholder="Enter email content"
                       />
@@ -364,6 +373,40 @@ export default function EmailTemplatesPage() {
                 <h4 className="text-lg font-medium text-gray-900">Preview</h4>
                 {renderPreview()}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {isPreviewModalOpen && selectedTemplate && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-6 border-b">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Preview: {selectedTemplate.name}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  View how your email template will appear to recipients
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsPreviewModalOpen(false);
+                  setSelectedTemplate(null);
+                }}
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <span className="mr-1">×</span>
+                Close
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {renderPreview(selectedTemplate)}
             </div>
           </div>
         </div>

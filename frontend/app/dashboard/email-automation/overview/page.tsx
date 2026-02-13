@@ -7,7 +7,7 @@ export default function EmailAutomationOverviewPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-black">Dashboard</h1>
           <p className="text-gray-600">Overview of your email campaigns</p>
         </div>
         <button className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:shadow-lg transition-all duration-200">

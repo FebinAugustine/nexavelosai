@@ -29,6 +29,9 @@ export class EmailCampaign {
   @Prop({ required: true })
   contactIds: string[];
 
+  @Prop()
+  googleAccountId?: string;
+
   @Prop({ default: CampaignStatus.DRAFT })
   status: CampaignStatus;
 

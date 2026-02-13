@@ -18,7 +18,11 @@ export class ContactsService {
     return contact.save();
   }
 
-  async uploadContacts(userId: string, contacts: any[]): Promise<any> {
+  async uploadContacts(
+    userId: string,
+    contacts: any[],
+    contactListId?: string,
+  ): Promise<any> {
     const validContacts = contacts.filter(
       (contact) => contact.email && contact.email.includes('@'),
     );
@@ -26,6 +30,7 @@ export class ContactsService {
     const contactsToCreate = validContacts.map((contact) => ({
       userId,
       ...contact,
+      ...(contactListId ? { contactListId } : {}),
     }));
 
     const result = await this.contactModel.insertMany(contactsToCreate);

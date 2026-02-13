@@ -27,7 +27,36 @@ export class ContactListsService {
       columns,
     });
 
-    return contactList.save();
+    const savedContactList = await contactList.save();
+
+    // Set contactListId on all uploaded contacts
+    const validContacts = contacts.filter(
+      (contact) => contact.email && contact.email.includes('@'),
+    );
+
+    await Promise.all(
+      validContacts.map(async (contact, index) => {
+        // Find the contact by email and update
+        const existingContact = await this.contactModel.findOne({
+          userId,
+          email: contact.email,
+        });
+
+        if (existingContact) {
+          existingContact.contactListId = savedContactList._id.toString();
+          await existingContact.save();
+        } else {
+          // Create new contact with contactListId
+          await this.contactModel.create({
+            userId,
+            ...contact,
+            contactListId: savedContactList._id.toString(),
+          });
+        }
+      }),
+    );
+
+    return savedContactList;
   }
 
   async getContactLists(userId: string): Promise<any> {
@@ -35,7 +64,7 @@ export class ContactListsService {
       userId,
       isActive: true,
     });
-    return { data: contactLists };
+    return contactLists;
   }
 
   async getContactList(
@@ -55,11 +84,23 @@ export class ContactListsService {
       throw new Error('Contact list not found');
     }
 
-    const contacts = await this.contactModel.find({ userId }).limit(100);
+    const contacts = await this.contactModel
+      .find({ userId, contactListId: listId })
+      .limit(100);
     return { data: contacts };
   }
 
   async deleteContactList(userId: string, listId: string): Promise<void> {
-    await this.contactListModel.deleteOne({ _id: listId, userId });
+    // Soft delete the contact list
+    await this.contactListModel.updateOne(
+      { _id: listId, userId },
+      { isActive: false },
+    );
+
+    // Also remove the contactListId from all associated contacts
+    await this.contactModel.updateMany(
+      { userId, contactListId: listId },
+      { $unset: { contactListId: 1 } },
+    );
   }
 }

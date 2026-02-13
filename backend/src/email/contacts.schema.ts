@@ -10,6 +10,9 @@ export class Contact {
   email: string;
 
   @Prop()
+  contactListId?: string;
+
+  @Prop()
   firstName?: string;
 
   @Prop()

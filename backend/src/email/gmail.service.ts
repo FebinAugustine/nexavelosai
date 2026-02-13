@@ -19,8 +19,18 @@ export class GmailService {
     to: string,
     subject: string,
     content: string,
+    accountId?: string,
   ): Promise<boolean> {
-    const account = await this.googleAccountService.getByUserId(userId);
+    let account;
+
+    if (accountId) {
+      // If accountId is specified, use that account
+      account = await this.googleAccountService.getById(userId, accountId);
+    } else {
+      // If no accountId specified, use the default account or first available
+      const accounts = await this.googleAccountService.getByUserId(userId);
+      account = accounts.find((acc) => acc.isDefault) || accounts[0];
+    }
 
     if (!account) {
       throw new Error('Google account not connected');

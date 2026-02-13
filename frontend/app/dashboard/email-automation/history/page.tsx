@@ -35,7 +35,7 @@ export default function EmailHistoryPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Email History</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Email History</h1>
         <button className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
           <Download className="w-4 h-4 mr-2" />
           Export CSV
@@ -52,7 +52,7 @@ export default function EmailHistoryPage() {
                 placeholder="Search emails..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-800"
               />
             </div>
           </div>
@@ -60,7 +60,7 @@ export default function EmailHistoryPage() {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-800"
             >
               <option value="24h">Last 24 Hours</option>
               <option value="7d">Last 7 Days</option>
@@ -76,7 +76,9 @@ export default function EmailHistoryPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="text-center py-8">
             <div className="text-6xl mb-4">📜</div>
-            <h3 className="text-lg font-semibold mb-2">No Email History</h3>
+            <h3 className="text-lg font-semibold mb-2 text-gray-700">
+              No Email History
+            </h3>
             <p className="text-gray-600">No emails have been sent yet</p>
           </div>
         </div>

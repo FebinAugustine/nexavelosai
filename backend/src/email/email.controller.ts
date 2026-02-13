@@ -37,13 +37,18 @@ export class EmailController {
 
   // Google Account endpoints
   @Get('accounts')
-  async getGoogleAccount(@Request() req) {
+  async getGoogleAccounts(@Request() req) {
     return this.googleAccountService.getByUserId(req.user._id);
   }
 
-  @Delete('accounts')
-  async disconnectGoogleAccount(@Request() req) {
-    return this.googleAccountService.disconnect(req.user._id);
+  @Delete('accounts/:id')
+  async disconnectGoogleAccount(@Request() req, @Param('id') id: string) {
+    return this.googleAccountService.disconnect(req.user._id, id);
+  }
+
+  @Put('accounts/:id/default')
+  async setDefaultAccount(@Request() req, @Param('id') id: string) {
+    return this.googleAccountService.setDefault(req.user._id, id);
   }
 
   // Contacts endpoints
@@ -66,34 +71,48 @@ export class EmailController {
       fileFilter: (req, file, cb) => {
         if (
           file.mimetype === 'text/csv' ||
-          file.originalname.endsWith('.csv')
+          file.originalname.endsWith('.csv') ||
+          file.mimetype.includes('excel') ||
+          file.mimetype.includes('spreadsheet') ||
+          file.originalname.endsWith('.xlsx') ||
+          file.originalname.endsWith('.xls')
         ) {
           cb(null, true);
         } else {
-          cb(new Error('Only CSV files are accepted'), false);
+          cb(new Error('Only CSV and Excel files are accepted'), false);
         }
       },
     }),
   )
   async uploadContacts(@Request() req, @UploadedFile() file) {
     try {
-      const csvParser = require('csv-parser');
       const fs = require('fs');
-      const results: any[] = [];
+      let results: any[] = [];
 
-      await new Promise((resolve, reject) => {
-        fs.createReadStream(file.path)
-          .pipe(csvParser())
-          .on('data', (data) => results.push(data))
-          .on('end', () => {
-            fs.unlinkSync(file.path);
-            resolve(results);
-          })
-          .on('error', (error) => {
-            fs.unlinkSync(file.path);
-            reject(error);
-          });
-      });
+      if (file.originalname.endsWith('.csv')) {
+        // Parse CSV file
+        const csvParser = require('csv-parser');
+        await new Promise((resolve, reject) => {
+          fs.createReadStream(file.path)
+            .pipe(csvParser())
+            .on('data', (data) => results.push(data))
+            .on('end', () => {
+              fs.unlinkSync(file.path);
+              resolve(results);
+            })
+            .on('error', (error) => {
+              fs.unlinkSync(file.path);
+              reject(error);
+            });
+        });
+      } else {
+        // Parse Excel file
+        const xlsx = require('xlsx');
+        const workbook = xlsx.readFile(file.path);
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        results = xlsx.utils.sheet_to_json(firstSheet);
+        fs.unlinkSync(file.path);
+      }
 
       const processedContacts = results.map((contact) => ({
         email: contact.email || contact.Email || '',
