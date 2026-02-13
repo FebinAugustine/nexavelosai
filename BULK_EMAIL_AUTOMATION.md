@@ -19,7 +19,7 @@ Create a comprehensive bulk email automation system that allows users to connect
 5. **Analytics & Reporting** - Track campaign performance
 6. **Frontend Dashboard** - User interface for all email automation features
 
-### Progress Update (February 12, 2026)
+### Progress Update (February 13, 2026)
 
 #### Completed Tasks
 
@@ -27,16 +27,18 @@ Create a comprehensive bulk email automation system that allows users to connect
 - ✅ **Sub-page Routing**: Updated the `renderContent()` function to handle the new email automation sub-sections and render the appropriate components.
 - ✅ **Component Imports**: Added imports for all email automation sub-page components.
 - ✅ **Google Authentication Fix**: Fixed the Google OAuth integration to ensure refresh tokens are always retrieved by adding `accessType: 'offline'` and `prompt: 'consent'` to the GoogleStrategy configuration. Made refreshToken field optional in the schema to handle cases where Google might not return a refresh token.
+- ✅ **Contact List Deletion Fix**: Fixed the issue where deleting a contact list wasn't deleting the corresponding individual contacts. Changed the `deleteContactList` method in `ContactListsService` to use `deleteMany` instead of `updateMany` for associated contacts, ensuring both the list and its contacts are permanently removed.
 
 #### Current Status
 
-The email automation feature is now accessible from the main dashboard sidebar. The dropdown menu expands to show all sub-tabs, and each tab renders the corresponding page. The Google authentication issue has been fixed, and the integration is now working properly.
+The email automation feature is now accessible from the main dashboard sidebar. The dropdown menu expands to show all sub-tabs, and each tab renders the corresponding page. The Google authentication issue has been fixed, and the integration is now working properly. The contact list deletion functionality has been fixed to ensure data consistency.
 
 **Key Fix Details**:
 
 - Updated GoogleStrategy to always request refresh tokens with `accessType: 'offline'`
 - Added `prompt: 'consent'` to force the consent screen to appear and ensure refresh token retrieval
 - Made refreshToken field optional in the GoogleAccount schema to handle edge cases
+- Fixed contact list deletion to delete associated contacts permanently using `deleteMany` instead of just unsetting the contactListId
 
 The sub-pages include:
 

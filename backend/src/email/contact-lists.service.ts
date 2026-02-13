@@ -91,16 +91,10 @@ export class ContactListsService {
   }
 
   async deleteContactList(userId: string, listId: string): Promise<void> {
-    // Soft delete the contact list
-    await this.contactListModel.updateOne(
-      { _id: listId, userId },
-      { isActive: false },
-    );
+    // Permanently delete the contact list
+    await this.contactListModel.deleteOne({ _id: listId, userId });
 
-    // Also remove the contactListId from all associated contacts
-    await this.contactModel.updateMany(
-      { userId, contactListId: listId },
-      { $unset: { contactListId: 1 } },
-    );
+    // Also delete all associated contacts
+    await this.contactModel.deleteMany({ userId, contactListId: listId });
   }
 }
