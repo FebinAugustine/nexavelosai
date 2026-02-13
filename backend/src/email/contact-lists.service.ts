@@ -64,7 +64,7 @@ export class ContactListsService {
       userId,
       isActive: true,
     });
-    return contactLists;
+    return { data: contactLists };
   }
 
   async getContactList(
