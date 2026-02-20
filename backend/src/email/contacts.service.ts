@@ -47,6 +47,14 @@ export class ContactsService {
     return { data: contacts };
   }
 
+  async getContactById(userId: string, contactId: string): Promise<Contact> {
+    const contact = await this.contactModel.findOne({ _id: contactId, userId });
+    if (!contact) {
+      throw new Error('Contact not found');
+    }
+    return contact;
+  }
+
   async deleteContact(userId: string, contactId: string): Promise<void> {
     await this.contactModel.deleteOne({ _id: contactId, userId });
   }

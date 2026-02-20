@@ -36,10 +36,38 @@ export class GmailService {
       throw new Error('Google account not connected');
     }
 
+    // Check if we have both access token and refresh token
+    if (!account.accessToken) {
+      throw new Error('Google account missing access token');
+    }
+
+    if (!account.refreshToken) {
+      throw new Error('Google account missing refresh token');
+    }
+
     this.oauth2Client.setCredentials({
       access_token: account.accessToken,
       refresh_token: account.refreshToken,
     });
+
+    // Attempt to refresh token directly to ensure we have valid credentials
+    try {
+      console.log('Refreshing access token before sending email...');
+      const { credentials } = await this.oauth2Client.refreshAccessToken();
+      account.accessToken = credentials.access_token;
+      if (credentials.refresh_token) {
+        account.refreshToken = credentials.refresh_token;
+      }
+      await this.googleAccountService.updateAccount(
+        userId,
+        account._id,
+        account,
+      );
+      console.log('Access token refreshed successfully');
+    } catch (refreshError) {
+      console.error('Failed to refresh token:', refreshError);
+      throw new Error('Failed to authenticate with Google');
+    }
 
     const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
 
@@ -58,16 +86,32 @@ export class GmailService {
       .replace(/=+$/, '');
 
     try {
-      await gmail.users.messages.send({
+      const response = await gmail.users.messages.send({
         userId: 'me',
         requestBody: {
           raw: encodedMessage,
         },
       });
+
+      console.log(`Email sent successfully to ${to}:`, response.data.id);
       return true;
     } catch (error) {
-      console.error('Error sending email:', error);
-      return false;
+      console.error('Error sending email:', error.response?.data || error);
+
+      // Handle specific Gmail API errors
+      if (error.response?.data?.error?.code === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      } else if (error.response?.data?.error?.code === 401) {
+        throw new Error(
+          'Authentication failed. Please reconnect your Google account.',
+        );
+      } else if (error.response?.data?.error?.code === 403) {
+        throw new Error(
+          'Permission denied. Please check your Google account settings.',
+        );
+      } else {
+        throw new Error(`Failed to send email: ${error.message}`);
+      }
     }
   }
 }

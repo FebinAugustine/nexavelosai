@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { GoogleAccount, GoogleAccountDocument } from './google-account.schema';
@@ -6,6 +6,7 @@ import { GoogleAccount, GoogleAccountDocument } from './google-account.schema';
 @Injectable()
 export class GoogleAccountService {
   private readonly MAX_ACCOUNTS = 10;
+  private readonly logger = new Logger(GoogleAccountService.name);
 
   constructor(
     @InjectModel(GoogleAccount.name)
@@ -13,12 +14,22 @@ export class GoogleAccountService {
   ) {}
 
   async connect(userId: string, googleData: any): Promise<GoogleAccount> {
+    this.logger.log('GoogleAccountService connect called with data:', {
+      email: googleData.email,
+      hasAccessToken: !!googleData.accessToken,
+      hasRefreshToken: !!googleData.refreshToken,
+      refreshTokenLength: googleData.refreshToken
+        ? googleData.refreshToken.length
+        : 0,
+    });
+
     // Check if user has already connected this email
     const existingEmail = await this.googleAccountModel.findOne({
       userId,
       email: googleData.email,
     });
     if (existingEmail) {
+      this.logger.log('Updating existing account');
       const updated = await this.googleAccountModel.findByIdAndUpdate(
         existingEmail._id,
         {
@@ -32,6 +43,10 @@ export class GoogleAccountService {
       if (!updated) {
         throw new Error('Failed to update Google account');
       }
+      this.logger.log(
+        'Updated account - refresh token stored:',
+        !!updated.refreshToken,
+      );
       return updated;
     }
 
@@ -43,6 +58,7 @@ export class GoogleAccountService {
       );
     }
 
+    this.logger.log('Creating new account');
     const newAccount = new this.googleAccountModel({
       userId,
       email: googleData.email,
@@ -51,7 +67,12 @@ export class GoogleAccountService {
       accessToken: googleData.accessToken,
       refreshToken: googleData.refreshToken,
     });
-    return newAccount.save();
+    const savedAccount = await newAccount.save();
+    this.logger.log(
+      'Saved account - refresh token stored:',
+      !!savedAccount.refreshToken,
+    );
+    return savedAccount;
   }
 
   async disconnect(userId: string, accountId: string): Promise<void> {
@@ -80,5 +101,21 @@ export class GoogleAccountService {
       { _id: accountId, userId },
       { $set: { isDefault: true } },
     );
+  }
+
+  async updateAccount(
+    userId: string,
+    accountId: string,
+    data: any,
+  ): Promise<GoogleAccount> {
+    const updated = await this.googleAccountModel.findOneAndUpdate(
+      { _id: accountId, userId },
+      { $set: data },
+      { new: true },
+    );
+    if (!updated) {
+      throw new Error('Google account not found');
+    }
+    return updated;
   }
 }

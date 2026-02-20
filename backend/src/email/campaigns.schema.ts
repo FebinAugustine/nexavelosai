@@ -7,10 +7,13 @@ export enum CampaignStatus {
   RUNNING = 'running',
   COMPLETED = 'completed',
   PAUSED = 'paused',
+  CANCELLED = 'cancelled',
 }
 
 @Schema({ timestamps: true })
 export class EmailCampaign {
+  _id?: string;
+
   @Prop({ required: true })
   userId: string;
 
@@ -26,6 +29,9 @@ export class EmailCampaign {
   @Prop()
   templateId?: string;
 
+  @Prop()
+  contactListId?: string;
+
   @Prop({ required: true })
   contactIds: string[];
 
@@ -37,6 +43,9 @@ export class EmailCampaign {
 
   @Prop()
   scheduledAt?: Date;
+
+  @Prop({ default: 60 }) // Default interval in seconds
+  interval?: number;
 
   @Prop({ type: Object })
   stats?: {

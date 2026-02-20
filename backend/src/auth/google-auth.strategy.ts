@@ -13,9 +13,10 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       callbackURL: 'http://localhost:5000/auth/gmail/callback',
       scope: ['email', 'profile', 'https://www.googleapis.com/auth/gmail.send'],
       passReqToCallback: true,
-      accessType: 'offline', // Ensures we get a refresh token
-      prompt: 'consent', // Forces consent screen to get refresh token even if already authorized
-    } as any); // Bypass type checking for extra parameters
+      accessType: 'offline', // THIS IS CRITICAL - Ensures we get a refresh token
+      prompt: 'consent', // Forces re-consent to ensure refresh token is always issued
+      includeGrantedScopes: true,
+    } as any);
     this.logger.log('GoogleStrategy initialized');
   }
 
@@ -30,6 +31,14 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       this.logger.log('Setting state to token:', options.state);
     }
 
+    // Ensure we preserve the configured accessType and prompt to get refresh token
+    options.accessType = 'offline';
+    options.prompt = 'consent';
+
+    this.logger.log(
+      'Authentication options with refresh token config:',
+      options,
+    );
     super.authenticate(req, options);
   }
 

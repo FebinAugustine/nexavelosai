@@ -40,11 +40,12 @@ export class GoogleAuthController {
     this.logger.log('GoogleAuthController googleAuthRedirect called');
     this.logger.log('State:', state);
     this.logger.log('Request user:', req.user);
-    this.logger.log('Request:', req);
+    this.logger.log('Request query:', req.query);
 
     try {
       // Handle Google callback
-      const { user } = req;
+      const user = req.user;
+      this.logger.log('User object received from strategy:', user);
 
       // Validate the token from state
       const decoded = await this.authService.decodeToken(state);
@@ -59,14 +60,25 @@ export class GoogleAuthController {
       this.logger.log('Decoded token:', decoded);
 
       // Store user credentials in database
-      await this.googleAccountService.connect(decoded.sub, {
-        email: user.email,
-        name: user.name,
-        picture: user.picture,
-        accessToken: user.accessToken,
-        refreshToken: user.refreshToken,
-      });
+      this.logger.log('Saving to database - refresh token:', user.refreshToken);
+      this.logger.log('Refresh token type:', typeof user.refreshToken);
+      this.logger.log(
+        'Refresh token length:',
+        user.refreshToken ? user.refreshToken.length : 0,
+      );
 
+      const connectedAccount = await this.googleAccountService.connect(
+        decoded.sub,
+        {
+          email: user.email,
+          name: user.name,
+          picture: user.picture,
+          accessToken: user.accessToken,
+          refreshToken: user.refreshToken,
+        },
+      );
+
+      this.logger.log('Connected account:', connectedAccount);
       this.logger.log('Google account connected successfully');
 
       // Redirect to frontend with success message

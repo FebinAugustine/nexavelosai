@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSocket } from "@/app/socket-context";
 import axios from "axios";
 import {
   Plus,
@@ -13,18 +14,35 @@ import {
   Users,
   FileText,
   Clock,
+  Pause,
+  Square,
 } from "lucide-react";
 
 interface EmailCampaign {
   _id: string;
   name: string;
-  status: "draft" | "running" | "paused" | "completed" | "cancelled";
-  recipients: number;
-  emailsSent: number;
-  emailsFailed: number;
+  status:
+    | "draft"
+    | "scheduled"
+    | "running"
+    | "paused"
+    | "completed"
+    | "cancelled";
+  contactIds: string[];
+  contactListId?: string;
+  templateId?: string;
+  googleAccountId?: string;
   interval: number;
   createdAt: string;
   updatedAt?: string;
+  stats?: {
+    sent: number;
+    delivered: number;
+    opened: number;
+    clicked: number;
+    bounced: number;
+    unsubscribed: number;
+  };
 }
 
 interface EmailTemplate {
@@ -54,12 +72,40 @@ export default function EmailCampaignsPage() {
     useState<EmailCampaign | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    fromAccount: "",
+    googleAccountId: "",
     contactListId: "",
     templateId: "",
+    interval: 60, // Default interval in seconds
   });
 
   const queryClient = useQueryClient();
+  const socket = useSocket();
+
+  // Listen for campaign updates
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+
+    const handleCampaignUpdate = (updatedCampaign: EmailCampaign) => {
+      console.log("Handling campaign update:", updatedCampaign);
+      // Update the cache with the new campaign data
+      queryClient.setQueryData(
+        ["email-campaigns"],
+        (oldData: EmailCampaign[] = []) => {
+          return oldData.map((campaign) =>
+            campaign._id === updatedCampaign._id ? updatedCampaign : campaign,
+          );
+        },
+      );
+    };
+
+    socket.on("campaignUpdate", handleCampaignUpdate);
+
+    return () => {
+      socket.off("campaignUpdate", handleCampaignUpdate);
+    };
+  }, [socket, queryClient]);
 
   // Fetch campaigns
   const { data: campaigns = [], isLoading } = useQuery({
@@ -137,10 +183,18 @@ export default function EmailCampaignsPage() {
       setCurrentStep(1);
       setFormData({
         name: "",
-        fromAccount: "",
+        googleAccountId: "",
         contactListId: "",
         templateId: "",
+        interval: 60,
       });
+      alert("Campaign created successfully!");
+    },
+    onError: (error: any) => {
+      console.error("Error creating campaign:", error);
+      alert(
+        `Failed to create campaign: ${error.response?.data?.message || error.message}`,
+      );
     },
   });
 
@@ -154,6 +208,81 @@ export default function EmailCampaignsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email-campaigns"] });
+    },
+  });
+
+  // Start campaign mutation
+  const startCampaign = useMutation({
+    mutationFn: async (id: string) => {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `http://localhost:5000/email/campaigns/${id}/start`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-campaigns"] });
+      alert("Campaign started successfully!");
+    },
+    onError: (error: any) => {
+      console.error("Error starting campaign:", error);
+      alert(
+        `Failed to start campaign: ${error.response?.data?.message || error.message}`,
+      );
+    },
+  });
+
+  // Pause campaign mutation
+  const pauseCampaign = useMutation({
+    mutationFn: async (id: string) => {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `http://localhost:5000/email/campaigns/${id}/pause`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-campaigns"] });
+      alert("Campaign paused successfully!");
+    },
+    onError: (error: any) => {
+      console.error("Error pausing campaign:", error);
+      alert(
+        `Failed to pause campaign: ${error.response?.data?.message || error.message}`,
+      );
+    },
+  });
+
+  // Stop campaign mutation
+  const stopCampaign = useMutation({
+    mutationFn: async (id: string) => {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `http://localhost:5000/email/campaigns/${id}/stop`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-campaigns"] });
+      alert("Campaign stopped successfully!");
+    },
+    onError: (error: any) => {
+      console.error("Error stopping campaign:", error);
+      alert(
+        `Failed to stop campaign: ${error.response?.data?.message || error.message}`,
+      );
     },
   });
 
@@ -172,6 +301,13 @@ export default function EmailCampaignsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email-campaigns"] });
+      alert("Campaign started successfully!");
+    },
+    onError: (error: any) => {
+      console.error("Error sending campaign:", error);
+      alert(
+        `Failed to start campaign: ${error.response?.data?.message || error.message}`,
+      );
     },
   });
 
@@ -208,6 +344,7 @@ export default function EmailCampaignsPage() {
 
   // Open campaign details
   const openCampaignDetails = (campaign: EmailCampaign) => {
+    console.log("Campaign Data:", campaign);
     setSelectedCampaign(campaign);
   };
 
@@ -230,7 +367,7 @@ export default function EmailCampaignsPage() {
                     currentStep > step.number
                       ? "bg-green-500 text-white"
                       : currentStep === step.number
-                        ? "bg-indigo-600 text-white"
+                        ? "bg-purple-600 text-white"
                         : "bg-gray-200 text-gray-500"
                   }`}
                 >
@@ -284,7 +421,7 @@ export default function EmailCampaignsPage() {
                 name="name"
                 value={formData.name}
                 onChange={handleFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800"
                 placeholder="e.g., January Newsletter"
               />
             </div>
@@ -294,10 +431,10 @@ export default function EmailCampaignsPage() {
                 Send From Account <span className="text-red-500">*</span>
               </label>
               <select
-                name="fromAccount"
-                value={formData.fromAccount}
+                name="googleAccountId"
+                value={formData.googleAccountId}
                 onChange={handleFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800"
               >
                 <option value="">Select an account</option>
                 {googleAccounts.map((account: GoogleAccount) => (
@@ -306,6 +443,25 @@ export default function EmailCampaignsPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Interval (seconds)
+              </label>
+              <input
+                type="number"
+                name="interval"
+                value={formData.interval}
+                onChange={handleFormChange}
+                min="10"
+                max="3600"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800"
+                placeholder="60"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Time between sending each email (minimum 10 seconds)
+              </p>
             </div>
           </div>
         );
@@ -330,7 +486,7 @@ export default function EmailCampaignsPage() {
                     }
                     className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                       formData.contactListId === list._id
-                        ? "border-indigo-500 bg-indigo-50"
+                        ? "border-purple-500 bg-purple-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -387,7 +543,7 @@ export default function EmailCampaignsPage() {
                   }
                   className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                     formData.templateId === template._id
-                      ? "border-indigo-500 bg-indigo-50"
+                      ? "border-purple-500 bg-purple-50"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -424,9 +580,17 @@ export default function EmailCampaignsPage() {
   const renderCampaignDetails = () => {
     if (!selectedCampaign) return null;
 
-    const progress = Math.round(
-      (selectedCampaign.emailsSent / selectedCampaign.recipients) * 100,
-    );
+    const progress =
+      selectedCampaign.stats?.sent && selectedCampaign.contactIds.length > 0
+        ? Math.min(
+            Math.round(
+              (selectedCampaign.stats.sent /
+                selectedCampaign.contactIds.length) *
+                100,
+            ),
+            100,
+          )
+        : 0;
 
     return (
       <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4">
@@ -441,13 +605,34 @@ export default function EmailCampaignsPage() {
                 Back to Campaigns
               </button>
               <div className="flex gap-3">
-                <button
-                  onClick={() => handleSendCampaign(selectedCampaign._id)}
-                  className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Start Campaign
-                </button>
+                {selectedCampaign.status === "draft" ||
+                selectedCampaign.status === "paused" ||
+                selectedCampaign.status === "cancelled" ? (
+                  <button
+                    onClick={() => startCampaign.mutate(selectedCampaign._id)}
+                    className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Start Campaign
+                  </button>
+                ) : selectedCampaign.status === "running" ? (
+                  <>
+                    <button
+                      onClick={() => pauseCampaign.mutate(selectedCampaign._id)}
+                      className="flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                    >
+                      <Pause className="w-4 h-4 mr-2" />
+                      Pause Campaign
+                    </button>
+                    <button
+                      onClick={() => stopCampaign.mutate(selectedCampaign._id)}
+                      className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      <Square className="w-4 h-4 mr-2" />
+                      Stop Campaign
+                    </button>
+                  </>
+                ) : null}
                 <button
                   onClick={() => deleteCampaign.mutate(selectedCampaign._id)}
                   className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -478,31 +663,35 @@ export default function EmailCampaignsPage() {
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">
-                    {selectedCampaign.recipients}
+                    {selectedCampaign.contactIds.length}
                   </div>
                   <div className="text-sm text-gray-600">Total</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
-                    {selectedCampaign.emailsSent}
+                    {selectedCampaign.stats?.sent || 0}
                   </div>
                   <div className="text-sm text-gray-600">Sent</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-red-600">
-                    {selectedCampaign.emailsFailed}
+                    {selectedCampaign.stats?.bounced || 0}
                   </div>
                   <div className="text-sm text-gray-600">Failed</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">
-                    {selectedCampaign.recipients - selectedCampaign.emailsSent}
+                    {Math.max(
+                      0,
+                      selectedCampaign.contactIds.length -
+                        (selectedCampaign.stats?.sent || 0),
+                    )}
                   </div>
                   <div className="text-sm text-gray-600">Remaining</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">
-                    {selectedCampaign.interval}m
+                    {selectedCampaign.interval}s
                   </div>
                   <div className="text-sm text-gray-600">Interval</div>
                 </div>
@@ -514,7 +703,7 @@ export default function EmailCampaignsPage() {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className="bg-indigo-600 h-2 rounded-full transition-all"
+                    className="bg-purple-600 h-2 rounded-full transition-all"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -528,16 +717,37 @@ export default function EmailCampaignsPage() {
                   <Mail className="w-4 h-4 mr-2 text-gray-500" />
                   <h4 className="font-medium text-gray-900">Sending From</h4>
                 </div>
-                <p className="text-sm text-gray-600">gsdulat@gmail.com</p>
-                <p className="text-xs text-gray-500">Gets Support</p>
+                <p className="text-sm text-gray-600">
+                  {selectedCampaign.googleAccountId
+                    ? googleAccounts.find(
+                        (account: GoogleAccount) =>
+                          account._id === selectedCampaign.googleAccountId,
+                      )?.email || "Not specified"
+                    : "Not specified"}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {selectedCampaign.googleAccountId
+                    ? googleAccounts.find(
+                        (account: GoogleAccount) =>
+                          account._id === selectedCampaign.googleAccountId,
+                      )?.name || "Unknown"
+                    : "Unknown"}
+                </p>
               </div>
               <div className="bg-white border rounded-lg p-4">
                 <div className="flex items-center mb-2">
                   <Users className="w-4 h-4 mr-2 text-gray-500" />
                   <h4 className="font-medium text-gray-900">Contact List</h4>
                 </div>
-                <p className="text-sm text-gray-600">emails</p>
-                <p className="text-xs text-gray-500">3 contacts</p>
+                <p className="text-sm text-gray-600">
+                  {contactLists.find(
+                    (list: ContactList) =>
+                      list._id === selectedCampaign.contactListId,
+                  )?.fileName || "Not specified"}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {selectedCampaign.contactIds?.length || 0} contacts
+                </p>
               </div>
               <div className="bg-white border rounded-lg p-4">
                 <div className="flex items-center mb-2">
@@ -545,10 +755,16 @@ export default function EmailCampaignsPage() {
                   <h4 className="font-medium text-gray-900">Template</h4>
                 </div>
                 <p className="text-sm text-gray-600">
-                  Professional Introduction
+                  {templates.find(
+                    (template: EmailTemplate) =>
+                      template._id === selectedCampaign.templateId,
+                  )?.name || "Not specified"}
                 </p>
                 <p className="text-xs text-gray-500">
-                  Introduction: {`{{name}}`} from {`{{company}}`}
+                  {templates.find(
+                    (template: EmailTemplate) =>
+                      template._id === selectedCampaign.templateId,
+                  )?.subject || ""}
                 </p>
               </div>
             </div>
@@ -590,7 +806,7 @@ export default function EmailCampaignsPage() {
         </div>
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+          className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-colors shadow-sm"
         >
           <Plus className="w-4 h-4 mr-2" />
           New Campaign
@@ -601,7 +817,7 @@ export default function EmailCampaignsPage() {
       {campaigns.length === 0 ? (
         <div className="text-center py-12">
           <div className="bg-white rounded-lg shadow p-8 max-w-md mx-auto">
-            <div className="text-6xl mb-4">✉️</div>
+            <div className="text-6xl mb-4">📧</div>
             <h3 className="text-lg font-semibold mb-2 text-gray-700">
               No campaigns yet
             </h3>
@@ -610,7 +826,7 @@ export default function EmailCampaignsPage() {
             </p>
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-colors"
             >
               Create Campaign
             </button>
@@ -640,16 +856,43 @@ export default function EmailCampaignsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSendCampaign(campaign._id);
-                    }}
-                    className="px-3 py-2 bg-indigo-100 text-indigo-600 rounded-md text-sm hover:bg-indigo-200 transition-colors flex items-center"
-                  >
-                    <Play className="w-4 h-4 mr-1" />
-                    Start
-                  </button>
+                  {campaign.status === "draft" ||
+                  campaign.status === "paused" ||
+                  campaign.status === "cancelled" ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSendCampaign(campaign._id);
+                      }}
+                      className="px-3 py-2 bg-purple-100 text-purple-600 rounded-md text-sm hover:bg-purple-200 transition-colors flex items-center"
+                    >
+                      <Play className="w-4 h-4 mr-1" />
+                      Start
+                    </button>
+                  ) : campaign.status === "running" ? (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          pauseCampaign.mutate(campaign._id);
+                        }}
+                        className="px-3 py-2 bg-yellow-100 text-yellow-600 rounded-md text-sm hover:bg-yellow-200 transition-colors flex items-center"
+                      >
+                        <Pause className="w-4 h-4 mr-1" />
+                        Pause
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          stopCampaign.mutate(campaign._id);
+                        }}
+                        className="px-3 py-2 bg-red-100 text-red-600 rounded-md text-sm hover:bg-red-200 transition-colors flex items-center"
+                      >
+                        <Square className="w-4 h-4 mr-1" />
+                        Stop
+                      </button>
+                    </>
+                  ) : null}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -666,31 +909,37 @@ export default function EmailCampaignsPage() {
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                 <div className="text-center">
                   <div className="text-lg font-bold text-gray-900">
-                    {campaign.recipients}
+                    {campaign.contactIds?.length || 0}
                   </div>
                   <div className="text-xs text-gray-600">Total</div>
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-bold text-green-600">
-                    {campaign.emailsSent}
+                    {campaign.stats?.sent || 0}
                   </div>
                   <div className="text-xs text-gray-600">Sent</div>
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-bold text-red-600">
-                    {campaign.emailsFailed}
+                    {campaign.stats?.bounced || 0}
                   </div>
                   <div className="text-xs text-gray-600">Failed</div>
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-bold text-gray-900">
-                    {campaign.recipients - campaign.emailsSent}
+                    {campaign.contactIds?.length
+                      ? Math.max(
+                          0,
+                          campaign.contactIds.length -
+                            (campaign.stats?.sent || 0),
+                        )
+                      : 0}
                   </div>
                   <div className="text-xs text-gray-600">Remaining</div>
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-bold text-gray-900">
-                    {campaign.interval}m
+                    {campaign.interval}s
                   </div>
                   <div className="text-xs text-gray-600">Interval</div>
                 </div>
@@ -701,17 +950,19 @@ export default function EmailCampaignsPage() {
                 <div className="flex justify-between text-sm text-gray-600 mb-1">
                   <span>Progress</span>
                   <span>
-                    {Math.round(
-                      (campaign.emailsSent / campaign.recipients) * 100,
-                    )}
-                    %
+                    {campaign.contactIds?.length && campaign.stats?.sent
+                      ? `${Math.min(Math.round((campaign.stats.sent / campaign.contactIds.length) * 100), 100)}%`
+                      : "0%"}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className="bg-indigo-600 h-2 rounded-full transition-all"
+                    className="bg-purple-600 h-2 rounded-full transition-all"
                     style={{
-                      width: `${Math.round((campaign.emailsSent / campaign.recipients) * 100)}%`,
+                      width:
+                        campaign.contactIds?.length && campaign.stats?.sent
+                          ? `${Math.min(Math.round((campaign.stats.sent / campaign.contactIds.length) * 100), 100)}%`
+                          : "0%",
                     }}
                   />
                 </div>
@@ -774,17 +1025,17 @@ export default function EmailCampaignsPage() {
                   onClick={handleNextStep}
                   disabled={
                     (currentStep === 1 &&
-                      (!formData.name || !formData.fromAccount)) ||
+                      (!formData.name || !formData.googleAccountId)) ||
                     (currentStep === 2 && !formData.contactListId) ||
                     (currentStep === 3 && !formData.templateId)
                   }
                   className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
                     (currentStep === 1 &&
-                      (!formData.name || !formData.fromAccount)) ||
+                      (!formData.name || !formData.googleAccountId)) ||
                     (currentStep === 2 && !formData.contactListId) ||
                     (currentStep === 3 && !formData.templateId)
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-indigo-600 text-white hover:bg-indigo-700"
+                      : "bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800"
                   }`}
                 >
                   Next
@@ -793,7 +1044,7 @@ export default function EmailCampaignsPage() {
               ) : (
                 <button
                   onClick={handleCreateCampaign}
-                  className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-colors"
                 >
                   <ArrowRight className="w-4 h-4 mr-2" />
                   Create Campaign

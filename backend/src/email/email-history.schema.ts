@@ -38,6 +38,9 @@ export class EmailHistory {
 
   @Prop()
   errorMessage?: string;
+
+  @Prop()
+  googleAccountId?: string;
 }
 
 export type EmailHistoryDocument = EmailHistory & Document;

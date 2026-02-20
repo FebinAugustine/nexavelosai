@@ -14,6 +14,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { TeamMember, TeamMemberDocument } from '../teams/team-members.schema';
 import { Team, TeamDocument } from '../teams/teams.schema';
+import { EmailCampaign } from '../email/campaigns.schema';
 
 @WebSocketGateway({
   cors: {
@@ -97,6 +98,12 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     for (const member of teamMembers) {
       this.server.to(member.userId.toString()).emit(event, data);
     }
+  }
+
+  // Method to send campaign update to a specific user
+  sendCampaignUpdate(userId: string, campaign: any) {
+    this.logger.log(`Sending campaign update to user '${userId}'`);
+    this.server.to(userId).emit('campaignUpdate', campaign);
   }
 
   // Method to send webhook event notifications

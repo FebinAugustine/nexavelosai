@@ -17,9 +17,11 @@ import { GmailService } from './gmail.service';
 import { EmailProcessor } from './email.processor';
 import { EmailController } from './email.controller';
 import { GoogleStrategy } from '../auth/google-auth.strategy';
+import { EventsModule } from '../events/events.module';
 
 @Module({
   imports: [
+    EventsModule,
     MongooseModule.forFeature([
       { name: GoogleAccount.name, schema: GoogleAccountSchema },
       { name: Contact.name, schema: ContactSchema },

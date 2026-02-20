@@ -224,6 +224,21 @@ export class EmailController {
     return this.emailCampaignsService.deleteCampaign(req.user._id, id);
   }
 
+  @Post('campaigns/:id/start')
+  async startCampaign(@Request() req, @Param('id') id: string) {
+    return this.emailCampaignsService.startCampaign(req.user._id, id);
+  }
+
+  @Post('campaigns/:id/pause')
+  async pauseCampaign(@Request() req, @Param('id') id: string) {
+    return this.emailCampaignsService.pauseCampaign(req.user._id, id);
+  }
+
+  @Post('campaigns/:id/stop')
+  async stopCampaign(@Request() req, @Param('id') id: string) {
+    return this.emailCampaignsService.stopCampaign(req.user._id, id);
+  }
+
   @Post('campaigns/:id/send')
   async sendCampaign(@Request() req, @Param('id') id: string) {
     return this.emailCampaignsService.sendCampaign(req.user._id, id);

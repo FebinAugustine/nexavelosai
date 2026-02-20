@@ -83,6 +83,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
       });
     });
 
+    // Handle campaign updates
+    socketInstance.on("campaignUpdate", (campaign: any) => {
+      console.log("Campaign update received:", campaign);
+    });
+
     return () => {
       socketInstance.disconnect();
     };
