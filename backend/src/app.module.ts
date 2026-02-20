@@ -25,6 +25,7 @@ import { WebhooksModule } from './webhooks/webhooks.module'; // Import Webhooks 
 import { ApiModule } from './api/api.module'; // Import API module
 import { AnalyticsModule } from './analytics/analytics.module'; // Import Analytics module
 import { EmailModule } from './email/email.module'; // Import Email module
+import { WhatsAppModule } from './whatsapp/whatsapp.module'; // Import WhatsApp module
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { EmailModule } from './email/email.module'; // Import Email module
     ApiModule, // Add API module here
     AnalyticsModule, // Add Analytics module here
     EmailModule, // Add Email module here
+    WhatsAppModule, // Add WhatsApp module here
     ServeStaticModule.forRoot({
       rootPath: path.join(__dirname, '..', 'public'),
       serveRoot: '/', // Serve static files from root path so widget.js is accessible at /widget.js

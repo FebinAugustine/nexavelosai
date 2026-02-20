@@ -41,6 +41,12 @@ import ContactsPage from "./email-automation/contacts/page";
 import EmailTemplatesPage from "./email-automation/templates/page";
 import EmailCampaignsPage from "./email-automation/campaigns/page";
 import EmailHistoryPage from "./email-automation/history/page";
+import WhatsAppAutomationOverviewPage from "./whatsapp-automation/overview/page";
+import WhatsAppAccountsPage from "./whatsapp-automation/accounts/page";
+import WhatsAppTemplatesPage from "./whatsapp-automation/templates/page";
+import WhatsAppCampaignsPage from "./whatsapp-automation/campaigns/page";
+import WhatsAppChatsPage from "./whatsapp-automation/chats/page";
+import WhatsAppAnalyticsPage from "./whatsapp-automation/analytics/page";
 
 interface User {
   _id: string;
@@ -3143,6 +3149,19 @@ window.nexavelWidget.open();`}</code>
         return <EmailCampaignsPage />;
       case "email-automation-history":
         return <EmailHistoryPage />;
+      case "whatsapp-automation":
+      case "whatsapp-automation-overview":
+        return <WhatsAppAutomationOverviewPage />;
+      case "whatsapp-automation-accounts":
+        return <WhatsAppAccountsPage />;
+      case "whatsapp-automation-templates":
+        return <WhatsAppTemplatesPage />;
+      case "whatsapp-automation-campaigns":
+        return <WhatsAppCampaignsPage />;
+      case "whatsapp-automation-chats":
+        return <WhatsAppChatsPage />;
+      case "whatsapp-automation-analytics":
+        return <WhatsAppAnalyticsPage />;
       default:
         return null;
     }
@@ -3447,6 +3466,56 @@ window.nexavelWidget.open();`}</code>
                   />
                 </svg>
               </button>
+              <button
+                onClick={() =>
+                  setActiveSection(
+                    activeSection === "whatsapp-automation"
+                      ? ""
+                      : "whatsapp-automation",
+                  )
+                }
+                className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium flex items-center justify-between ${
+                  activeSection === "whatsapp-automation" ||
+                  activeSection.startsWith("whatsapp-automation-")
+                    ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg"
+                    : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <span>WhatsApp Automation</span>
+                </div>
+                <svg
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    activeSection === "whatsapp-automation" ||
+                    activeSection.startsWith("whatsapp-automation-")
+                      ? "rotate-180"
+                      : ""
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
               {(activeSection === "email-automation" ||
                 activeSection.startsWith("email-automation-")) && (
                 <div className="ml-4 space-y-1">
@@ -3463,6 +3532,94 @@ window.nexavelWidget.open();`}</code>
                   >
                     Overview
                   </button>
+                </div>
+              )}
+              {(activeSection === "whatsapp-automation" ||
+                activeSection.startsWith("whatsapp-automation-")) && (
+                <div className="ml-4 space-y-1">
+                  <button
+                    onClick={() => {
+                      setActiveSection("whatsapp-automation-overview");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "whatsapp-automation-overview"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Overview
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("whatsapp-automation-accounts");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "whatsapp-automation-accounts"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Accounts
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("whatsapp-automation-templates");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "whatsapp-automation-templates"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Templates
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("whatsapp-automation-campaigns");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "whatsapp-automation-campaigns"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Campaigns
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("whatsapp-automation-chats");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "whatsapp-automation-chats"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Chats
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("whatsapp-automation-analytics");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "whatsapp-automation-analytics"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Analytics
+                  </button>
+                </div>
+              )}
+              {(activeSection === "email-automation" ||
+                activeSection.startsWith("email-automation-")) && (
+                <div className="ml-4 space-y-1">
                   <button
                     onClick={() => {
                       setActiveSection("email-automation-accounts");
