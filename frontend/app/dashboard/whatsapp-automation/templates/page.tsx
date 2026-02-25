@@ -198,7 +198,7 @@ function WhatsAppTemplatesContent() {
                 onChange={(e) =>
                   setCreateFormData({ ...createFormData, name: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
                 placeholder="welcome_message"
               />
             </div>
@@ -216,7 +216,7 @@ function WhatsAppTemplatesContent() {
                       category: e.target.value,
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
                 >
                   <option value="MARKETING">Marketing</option>
                   <option value="UTILITY">Utility</option>
@@ -236,7 +236,7 @@ function WhatsAppTemplatesContent() {
                       languageCode: e.target.value,
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
                 >
                   <option value="en_US">English (US)</option>
                   <option value="en_GB">English (GB)</option>
@@ -284,7 +284,7 @@ function WhatsAppTemplatesContent() {
                       });
                     }}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
                     placeholder="Hello {{1}}! Thank you for signing up. {{2}}"
                   />
                 </div>
@@ -479,7 +479,9 @@ function WhatsAppTemplatesContent() {
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <span className="text-2xl">📝</span>
           </div>
-          <h3 className="text-xl font-semibold mb-2">No templates created</h3>
+          <h3 className="text-xl font-semibold mb-2 text-black">
+            No templates created
+          </h3>
           <p className="text-black mb-8">
             Create your first WhatsApp message template to start sending
             campaigns

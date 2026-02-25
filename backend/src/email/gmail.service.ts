@@ -66,7 +66,15 @@ export class GmailService {
       console.log('Access token refreshed successfully');
     } catch (refreshError) {
       console.error('Failed to refresh token:', refreshError);
-      throw new Error('Failed to authenticate with Google');
+      // Handle invalid refresh token - mark account as inactive
+      console.log('Marking account as inactive due to invalid refresh token');
+      await this.googleAccountService.updateAccount(userId, account._id, {
+        ...account,
+        isActive: false,
+      });
+      throw new Error(
+        'Authentication failed. Please reconnect your Google account.',
+      );
     }
 
     const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });

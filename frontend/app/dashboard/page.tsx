@@ -37,10 +37,11 @@ import WebhooksPage from "./webhooks/page";
 import AnalyticsDashboard from "./analytics/page";
 import EmailAutomationOverviewPage from "./email-automation/overview/page";
 import EmailAccountsPage from "./email-automation/accounts/page";
-import ContactsPage from "./email-automation/contacts/page";
+import ContactsPage from "./contacts/page";
 import EmailTemplatesPage from "./email-automation/templates/page";
 import EmailCampaignsPage from "./email-automation/campaigns/page";
 import EmailHistoryPage from "./email-automation/history/page";
+import EmailFlowsPage from "./email-automation/flows/page";
 import WhatsAppAutomationOverviewPage from "./whatsapp-automation/overview/page";
 import WhatsAppAccountsPage from "./whatsapp-automation/accounts/page";
 import WhatsAppTemplatesPage from "./whatsapp-automation/templates/page";
@@ -65,11 +66,13 @@ interface Agent {
   name: string;
   description?: string;
   provider: string;
+  model?: string; // Added for custom agents
   domain?: string;
   chatCount: number;
   totalInteractions: number;
   isShared: boolean;
   userRole: "owner" | "admin" | "editor" | "viewer";
+  isCustom?: boolean;
 }
 
 interface Analytics {
@@ -137,6 +140,27 @@ export default function Dashboard() {
     },
     enabled: !!user,
   });
+
+  // Fetch custom agents
+  const {
+    data: customAgents,
+    isLoading: customAgentsLoading,
+    error: customAgentsError,
+  } = useQuery<Agent[]>({
+    queryKey: ["customAgents"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return [];
+      const response = await axios.get("http://localhost:5000/custom-agents", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    },
+    enabled: !!user,
+  });
+
+  // Combine agents and custom agents for display
+  const allAgents = [...(agents || []), ...(customAgents || [])];
 
   // Fetch user teams
   const {
@@ -247,10 +271,28 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
     });
 
+    // Socket listener for custom agent chat responses
+    const handleCustomAgentResult = (data: any) => {
+      console.log("Custom agent result received:", data);
+      if (data.status === "completed") {
+        setCustomMessages((prev) => [
+          ...prev,
+          { role: "agent" as const, content: data.data },
+        ]);
+        setCustomChatLoading(false);
+      } else if (data.status === "error") {
+        toast.error(data.error || "Failed to get response from custom agent");
+        setCustomChatLoading(false);
+      }
+    };
+
+    socket?.on(`custom-agent-result-${user?._id}`, handleCustomAgentResult);
+
     return () => {
       socket?.off("analytics:update");
+      socket?.off(`custom-agent-result-${user?._id}`, handleCustomAgentResult);
     };
-  }, [socket, queryClient]);
+  }, [socket, queryClient, user?._id]);
 
   // Chat Volume Trends Query
   const { data: chatVolumeData } = useQuery({
@@ -452,18 +494,28 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [navbarDropdownOpen, setNavbarDropdownOpen] = useState(false);
   const [testModalOpen, setTestModalOpen] = useState(false);
+  const [testCustomModalOpen, setTestCustomModalOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [selectedCustomAgent, setSelectedCustomAgent] = useState<Agent | null>(
+    null,
+  );
   const [messages, setMessages] = useState<
     { role: "user" | "agent"; content: string }[]
   >([]);
+  const [customMessages, setCustomMessages] = useState<
+    { role: "user" | "agent"; content: string }[]
+  >([]);
   const [chatMessage, setChatMessage] = useState("");
+  const [customChatMessage, setCustomChatMessage] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [customChatLoading, setCustomChatLoading] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedAgentForEdit, setSelectedAgentForEdit] =
     useState<Agent | null>(null);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editDomain, setEditDomain] = useState("");
+  const [editModel, setEditModel] = useState("");
   const [snippetModalOpen, setSnippetModalOpen] = useState(false);
   const [selectedAgentForSnippet, setSelectedAgentForSnippet] =
     useState<Agent | null>(null);
@@ -471,6 +523,14 @@ export default function Dashboard() {
   const [leadCaptureModalOpen, setLeadCaptureModalOpen] = useState(false);
   const [selectedAgentForLeadCapture, setSelectedAgentForLeadCapture] =
     useState<Agent | null>(null);
+  // Custom AI Agent creation state
+  const [customAgentModalOpen, setCustomAgentModalOpen] = useState(false);
+  const [customAgentName, setCustomAgentName] = useState("");
+  const [customAgentDescription, setCustomAgentDescription] = useState("");
+  const [customAgentApiKey, setCustomAgentApiKey] = useState("");
+  const [customAgentProvider, setCustomAgentProvider] = useState("gemini");
+  const [customAgentModel, setCustomAgentModel] = useState("");
+  const [customAgentLoading, setCustomAgentLoading] = useState(false);
   // Create Agent form state
   const [agentName, setAgentName] = useState("");
   const [agentDescription, setAgentDescription] = useState("");
@@ -582,15 +642,25 @@ export default function Dashboard() {
   };
 
   const deleteAgentMutation = useMutation({
-    mutationFn: async (agentId: string) => {
+    mutationFn: async ({
+      agentId,
+      isCustom,
+    }: {
+      agentId: string;
+      isCustom: boolean;
+    }) => {
       const token = localStorage.getItem("token");
-      return axios.delete(`http://localhost:5000/agents/${agentId}`, {
+      const endpoint = isCustom
+        ? `http://localhost:5000/custom-agents/${agentId}`
+        : `http://localhost:5000/agents/${agentId}`;
+      return axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
     },
     onSuccess: () => {
       toast.success("Agent deleted successfully!");
       queryClient.invalidateQueries({ queryKey: ["agents"] });
+      queryClient.invalidateQueries({ queryKey: ["customAgents"] });
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
     },
     onError: (error: any) => {
@@ -598,19 +668,25 @@ export default function Dashboard() {
     },
   });
 
-  const handleDeleteAgent = async (agentId: string) => {
+  const handleDeleteAgent = async (agentId: string, isCustom: boolean) => {
     if (!confirm("Are you sure you want to delete this agent?")) return;
-    deleteAgentMutation.mutate(agentId);
+    deleteAgentMutation.mutate({ agentId, isCustom });
   };
 
   const handleTestAgent = (agent: Agent) => {
-    setSelectedAgent(agent);
-    setMessages([]);
-    setTestModalOpen(true);
+    if (agent.isCustom) {
+      setSelectedCustomAgent(agent);
+      setCustomMessages([]);
+      setTestCustomModalOpen(true);
+    } else {
+      setSelectedAgent(agent);
+      setMessages([]);
+      setTestModalOpen(true);
+    }
   };
 
   const handleSendMessage = async () => {
-    if (!chatMessage.trim() || !selectedAgent || !user) return; // Ensure user is available for userId
+    if (!chatMessage.trim() || !selectedAgent || !user) return;
 
     const userMessage = { role: "user" as const, content: chatMessage };
     setMessages((prev) => [...prev, userMessage]);
@@ -619,9 +695,10 @@ export default function Dashboard() {
 
     try {
       const token = localStorage.getItem("token");
-      // Expect jobId in response
+      const endpoint = `http://localhost:5000/agents/${selectedAgent._id}/chat`;
+
       const response = await axios.post(
-        `http://localhost:5000/agents/${selectedAgent._id}/chat`,
+        endpoint,
         {
           message: userMessage.content,
         },
@@ -629,14 +706,48 @@ export default function Dashboard() {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      // Backend now returns { jobId: string }
-      toast.success("Message sent to agent queue. Awaiting response...");
 
-      // No direct agentMessage added here; it will come via WebSocket
-      // Optionally, you could store the jobId to link to the response later
+      if (response.data.response) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "agent", content: response.data.response },
+        ]);
+      } else {
+        toast.success("Message sent to agent queue. Awaiting response...");
+      }
+      setChatLoading(false);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to send message");
-      setChatLoading(false); // If request fails, stop loading
+      setChatLoading(false);
+    }
+  };
+
+  const handleSendCustomMessage = async () => {
+    if (!customChatMessage.trim() || !selectedCustomAgent || !user) return;
+
+    const userMessage = { role: "user" as const, content: customChatMessage };
+    setCustomMessages((prev) => [...prev, userMessage]);
+    setCustomChatMessage("");
+    setCustomChatLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const endpoint = `http://localhost:5000/custom-agents/${selectedCustomAgent._id}/chat`;
+
+      const response = await axios.post(
+        endpoint,
+        {
+          message: userMessage.content,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      toast.success("Message sent to custom agent queue. Awaiting response...");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to send message");
+      setCustomChatLoading(false);
     }
   };
 
@@ -645,13 +756,25 @@ export default function Dashboard() {
     setEditName(agent.name);
     setEditDescription(agent.description || "");
     setEditDomain(agent.domain || "");
+    setEditModel((agent as any).model || ""); // Add model state for custom agents
     setEditModalOpen(true);
   };
 
   const updateAgentMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+    mutationFn: async ({
+      id,
+      data,
+      isCustom,
+    }: {
+      id: string;
+      data: any;
+      isCustom: boolean;
+    }) => {
       const token = localStorage.getItem("token");
-      return axios.patch(`http://localhost:5000/agents/${id}`, data, {
+      const endpoint = isCustom
+        ? `http://localhost:5000/custom-agents/${id}`
+        : `http://localhost:5000/agents/${id}`;
+      return axios.patch(endpoint, data, {
         headers: { Authorization: `Bearer ${token}` },
       });
     },
@@ -668,13 +791,21 @@ export default function Dashboard() {
 
   const handleUpdateAgent = async () => {
     if (!selectedAgentForEdit) return;
+    const updateData: any = {
+      name: editName,
+      description: editDescription,
+      ...(selectedAgentForEdit.isCustom ? {} : { domain: editDomain }),
+    };
+
+    // Add model field only for custom agents
+    if (selectedAgentForEdit.isCustom) {
+      updateData.model = editModel;
+    }
+
     updateAgentMutation.mutate({
       id: selectedAgentForEdit._id,
-      data: {
-        name: editName,
-        description: editDescription,
-        domain: editDomain,
-      },
+      isCustom: selectedAgentForEdit.isCustom || false,
+      data: updateData,
     });
   };
 
@@ -717,6 +848,38 @@ export default function Dashboard() {
     }
   };
 
+  const createCustomAgentMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const token = localStorage.getItem("token");
+      return axios.post("http://localhost:5000/custom-agents", data, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Custom AI agent created successfully!");
+      // Reset form
+      setCustomAgentName("");
+      setCustomAgentDescription("");
+      setCustomAgentApiKey("");
+      setCustomAgentProvider("gemini");
+      setCustomAgentModel("");
+      // Close modal
+      setCustomAgentModalOpen(false);
+      // Invalidate cache to refresh data
+      queryClient.invalidateQueries({ queryKey: ["agents"] });
+      queryClient.invalidateQueries({ queryKey: ["customAgents"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    },
+    onError: (error: any) => {
+      toast.error(
+        error.response?.data?.message || "Failed to create custom agent",
+      );
+    },
+    onSettled: () => {
+      setCustomAgentLoading(false);
+    },
+  });
+
   const createAgentMutation = useMutation({
     mutationFn: async (data: any) => {
       const token = localStorage.getItem("token");
@@ -745,6 +908,72 @@ export default function Dashboard() {
       setCreateAgentLoading(false);
     },
   });
+
+  const handleCreateCustomAgent = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Sanitize and validate inputs
+    const sanitizedName = sanitizeAndValidateInput(customAgentName, {
+      maxLength: 100,
+      fieldName: "Agent name",
+    });
+    if (!sanitizedName.isValid) {
+      toast.error(sanitizedName.error!);
+      return;
+    }
+
+    if (!isValidAgentName(sanitizedName.sanitized)) {
+      toast.error(
+        "Agent name can only contain letters, numbers, spaces, hyphens, and underscores",
+      );
+      return;
+    }
+
+    const sanitizedDescription = sanitizeAndValidateInput(
+      customAgentDescription,
+      {
+        maxLength: 50000,
+        fieldName: "Description",
+      },
+    );
+    if (!sanitizedDescription.isValid) {
+      toast.error(sanitizedDescription.error!);
+      return;
+    }
+
+    // Check word count for description
+    if (countWords(sanitizedDescription.sanitized) > 1000) {
+      toast.error("Description must not exceed 1000 words");
+      return;
+    }
+
+    const sanitizedApiKey = sanitizeAndValidateInput(customAgentApiKey, {
+      maxLength: 1000,
+      fieldName: "API key",
+    });
+    if (!sanitizedApiKey.isValid) {
+      toast.error(sanitizedApiKey.error!);
+      return;
+    }
+
+    const sanitizedModel = sanitizeAndValidateInput(customAgentModel, {
+      maxLength: 100,
+      fieldName: "Model name",
+    });
+    if (!sanitizedModel.isValid) {
+      toast.error(sanitizedModel.error!);
+      return;
+    }
+
+    setCustomAgentLoading(true);
+    createCustomAgentMutation.mutate({
+      name: sanitizedName.sanitized,
+      description: sanitizedDescription.sanitized,
+      apiKey: sanitizedApiKey.sanitized,
+      provider: customAgentProvider,
+      model: customAgentModel,
+    });
+  };
 
   const handleCreateAgent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1033,7 +1262,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Agents Overview */}
+            {/* Regular AI Agents */}
             <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
               <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6">
                 <div className="flex items-center space-x-3">
@@ -1053,7 +1282,10 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <h3 className="text-xl font-semibold text-white">
-                    AI Agents ({agents?.length || 0})
+                    AI Agents (
+                    {agents?.filter((agent: any) => !agent.isCustom).length ||
+                      0}
+                    )
                   </h3>
                 </div>
               </div>
@@ -1082,16 +1314,252 @@ export default function Dashboard() {
                       Create your first AI agent to get started with intelligent
                       chatbots.
                     </p>
-                    <button
-                      onClick={() => setActiveSection("create-agent")}
-                      className="bg-gradient-to-r from-emerald-600 to-green-600 text-white px-8 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
-                    >
-                      Create Your First Agent
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      <button
+                        onClick={() => setActiveSection("create-agent")}
+                        className="bg-gradient-to-r from-emerald-600 to-green-600 text-white px-8 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                      >
+                        Create Your First Agent
+                      </button>
+                      <button
+                        onClick={() => setCustomAgentModalOpen(true)}
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-3 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                      >
+                        Create Custom AI Agent 1
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {agents?.map((agent) => (
+                    {agents
+                      ?.filter((agent: any) => !agent.isCustom)
+                      .map((agent: any) => (
+                        <div
+                          key={agent._id}
+                          className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200"
+                        >
+                          <div className="flex flex-col justify-between items-start gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-3">
+                                <div className="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
+                                  <svg
+                                    className="w-6 h-6 text-indigo-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                                    />
+                                  </svg>
+                                </div>
+                                <div>
+                                  <h4 className="text-lg font-semibold text-gray-900">
+                                    {agent.name}
+                                  </h4>
+                                  <p className="text-sm text-gray-600">
+                                    {agent.description}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                <div className="flex items-center space-x-2">
+                                  <svg
+                                    className="w-4 h-4 text-indigo-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                                    />
+                                  </svg>
+                                  <span className="text-gray-600">
+                                    Provider:
+                                  </span>
+                                  <span className="font-medium text-gray-900">
+                                    {agent.provider}
+                                  </span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <svg
+                                    className="w-4 h-4 text-indigo-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3"
+                                    />
+                                  </svg>
+                                  <span className="text-gray-600">Domain:</span>
+                                  <span className="font-medium text-gray-900">
+                                    {agent.domain || "Not set"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center space-x-2 md:ml-10">
+                                  <svg
+                                    className="w-4 h-4 text-indigo-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                    />
+                                  </svg>
+                                  <span className="text-gray-600">Chats:</span>{" "}
+                                  <br />
+                                  <span className="font-medium text-gray-900">
+                                    {agent.chatCount} | Interactions:{" "}
+                                    {agent.totalInteractions}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 ml-4">
+                              <button
+                                onClick={() => handleTestAgent(agent)}
+                                className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors duration-200 font-medium text-sm"
+                              >
+                                Test Agent
+                              </button>
+                              <button
+                                onClick={() => handleGetSnippet(agent)}
+                                className="bg-green-50 text-green-700 px-4 py-2 rounded-lg hover:bg-green-100 transition-colors duration-200 font-medium text-sm"
+                              >
+                                Get Snippet
+                              </button>
+                              {agent.userRole === "owner" ||
+                              agent.userRole === "admin" ||
+                              agent.userRole === "editor" ? (
+                                <button
+                                  onClick={() => {
+                                    setSelectedAgentForLeadCapture(agent);
+                                    setLeadCaptureModalOpen(true);
+                                  }}
+                                  className="bg-purple-50 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors duration-200 font-medium text-sm"
+                                >
+                                  Lead Capture
+                                </button>
+                              ) : null}
+                              {agent.userRole === "owner" ||
+                              agent.userRole === "admin" ? (
+                                <button
+                                  onClick={() => handleEditAgent(agent)}
+                                  className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg hover:bg-indigo-100 transition-colors duration-200 font-medium text-sm"
+                                >
+                                  Edit
+                                </button>
+                              ) : null}
+                              {agent.userRole === "owner" ||
+                              agent.userRole === "admin" ? (
+                                <button
+                                  onClick={() =>
+                                    handleDeleteAgent(
+                                      agent._id,
+                                      agent.isCustom || false,
+                                    )
+                                  }
+                                  className="bg-red-50 text-red-700 px-4 py-2 rounded-lg hover:bg-red-100 transition-colors duration-200 font-medium text-sm"
+                                >
+                                  Delete
+                                </button>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Custom AI Agents */}
+            <div className="bg-white/70 backdrop-blur-md overflow-hidden shadow-xl rounded-2xl border border-gray-200/50 mb-8">
+              <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">
+                    Custom AI Agents ({customAgents?.length || 0})
+                  </h3>
+                </div>
+              </div>
+              <div className="px-6 py-8 sm:p-8">
+                <div className="flex justify-end mb-6">
+                  <button
+                    onClick={() => setCustomAgentModalOpen(true)}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                  >
+                    Create Custom AI Agent
+                  </button>
+                </div>
+                {customAgents?.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg
+                        className="w-8 h-8 text-purple-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-gray-600 text-lg font-medium mb-2">
+                      No custom AI agents yet
+                    </p>
+                    <p className="text-gray-500 mb-6">
+                      Create custom AI agents with your own configurations and
+                      APIs.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {customAgents?.map((agent: any) => (
                       <div
                         key={agent._id}
                         className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200"
@@ -1099,9 +1567,9 @@ export default function Dashboard() {
                         <div className="flex flex-col justify-between items-start gap-4">
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-3">
-                              <div className="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
+                              <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl flex items-center justify-center">
                                 <svg
-                                  className="w-6 h-6 text-indigo-600"
+                                  className="w-6 h-6 text-purple-600"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -1110,7 +1578,13 @@ export default function Dashboard() {
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     strokeWidth={2}
-                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                                   />
                                 </svg>
                               </div>
@@ -1126,7 +1600,7 @@ export default function Dashboard() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                               <div className="flex items-center space-x-2">
                                 <svg
-                                  className="w-4 h-4 text-indigo-600"
+                                  className="w-4 h-4 text-purple-600"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -1145,7 +1619,7 @@ export default function Dashboard() {
                               </div>
                               <div className="flex items-center space-x-2">
                                 <svg
-                                  className="w-4 h-4 text-indigo-600"
+                                  className="w-4 h-4 text-purple-600"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -1164,7 +1638,7 @@ export default function Dashboard() {
                               </div>
                               <div className="flex items-center space-x-2 md:ml-10">
                                 <svg
-                                  className="w-4 h-4 text-indigo-600"
+                                  className="w-4 h-4 text-purple-600"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -1192,25 +1666,6 @@ export default function Dashboard() {
                             >
                               Test Agent
                             </button>
-                            <button
-                              onClick={() => handleGetSnippet(agent)}
-                              className="bg-green-50 text-green-700 px-4 py-2 rounded-lg hover:bg-green-100 transition-colors duration-200 font-medium text-sm"
-                            >
-                              Get Snippet
-                            </button>
-                            {agent.userRole === "owner" ||
-                            agent.userRole === "admin" ||
-                            agent.userRole === "editor" ? (
-                              <button
-                                onClick={() => {
-                                  setSelectedAgentForLeadCapture(agent);
-                                  setLeadCaptureModalOpen(true);
-                                }}
-                                className="bg-purple-50 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors duration-200 font-medium text-sm"
-                              >
-                                Lead Capture
-                              </button>
-                            ) : null}
                             {agent.userRole === "owner" ||
                             agent.userRole === "admin" ? (
                               <button
@@ -1223,7 +1678,12 @@ export default function Dashboard() {
                             {agent.userRole === "owner" ||
                             agent.userRole === "admin" ? (
                               <button
-                                onClick={() => handleDeleteAgent(agent._id)}
+                                onClick={() =>
+                                  handleDeleteAgent(
+                                    agent._id,
+                                    agent.isCustom || false,
+                                  )
+                                }
                                 className="bg-red-50 text-red-700 px-4 py-2 rounded-lg hover:bg-red-100 transition-colors duration-200 font-medium text-sm"
                               >
                                 Delete
@@ -3138,9 +3598,12 @@ window.nexavelWidget.open();`}</code>
         );
       case "email-automation":
       case "email-automation-overview":
-        return <EmailAutomationOverviewPage />;
+        return (
+          <EmailAutomationOverviewPage setActiveSection={setActiveSection} />
+        );
       case "email-automation-accounts":
         return <EmailAccountsPage />;
+      case "contacts":
       case "email-automation-contacts":
         return <ContactsPage />;
       case "email-automation-templates":
@@ -3149,6 +3612,8 @@ window.nexavelWidget.open();`}</code>
         return <EmailCampaignsPage />;
       case "email-automation-history":
         return <EmailHistoryPage />;
+      case "email-automation-flows":
+        return <EmailFlowsPage />;
       case "whatsapp-automation":
       case "whatsapp-automation-overview":
         return <WhatsAppAutomationOverviewPage />;
@@ -3415,6 +3880,34 @@ window.nexavelWidget.open();`}</code>
                 </div>
               </button>
             ) : null}
+            <button
+              onClick={() => {
+                setActiveSection("contacts");
+                setSidebarOpen(false);
+              }}
+              className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 font-medium ${
+                activeSection === "contacts"
+                  ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg"
+                  : "text-gray-700 hover:bg-white/60 hover:shadow-md backdrop-blur-sm"
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                <span>Contacts</span>
+              </div>
+            </button>
             <div className="space-y-1">
               <button
                 onClick={() =>
@@ -3466,6 +3959,89 @@ window.nexavelWidget.open();`}</code>
                   />
                 </svg>
               </button>
+              {(activeSection === "email-automation" ||
+                activeSection.startsWith("email-automation-")) && (
+                <div className="ml-4 space-y-1">
+                  <button
+                    onClick={() => {
+                      setActiveSection("email-automation-overview");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "email-automation-overview"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Overview
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("email-automation-accounts");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "email-automation-accounts"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Accounts
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("email-automation-templates");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "email-automation-templates"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Templates
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("email-automation-campaigns");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "email-automation-campaigns"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Campaigns
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("email-automation-history");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "email-automation-history"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    History
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveSection("email-automation-flows");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                      activeSection === "email-automation-flows"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
+                    }`}
+                  >
+                    Flow Builder
+                  </button>
+                </div>
+              )}
               <button
                 onClick={() =>
                   setActiveSection(
@@ -3516,24 +4092,6 @@ window.nexavelWidget.open();`}</code>
                   />
                 </svg>
               </button>
-              {(activeSection === "email-automation" ||
-                activeSection.startsWith("email-automation-")) && (
-                <div className="ml-4 space-y-1">
-                  <button
-                    onClick={() => {
-                      setActiveSection("email-automation-overview");
-                      setSidebarOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
-                      activeSection === "email-automation-overview"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
-                    }`}
-                  >
-                    Overview
-                  </button>
-                </div>
-              )}
               {(activeSection === "whatsapp-automation" ||
                 activeSection.startsWith("whatsapp-automation-")) && (
                 <div className="ml-4 space-y-1">
@@ -3614,76 +4172,6 @@ window.nexavelWidget.open();`}</code>
                     }`}
                   >
                     Analytics
-                  </button>
-                </div>
-              )}
-              {(activeSection === "email-automation" ||
-                activeSection.startsWith("email-automation-")) && (
-                <div className="ml-4 space-y-1">
-                  <button
-                    onClick={() => {
-                      setActiveSection("email-automation-accounts");
-                      setSidebarOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
-                      activeSection === "email-automation-accounts"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
-                    }`}
-                  >
-                    Accounts
-                  </button>
-                  <button
-                    onClick={() => {
-                      setActiveSection("email-automation-contacts");
-                      setSidebarOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
-                      activeSection === "email-automation-contacts"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
-                    }`}
-                  >
-                    Contacts
-                  </button>
-                  <button
-                    onClick={() => {
-                      setActiveSection("email-automation-templates");
-                      setSidebarOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
-                      activeSection === "email-automation-templates"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
-                    }`}
-                  >
-                    Templates
-                  </button>
-                  <button
-                    onClick={() => {
-                      setActiveSection("email-automation-campaigns");
-                      setSidebarOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
-                      activeSection === "email-automation-campaigns"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
-                    }`}
-                  >
-                    Campaigns
-                  </button>
-                  <button
-                    onClick={() => {
-                      setActiveSection("email-automation-history");
-                      setSidebarOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
-                      activeSection === "email-automation-history"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "text-gray-600 hover:bg-white/60 hover:text-gray-900"
-                    }`}
-                  >
-                    History
                   </button>
                 </div>
               )}
@@ -4483,6 +4971,277 @@ window.nexavelWidget.open();`}</code>
         </div>
       )}
 
+      {/* Test Custom AI Agent Modal */}
+      {testCustomModalOpen && selectedCustomAgent && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden border border-gray-200/50">
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">
+                      Test Custom AI Agent
+                    </h3>
+                    <p className="text-purple-100 text-sm">
+                      {selectedCustomAgent.name}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setTestCustomModalOpen(false)}
+                  className="text-white/80 hover:text-white transition-colors duration-200 p-1 hover:bg-white/10 rounded-full"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-col h-[600px]">
+              <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white">
+                {customMessages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center">
+                    <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mb-4">
+                      <svg
+                        className="w-8 h-8 text-purple-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-gray-500 text-lg font-medium">
+                      Start a conversation
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      Type a message below to test your custom AI agent
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {customMessages.map((msg, index) => (
+                      <div
+                        key={index}
+                        className={`flex ${
+                          msg.role === "user" ? "justify-end" : "justify-start"
+                        }`}
+                      >
+                        <div
+                          className={`flex items-start space-x-3 max-w-[80%] ${
+                            msg.role === "user"
+                              ? "flex-row-reverse space-x-reverse"
+                              : ""
+                          }`}
+                        >
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                              msg.role === "user"
+                                ? "bg-gradient-to-r from-purple-600 to-indigo-600"
+                                : "bg-gradient-to-r from-gray-400 to-gray-600"
+                            }`}
+                          >
+                            {msg.role === "user" ? (
+                              <svg
+                                className="w-4 h-4 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="w-4 h-4 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                          <div
+                            className={`px-4 py-3 rounded-2xl shadow-sm ${
+                              msg.role === "user"
+                                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
+                                : "bg-white border border-gray-200 text-gray-800"
+                            }`}
+                          >
+                            {msg.role === "agent" ? (
+                              <div className="prose prose-sm max-w-none">
+                                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                              </div>
+                            ) : (
+                              <p className="text-sm">{msg.content}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {customChatLoading && (
+                  <div className="flex justify-start">
+                    <div className="flex items-start space-x-3 max-w-[80%]">
+                      <div className="w-8 h-8 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg
+                          className="w-4 h-4 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="bg-white border border-gray-200 px-4 py-3 rounded-2xl shadow-sm">
+                        <div className="flex items-center space-x-2">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div
+                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                              style={{ animationDelay: "0.1s" }}
+                            ></div>
+                            <div
+                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                              style={{ animationDelay: "0.2s" }}
+                            ></div>
+                          </div>
+                          <span className="text-gray-500 text-sm">
+                            Thinking...
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-gray-200 p-6 bg-white/50 backdrop-blur-sm">
+                <div className="flex space-x-3">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={customChatMessage}
+                      onChange={(e) => setCustomChatMessage(e.target.value)}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && handleSendCustomMessage()
+                      }
+                      placeholder="Type your message here..."
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white/70 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                      disabled={customChatLoading}
+                    />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleSendCustomMessage}
+                    disabled={customChatLoading || !customChatMessage.trim()}
+                    className="inline-flex items-center px-6 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    {customChatLoading ? (
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-4 h-4 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                          />
+                        </svg>
+                        Send
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Agent Modal */}
       {editModalOpen && selectedAgentForEdit && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -4580,47 +5339,80 @@ window.nexavelWidget.open();`}</code>
                   placeholder="Describe your agent"
                 />
               </div>
-              <div>
-                <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
-                  <svg
-                    className="w-5 h-5 mr-2 text-indigo-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3"
-                    />
-                  </svg>
-                  Domain (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={editDomain}
-                  onChange={(e) => setEditDomain(e.target.value)}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
-                  placeholder="e.g., example.com"
-                />
-                <p className="mt-2 text-sm text-gray-500 flex items-center">
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  Restrict agent usage to specific domains
-                </p>
-              </div>
+              {selectedAgentForEdit.isCustom && (
+                <div>
+                  <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
+                    <svg
+                      className="w-5 h-5 mr-2 text-indigo-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                      />
+                    </svg>
+                    Model Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editModel}
+                    onChange={(e) => setEditModel(e.target.value)}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                    placeholder={
+                      (selectedAgentForEdit as any).provider === "openrouter"
+                        ? "Enter model name (e.g., anthropic/claude-2, openai/gpt-4)"
+                        : "Enter model name (e.g., gpt-4, gemini-pro)"
+                    }
+                  />
+                </div>
+              )}
+              {!selectedAgentForEdit.isCustom && (
+                <div>
+                  <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
+                    <svg
+                      className="w-5 h-5 mr-2 text-indigo-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3"
+                      />
+                    </svg>
+                    Domain (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={editDomain}
+                    onChange={(e) => setEditDomain(e.target.value)}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm text-gray-900 placeholder-gray-400"
+                    placeholder="e.g., example.com"
+                  />
+                  <p className="mt-2 text-sm text-gray-500 flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Restrict agent usage to specific domains
+                  </p>
+                </div>
+              )}
               <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
                 <button
                   onClick={() => setEditModalOpen(false)}
@@ -4816,6 +5608,170 @@ window.nexavelWidget.open();`}</code>
           agentId={selectedAgentForLeadCapture._id}
           agentName={selectedAgentForLeadCapture.name}
         />
+      )}
+
+      {/* Custom AI Agent Modal */}
+      {customAgentModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-lg border border-gray-200/50 overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">
+                    Create Custom AI Agent
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setCustomAgentModalOpen(false)}
+                  className="text-white/80 hover:text-white transition-colors duration-200 p-1 hover:bg-white/10 rounded-full"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <form onSubmit={handleCreateCustomAgent} className="space-y-6">
+                <div>
+                  <label
+                    htmlFor="customAgentName"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Agent Name
+                  </label>
+                  <input
+                    type="text"
+                    id="customAgentName"
+                    value={customAgentName}
+                    onChange={(e) => setCustomAgentName(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 shadow-sm text-gray-900"
+                    placeholder="Enter custom agent name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="customAgentDescription"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Description
+                  </label>
+                  <textarea
+                    id="customAgentDescription"
+                    value={customAgentDescription}
+                    onChange={(e) => setCustomAgentDescription(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 shadow-sm resize-none text-gray-900"
+                    placeholder="Enter agent description"
+                    rows={3}
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="customAgentProvider"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    AI Provider
+                  </label>
+                  <select
+                    id="customAgentProvider"
+                    value={customAgentProvider}
+                    onChange={(e) => setCustomAgentProvider(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 shadow-sm text-gray-900"
+                    required
+                  >
+                    <option value="gemini">Google Gemini</option>
+                    <option value="chatgpt">OpenAI ChatGPT</option>
+                    <option value="openrouter">OpenRouter</option>
+                    <option value="custom">Custom Provider</option>
+                  </select>
+                </div>
+                <div>
+                  <label
+                    htmlFor="customAgentModel"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Model Name
+                  </label>
+                  <input
+                    type="text"
+                    id="customAgentModel"
+                    value={customAgentModel}
+                    onChange={(e) => setCustomAgentModel(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 shadow-sm text-gray-900"
+                    placeholder="Enter model name (e.g., gpt-4, gemini-pro)"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="customAgentApiKey"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    API Key
+                  </label>
+                  <input
+                    type="password"
+                    id="customAgentApiKey"
+                    value={customAgentApiKey}
+                    onChange={(e) => setCustomAgentApiKey(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 shadow-sm text-gray-900"
+                    placeholder="Enter API key"
+                    required
+                  />
+                </div>
+                <div className="flex space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setCustomAgentModalOpen(false)}
+                    className="flex-1 px-6 py-3 border border-gray-300 rounded-xl shadow-sm text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 hover:shadow-md"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={customAgentLoading}
+                    className="flex-1 px-6 py-3 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {customAgentLoading ? "Creating..." : "Create Agent"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

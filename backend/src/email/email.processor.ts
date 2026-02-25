@@ -5,6 +5,7 @@ import { EmailHistoryService } from './email-history.service';
 import { EmailCampaignsService } from './campaigns.service';
 import { CampaignStatus } from './campaigns.schema';
 import { EmailStatus } from './email-history.schema';
+import { EventsGateway } from '../events/events.gateway';
 
 @Processor('email-queue')
 export class EmailProcessor {
@@ -12,6 +13,7 @@ export class EmailProcessor {
     private readonly gmailService: GmailService,
     private readonly emailHistoryService: EmailHistoryService,
     private readonly emailCampaignsService: EmailCampaignsService,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   @Process('send-email')
@@ -34,7 +36,7 @@ export class EmailProcessor {
         return;
       }
 
-      const success = await this.gmailService.sendEmail(
+      await this.gmailService.sendEmail(
         userId,
         to,
         subject,
@@ -49,19 +51,20 @@ export class EmailProcessor {
         recipientEmail: to,
         subject,
         content,
-        status: success ? EmailStatus.SENT : EmailStatus.FAILED,
+        status: EmailStatus.SENT,
         googleAccountId,
-        sentAt: success ? new Date() : undefined,
-        failedAt: !success ? new Date() : undefined,
+        sentAt: new Date(),
       });
 
       // Update campaign stats
       if (campaignId) {
-        await this.emailCampaignsService.updateCampaignStats(
+        await this.emailCampaignsService.updateCampaignStats(campaignId);
+        // Get updated campaign and emit real-time update
+        const updatedCampaign = await this.emailCampaignsService.getCampaign(
           userId,
           campaignId,
-          success,
         );
+        this.eventsGateway.sendCampaignUpdate(userId, updatedCampaign);
       }
 
       console.log(`Email sent successfully to ${to}`);
@@ -83,14 +86,16 @@ export class EmailProcessor {
 
       // Update campaign stats for failed email
       if (campaignId) {
-        await this.emailCampaignsService.updateCampaignStats(
+        await this.emailCampaignsService.updateCampaignStats(campaignId);
+        // Get updated campaign and emit real-time update
+        const updatedCampaign = await this.emailCampaignsService.getCampaign(
           userId,
           campaignId,
-          false,
         );
+        this.eventsGateway.sendCampaignUpdate(userId, updatedCampaign);
       }
 
-      throw error;
+      // Don't rethrow to prevent job from being retried infinitely
     }
   }
 }

@@ -12,7 +12,7 @@ function WhatsAppCampaignsContent() {
     description: "",
     templateId: "",
     scheduledAt: "",
-    contacts: [] as string[],
+    contactListId: "",
     variables: {},
   });
 
@@ -46,6 +46,20 @@ function WhatsAppCampaignsContent() {
     },
   });
 
+  const { data: contactLists = [] } = useQuery({
+    queryKey: ["whatsappContactLists"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        "http://localhost:5000/whatsapp/contacts/lists",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      return response.data.data;
+    },
+  });
+
   const createCampaignMutation = useMutation({
     mutationFn: async (campaignData: any) => {
       const token = localStorage.getItem("token");
@@ -66,7 +80,7 @@ function WhatsAppCampaignsContent() {
         description: "",
         templateId: "",
         scheduledAt: "",
-        contacts: [],
+        contactListId: "",
         variables: {},
       });
     },
@@ -291,7 +305,7 @@ function WhatsAppCampaignsContent() {
                 onChange={(e) =>
                   setCreateFormData({ ...createFormData, name: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
                 placeholder="Welcome Campaign"
               />
             </div>
@@ -309,7 +323,7 @@ function WhatsAppCampaignsContent() {
                   })
                 }
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
                 placeholder="Welcome message for new subscribers"
               />
             </div>
@@ -326,7 +340,7 @@ function WhatsAppCampaignsContent() {
                     templateId: e.target.value,
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
               >
                 <option value="">Select a template...</option>
                 {templates &&
@@ -357,24 +371,28 @@ function WhatsAppCampaignsContent() {
 
             <div>
               <label className="block text-sm font-medium text-black mb-2">
-                Contacts (Phone Numbers)
+                Contact List
               </label>
-              <textarea
-                value={createFormData.contacts.join("\n")}
+              <select
+                value={createFormData.contactListId}
                 onChange={(e) =>
                   setCreateFormData({
                     ...createFormData,
-                    contacts: e.target.value
-                      .split("\n")
-                      .filter((line: string) => line.trim()),
+                    contactListId: e.target.value,
                   })
                 }
-                rows={5}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="+1234567890&#10;+0987654321"
-              />
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+              >
+                <option value="">Select a contact list...</option>
+                {contactLists &&
+                  contactLists.map((list: any) => (
+                    <option key={list._id} value={list._id}>
+                      {list.fileName} ({list.contactCount} contacts)
+                    </option>
+                  ))}
+              </select>
               <p className="text-xs text-gray-500 mt-1">
-                Enter one phone number per line (including country code)
+                Select a contact list to send messages to
               </p>
             </div>
 
@@ -385,7 +403,7 @@ function WhatsAppCampaignsContent() {
                   isCreating ||
                   !createFormData.name ||
                   !createFormData.templateId ||
-                  createFormData.contacts.length === 0
+                  !createFormData.contactListId
                 }
                 className="flex-1 bg-green-500 text-white py-2 rounded-lg font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -548,7 +566,9 @@ function WhatsAppCampaignsContent() {
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <span className="text-2xl">📱</span>
           </div>
-          <h3 className="text-xl font-semibold mb-2">No campaigns created</h3>
+          <h3 className="text-xl font-semibold mb-2 text-black">
+            No campaigns created
+          </h3>
           <p className="text-black mb-8">
             Create your first WhatsApp campaign to start sending messages to
             your contacts

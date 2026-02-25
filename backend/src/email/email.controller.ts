@@ -17,11 +17,14 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GoogleAccountService } from './google-account.service';
-import { ContactsService } from './contacts.service';
-import { ContactListsService } from './contact-lists.service';
+import { ContactsService } from '../contacts/contacts.service';
+import { ContactListsService } from '../contacts/contact-lists.service';
 import { EmailTemplatesService } from './templates.service';
 import { EmailCampaignsService } from './campaigns.service';
 import { EmailHistoryService } from './email-history.service';
+import { EmailAnalyticsService } from './email-analytics.service';
+import { FlowBuilderService } from './flow-builder/flow-builder.service';
+import { EmailFlowEngine } from './flow-builder/email-flow-engine.service';
 
 @Controller('email')
 @UseGuards(JwtAuthGuard)
@@ -33,6 +36,9 @@ export class EmailController {
     private readonly emailTemplatesService: EmailTemplatesService,
     private readonly emailCampaignsService: EmailCampaignsService,
     private readonly emailHistoryService: EmailHistoryService,
+    private readonly emailAnalyticsService: EmailAnalyticsService,
+    private readonly flowBuilderService: FlowBuilderService,
+    private readonly emailFlowEngine: EmailFlowEngine,
   ) {}
 
   // Google Account endpoints
@@ -253,5 +259,51 @@ export class EmailController {
   @Delete('history/:id')
   async deleteEmailHistory(@Request() req, @Param('id') id: string) {
     return this.emailHistoryService.deleteEmailHistory(id);
+  }
+
+  // Analytics endpoints
+  @Get('analytics')
+  async getAnalytics(@Request() req) {
+    return this.emailAnalyticsService.getOverallAnalytics(req.user._id);
+  }
+
+  // Flow Builder endpoints
+  @Post('flows')
+  async createFlow(@Request() req, @Body() body) {
+    return this.flowBuilderService.createFlow(req.user._id, body);
+  }
+
+  @Get('flows')
+  async getFlows(@Request() req) {
+    return this.flowBuilderService.getFlows(req.user._id);
+  }
+
+  @Get('flows/:id')
+  async getFlow(@Request() req, @Param('id') id: string) {
+    return this.flowBuilderService.getFlow(req.user._id, id);
+  }
+
+  @Put('flows/:id')
+  async updateFlow(@Request() req, @Param('id') id: string, @Body() body) {
+    return this.flowBuilderService.updateFlow(req.user._id, id, body);
+  }
+
+  @Delete('flows/:id')
+  async deleteFlow(@Request() req, @Param('id') id: string) {
+    return this.flowBuilderService.deleteFlow(req.user._id, id);
+  }
+
+  @Post('flows/:id/publish')
+  async publishFlow(@Request() req, @Param('id') id: string) {
+    return this.flowBuilderService.publishFlow(req.user._id, id);
+  }
+
+  @Post('flows/:id/run')
+  async runFlow(@Request() req, @Param('id') id: string, @Body() body) {
+    return this.emailFlowEngine.executeFlow(id, {
+      userId: req.user._id,
+      flowId: id,
+      ...body,
+    });
   }
 }

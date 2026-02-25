@@ -5,6 +5,7 @@ import {
   IsIn,
   MaxLength,
   Matches,
+  IsBoolean,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -52,12 +53,16 @@ export class CreateAgentDto {
   @Transform(({ value }) => value?.trim().toLowerCase())
   provider: string;
 
-  @IsNotEmpty({ message: 'Domain is required' })
+  @IsOptional()
   @IsString({ message: 'Domain must be a string' })
   @MaxLength(253, { message: 'Domain must not exceed 253 characters' })
   @Matches(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, {
     message: 'Domain must be a valid domain format',
   })
   @Transform(({ value }) => value?.trim().toLowerCase())
-  domain: string;
+  domain?: string;
+
+  @IsOptional()
+  @IsBoolean({ message: 'isCustom must be a boolean' })
+  isCustom?: boolean;
 }

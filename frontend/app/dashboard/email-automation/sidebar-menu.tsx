@@ -19,7 +19,7 @@ export default function EmailAutomationSidebar() {
     },
     {
       title: "Contacts",
-      href: "/dashboard/email-automation/contacts",
+      href: "/dashboard/contacts",
       icon: "👥",
     },
     {
@@ -31,6 +31,11 @@ export default function EmailAutomationSidebar() {
       title: "Campaigns",
       href: "/dashboard/email-automation/campaigns",
       icon: "📧",
+    },
+    {
+      title: "Flow Builder",
+      href: "/dashboard/email-automation/flows",
+      icon: "⚙️",
     },
     {
       title: "History",

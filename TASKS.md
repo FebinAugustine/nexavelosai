@@ -275,6 +275,154 @@ This document outlines the detailed tasks required to implement the NexaVelosAI 
 - **Dependencies**: All phases
 - **Acceptance Criteria**: App deployed and accessible.
 
+## Phase 8: WhatsApp Automation (Completed)
+
+### 8.1 Backend Setup and API Integration
+
+- **Task**: Create WhatsApp module backend structure with necessary files
+- **Description**: Set up the WhatsApp module with all required services, schemas, and API endpoints
+- **Effort**: 3 days
+- **Dependencies**: Backend setup, user management
+- **Acceptance Criteria**: WhatsApp module created with all necessary files
+- **Status**: Completed
+
+- **Task**: Implement Meta WhatsApp API integration service
+- **Description**: Integrate with Meta WhatsApp Business API for sending messages and managing templates
+- **Effort**: 3 days
+- **Dependencies**: WhatsApp module structure
+- **Acceptance Criteria**: Meta WhatsApp API service implemented and functional
+- **Status**: Completed
+
+- **Task**: Create WhatsApp account management schema and service
+- **Description**: Implement WhatsApp account connection and management functionality
+- **Effort**: 2 days
+- **Dependencies**: Meta WhatsApp API integration
+- **Acceptance Criteria**: Users can connect and manage their WhatsApp Business Accounts
+- **Status**: Completed
+
+- **Task**: Implement WhatsApp message templates management (schema + service)
+- **Description**: Create, edit, delete, and validate WhatsApp message templates
+- **Effort**: 2 days
+- **Dependencies**: Account management
+- **Acceptance Criteria**: Templates can be created, edited, deleted, and validated
+- **Status**: Completed
+
+- **Task**: Create WhatsApp campaigns management system (schema + service)
+- **Description**: Implement campaign creation, scheduling, and sending functionality
+- **Effort**: 3 days
+- **Dependencies**: Templates management
+- **Acceptance Criteria**: Campaigns can be created, scheduled, and sent
+- **Status**: Completed
+
+- **Task**: Implement chat automation and auto-reply functionality (schema + service)
+- **Description**: Add auto-reply and chat history management features
+- **Effort**: 2 days
+- **Dependencies**: Account management
+- **Acceptance Criteria**: Auto-replies and chat history management implemented
+- **Status**: Completed
+
+- **Task**: Create WhatsApp analytics and reporting system (schema + service)
+- **Description**: Implement campaign performance tracking and engagement metrics
+- **Effort**: 2 days
+- **Dependencies**: Campaigns management
+- **Acceptance Criteria**: Analytics and reporting system functional
+- **Status**: Completed
+
+- **Task**: Build WhatsApp automation API controller with endpoints
+- **Description**: Create API endpoints for all WhatsApp automation features
+- **Effort**: 2 days
+- **Dependencies**: All backend services
+- **Acceptance Criteria**: API endpoints created and functional
+- **Status**: Completed
+
+### 8.2 Frontend Implementation
+
+- **Task**: Create frontend dashboard structure for WhatsApp automation
+- **Description**: Set up the frontend structure for WhatsApp automation pages
+- **Effort**: 2 days
+- **Dependencies**: Frontend setup
+- **Acceptance Criteria**: Frontend structure created
+- **Status**: Completed
+
+- **Task**: Implement account connection UI component
+- **Description**: Build the account connection form and display
+- **Effort**: 1 day
+- **Dependencies**: Frontend structure
+- **Acceptance Criteria**: Account connection UI functional
+- **Status**: Completed
+
+- **Task**: Build template management UI
+- **Description**: Create the templates management interface
+- **Effort**: 1 day
+- **Dependencies**: Frontend structure
+- **Acceptance Criteria**: Template management UI functional
+- **Status**: Completed
+
+- **Task**: Create campaign management UI
+- **Description**: Build the campaigns management interface
+- **Effort**: 1 day
+- **Dependencies**: Frontend structure
+- **Acceptance Criteria**: Campaign management UI functional
+- **Status**: Completed
+
+- **Task**: Implement chat automation UI
+- **Description**: Create the chat automation interface
+- **Effort**: 1 day
+- **Dependencies**: Frontend structure
+- **Acceptance Criteria**: Chat automation UI functional
+- **Status**: Completed
+
+- **Task**: Add WhatsApp automation to main navigation and sidebar
+- **Description**: Integrate WhatsApp automation into the main dashboard navigation
+- **Effort**: 0.5 days
+- **Dependencies**: Frontend structure
+- **Acceptance Criteria**: Navigation updated
+- **Status**: Completed
+
+- **Task**: Build analytics and reporting dashboard
+- **Description**: Create the analytics and reporting interface
+- **Effort**: 1 day
+- **Dependencies**: Frontend structure
+- **Acceptance Criteria**: Analytics dashboard functional
+- **Status**: Completed
+
+### 8.3 Testing and Integration
+
+- **Task**: Test all backend services and API endpoints
+- **Description**: Test all backend services and API endpoints
+- **Effort**: 1 day
+- **Dependencies**: All backend services
+- **Acceptance Criteria**: All tests pass
+- **Status**: Completed
+
+- **Task**: Test frontend-backend integration
+- **Description**: Test frontend-backend integration
+- **Effort**: 1 day
+- **Dependencies**: All frontend pages
+- **Acceptance Criteria**: Frontend and backend integrated
+- **Status**: Completed
+
+- **Task**: Verify integration with existing system (users, teams, payments)
+- **Description**: Verify integration with existing system
+- **Effort**: 1 day
+- **Dependencies**: All features
+- **Acceptance Criteria**: Feature integrated with existing system
+- **Status**: Completed
+
+- **Task**: Perform user acceptance testing
+- **Description**: Perform user acceptance testing
+- **Effort**: 1 day
+- **Dependencies**: All features
+- **Acceptance Criteria**: Users can use all features
+- **Status**: Completed
+
+- **Task**: Deploy to production and configure monitoring
+- **Description**: Deploy to production and configure monitoring
+- **Effort**: 1 day
+- **Dependencies**: All features
+- **Acceptance Criteria**: Feature deployed and monitoring configured
+- **Status**: Completed
+
 ## Total Estimated Effort: ~70 days (adjust based on team size)
 
 ### Notes

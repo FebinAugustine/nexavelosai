@@ -15,6 +15,7 @@ import { UsersModule } from './users/users.module';
 import { MailModule } from './mail/mail.module';
 import { AuthModule } from './auth/auth.module';
 import { AgentsModule } from './agents/agents.module';
+import { CustomAgentsModule } from './custom-agents/custom-agents.module';
 import { PaymentsModule } from './payments/payments.module';
 import { EventsModule } from './events/events.module';
 import { AgentQueueModule } from './agent-queue/agent-queue.module';
@@ -26,6 +27,7 @@ import { ApiModule } from './api/api.module'; // Import API module
 import { AnalyticsModule } from './analytics/analytics.module'; // Import Analytics module
 import { EmailModule } from './email/email.module'; // Import Email module
 import { WhatsAppModule } from './whatsapp/whatsapp.module'; // Import WhatsApp module
+import { ContactsModule } from './contacts/contacts.module'; // Import Contacts module
 
 @Module({
   imports: [
@@ -53,6 +55,7 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module'; // Import WhatsApp 
     MailModule,
     AuthModule,
     AgentsModule,
+    CustomAgentsModule,
     PaymentsModule,
     EventsModule,
     AgentQueueModule,
@@ -64,6 +67,7 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module'; // Import WhatsApp 
     AnalyticsModule, // Add Analytics module here
     EmailModule, // Add Email module here
     WhatsAppModule, // Add WhatsApp module here
+    ContactsModule, // Add Contacts module here
     ServeStaticModule.forRoot({
       rootPath: path.join(__dirname, '..', 'public'),
       serveRoot: '/', // Serve static files from root path so widget.js is accessible at /widget.js

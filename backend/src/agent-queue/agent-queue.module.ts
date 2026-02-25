@@ -31,6 +31,9 @@ import { AgentsModule } from '../agents/agents.module';
     BullModule.registerQueue({
       name: 'agent-requests',
     }),
+    BullModule.registerQueue({
+      name: 'custom-agent-requests',
+    }),
     EventsModule, // Add EventsModule
     forwardRef(() => AgentsModule), // Add AgentsModule with forwardRef
   ],

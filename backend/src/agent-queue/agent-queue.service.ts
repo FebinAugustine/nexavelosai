@@ -4,18 +4,36 @@ import { Queue } from 'bull';
 
 @Injectable()
 export class AgentQueueService {
-  constructor(@InjectQueue('agent-requests') private agentQueue: Queue) {}
+  constructor(
+    @InjectQueue('agent-requests') private agentQueue: Queue,
+    @InjectQueue('custom-agent-requests') private customAgentQueue: Queue,
+  ) {}
 
   async addAgentRequest(data: any) {
     // Add a job to the 'agent-requests' queue
-    // We can add options like delay, attempts, backoff strategies here
     const job = await this.agentQueue.add('process-agent-request', data, {
-      attempts: 3, // Retry up to 3 times
+      attempts: 3,
       backoff: {
         type: 'exponential',
-        delay: 1000, // Initial delay of 1 second, then 2s, 4s, etc.
+        delay: 1000,
       },
     });
+    return job;
+  }
+
+  async addCustomAgentRequest(data: any) {
+    // Add a job to the 'custom-agent-requests' queue
+    const job = await this.customAgentQueue.add(
+      'process-custom-agent-request',
+      data,
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 1000,
+        },
+      },
+    );
     return job;
   }
 }

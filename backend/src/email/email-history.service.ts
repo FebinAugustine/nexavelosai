@@ -86,4 +86,10 @@ export class EmailHistoryService {
   async deleteEmailHistory(emailHistoryId: string): Promise<void> {
     await this.emailHistoryModel.deleteOne({ _id: emailHistoryId });
   }
+
+  async getEmailHistoryByCampaignId(
+    campaignId: string,
+  ): Promise<EmailHistory[]> {
+    return this.emailHistoryModel.find({ campaignId }).sort({ sentAt: -1 });
+  }
 }

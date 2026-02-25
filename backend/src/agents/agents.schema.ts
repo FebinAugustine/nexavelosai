@@ -32,6 +32,9 @@ export class Agent {
   @Prop({ default: 0 })
   totalInteractions: number;
 
+  @Prop({ default: false })
+  isCustom: boolean;
+
   @Prop({
     type: Object,
     default: {

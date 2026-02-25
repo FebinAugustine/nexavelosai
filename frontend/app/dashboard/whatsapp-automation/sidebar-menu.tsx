@@ -18,6 +18,11 @@ export default function WhatsAppAutomationSidebar() {
       icon: "🔗",
     },
     {
+      title: "Contacts",
+      href: "/dashboard/contacts",
+      icon: "👥",
+    },
+    {
       title: "Templates",
       href: "/dashboard/whatsapp-automation/templates",
       icon: "📝",

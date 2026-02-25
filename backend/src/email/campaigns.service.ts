@@ -7,7 +7,7 @@ import {
   CampaignStatus,
 } from './campaigns.schema';
 import { EmailTemplatesService } from './templates.service';
-import { ContactsService } from './contacts.service';
+import { ContactsService } from '../contacts/contacts.service';
 import { GmailService } from './gmail.service';
 import { EmailHistoryService } from './email-history.service';
 import { InjectQueue } from '@nestjs/bull';
@@ -103,56 +103,72 @@ export class EmailCampaignsService {
     await this.campaignModel.deleteOne({ _id: campaignId, userId });
   }
 
-  async updateCampaignStats(
-    userId: string,
-    campaignId: string,
-    success: boolean,
-  ): Promise<void> {
-    const campaign = await this.getCampaign(userId, campaignId);
-    const sentCount = campaign.stats?.sent || 0;
-    const totalContacts = campaign.contactIds.length;
-
-    // Prevent stats from exceeding total contacts
-    if (sentCount >= totalContacts) {
-      console.log(
-        `Campaign ${campaignId} has already sent all emails, skipping stats update`,
-      );
-      return;
+  async updateCampaignStats(campaignId: string): Promise<void> {
+    const campaign = await this.campaignModel.findById(campaignId);
+    if (!campaign) {
+      throw new Error('Campaign not found');
     }
 
-    const updateData: any = {
-      $inc: { 'stats.sent': 1 },
-    };
+    // Get all email history for this campaign
+    const emailHistory =
+      await this.emailHistoryService.getEmailHistoryByCampaignId(campaignId);
 
-    if (success) {
-      updateData.$inc['stats.delivered'] = 1;
-    } else {
-      updateData.$inc['stats.bounced'] = 1;
+    // Calculate stats
+    const totalSent = emailHistory.filter(
+      (email) => email.status === 'sent',
+    ).length;
+    const totalFailed = emailHistory.filter(
+      (email) => email.status === 'failed',
+    ).length;
+    const totalPending = emailHistory.filter(
+      (email) => email.status === 'pending',
+    ).length;
+
+    // Update campaign stats using atomic operations
+    await this.campaignModel.findByIdAndUpdate(
+      campaignId,
+      {
+        $set: {
+          stats: {
+            sent: totalSent,
+            delivered: totalSent, // Assuming sent = delivered for now
+            opened: 0, // These would need to be tracked with email tracking
+            clicked: 0,
+            bounced: totalFailed,
+            unsubscribed: 0,
+          },
+        },
+      },
+      { new: true },
+    );
+
+    // Check if campaign is complete
+    const totalProcessed = totalSent + totalFailed;
+    if (
+      totalProcessed === campaign.contactIds.length &&
+      (campaign.stats?.sent || 0) !== totalSent
+    ) {
+      await this.campaignModel.findByIdAndUpdate(campaignId, {
+        $set: { status: CampaignStatus.COMPLETED },
+      });
     }
-
-    await this.campaignModel.updateOne({ _id: campaignId, userId }, updateData);
-
-    // Check if campaign is completed
-    const updatedCampaign = await this.getCampaign(userId, campaignId);
-    const newSentCount = updatedCampaign.stats?.sent || 0;
-
-    if (newSentCount >= totalContacts) {
-      await this.campaignModel.updateOne(
-        { _id: campaignId, userId },
-        { status: CampaignStatus.COMPLETED },
-      );
-    }
-
-    // Emit real-time campaign update
-    const finalCampaign = await this.getCampaign(userId, campaignId);
-    this.eventsGateway.sendCampaignUpdate(userId, finalCampaign);
   }
 
   async startCampaign(userId: string, campaignId: string): Promise<void> {
     const campaign = await this.getCampaign(userId, campaignId);
+
+    // Check if campaign is already running
+    if (campaign.status === CampaignStatus.RUNNING) {
+      console.log(`Campaign ${campaignId} is already running`);
+      return;
+    }
+
+    // Update campaign status to running
     await this.campaignModel.findByIdAndUpdate(campaignId, {
       status: CampaignStatus.RUNNING,
     });
+
+    console.log(`Campaign ${campaignId} started`);
 
     // Queue email sending
     this.queueCampaignEmails(userId, campaign);

@@ -27,9 +27,11 @@ import {
   WhatsAppAnalytics,
   WhatsAppAnalyticsSchema,
 } from './whatsapp-analytics.schema';
+import { ContactsModule } from '../contacts/contacts.module';
 
 @Module({
   imports: [
+    ContactsModule,
     MongooseModule.forFeature([
       { name: WhatsAppAccount.name, schema: WhatsAppAccountSchema },
       { name: WhatsAppTemplate.name, schema: WhatsAppTemplateSchema },

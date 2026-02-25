@@ -282,7 +282,9 @@ function WhatsAppChatsContent() {
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl">💬</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Select a chat</h3>
+              <h3 className="text-xl font-semibold mb-2 text-black">
+                Select a chat
+              </h3>
               <p className="text-black mb-8">
                 Choose a chat from the list to view and respond to messages
               </p>

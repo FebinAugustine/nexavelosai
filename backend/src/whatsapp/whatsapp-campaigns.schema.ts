@@ -18,7 +18,7 @@ export class WhatsAppCampaign {
   templateId: string;
 
   @Prop({ required: true })
-  contactList: string[];
+  contactListId: string;
 
   @Prop()
   scheduledAt?: Date;

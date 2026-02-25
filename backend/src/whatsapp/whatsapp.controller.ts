@@ -9,7 +9,12 @@ import {
   UseGuards,
   Request,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { WhatsAppAccountService } from './whatsapp-account.service';
 import { WhatsAppTemplatesService } from './whatsapp-templates.service';
 import { WhatsAppCampaignsService } from './whatsapp-campaigns.service';
@@ -17,6 +22,8 @@ import { WhatsAppChatService } from './whatsapp-chat.service';
 import { WhatsAppAnalyticsService } from './whatsapp-analytics.service';
 import { MetaWhatsAppAPI } from './meta-whatsapp-api';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ContactsService } from '../contacts/contacts.service';
+import { ContactListsService } from '../contacts/contact-lists.service';
 
 @Controller('whatsapp')
 export class WhatsAppController {
@@ -27,7 +34,137 @@ export class WhatsAppController {
     private readonly whatsAppChatService: WhatsAppChatService,
     private readonly whatsAppAnalyticsService: WhatsAppAnalyticsService,
     private readonly metaWhatsAppAPI: MetaWhatsAppAPI,
+    private readonly contactsService: ContactsService,
+    private readonly contactListsService: ContactListsService,
   ) {}
+
+  // Contacts endpoints
+  @UseGuards(JwtAuthGuard)
+  @Post('contacts')
+  async createContact(@Request() req, @Body() body) {
+    return this.contactsService.createContact(req.user._id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('contacts/upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (
+          file.mimetype === 'text/csv' ||
+          file.originalname.endsWith('.csv') ||
+          file.mimetype.includes('excel') ||
+          file.mimetype.includes('spreadsheet') ||
+          file.originalname.endsWith('.xlsx') ||
+          file.originalname.endsWith('.xls')
+        ) {
+          cb(null, true);
+        } else {
+          cb(new Error('Only CSV and Excel files are accepted'), false);
+        }
+      },
+    }),
+  )
+  async uploadContacts(@Request() req, @UploadedFile() file) {
+    try {
+      const fs = require('fs');
+      let results: any[] = [];
+
+      if (file.originalname.endsWith('.csv')) {
+        // Parse CSV file
+        const csvParser = require('csv-parser');
+        await new Promise((resolve, reject) => {
+          fs.createReadStream(file.path)
+            .pipe(csvParser())
+            .on('data', (data) => results.push(data))
+            .on('end', () => {
+              fs.unlinkSync(file.path);
+              resolve(results);
+            })
+            .on('error', (error) => {
+              fs.unlinkSync(file.path);
+              reject(error);
+            });
+        });
+      } else {
+        // Parse Excel file
+        const xlsx = require('xlsx');
+        const workbook = xlsx.readFile(file.path);
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        results = xlsx.utils.sheet_to_json(firstSheet);
+        fs.unlinkSync(file.path);
+      }
+
+      const processedContacts = results.map((contact) => ({
+        email: contact.email || contact.Email || '',
+        firstName: contact.firstName || contact['First Name'] || '',
+        lastName: contact.lastName || contact['Last Name'] || '',
+        phone: contact.phone || contact.Phone || '',
+        tags:
+          contact.tags || contact.Tags
+            ? contact.tags.split(',').map((tag: string) => tag.trim())
+            : [],
+      }));
+
+      const result = await this.contactsService.uploadContacts(
+        req.user._id,
+        processedContacts,
+      );
+
+      // Create contact list
+      await this.contactListsService.createContactList(
+        req.user._id,
+        file.originalname,
+        processedContacts,
+      );
+
+      return {
+        message: `Contacts uploaded successfully`,
+        ...result,
+      };
+    } catch (error) {
+      console.error('Error parsing CSV file:', error);
+      return { message: 'Error parsing CSV file', error: error.message };
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('contacts/lists')
+  async getContactLists(@Request() req) {
+    return this.contactListsService.getContactLists(req.user._id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('contacts/lists/:id/preview')
+  async getContactListPreview(@Request() req, @Param('id') id: string) {
+    return this.contactListsService.getContactListPreview(req.user._id, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('contacts/lists/:id')
+  async deleteContactList(@Request() req, @Param('id') id: string) {
+    return this.contactListsService.deleteContactList(req.user._id, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('contacts')
+  async getContacts(@Request() req, @Query() query) {
+    return this.contactsService.getContacts(req.user._id, query);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('contacts/:id')
+  async deleteContact(@Request() req, @Param('id') id: string) {
+    return this.contactsService.deleteContact(req.user._id, id);
+  }
 
   // Account management
   @UseGuards(JwtAuthGuard)

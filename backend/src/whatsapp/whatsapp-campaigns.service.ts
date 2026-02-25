@@ -8,6 +8,7 @@ import {
 import { MetaWhatsAppAPI } from './meta-whatsapp-api';
 import { WhatsAppAccountService } from './whatsapp-account.service';
 import { WhatsAppTemplatesService } from './whatsapp-templates.service';
+import { ContactsService } from '../contacts/contacts.service';
 
 @Injectable()
 export class WhatsAppCampaignsService {
@@ -17,6 +18,7 @@ export class WhatsAppCampaignsService {
     private readonly metaWhatsAppAPI: MetaWhatsAppAPI,
     private readonly whatsAppAccountService: WhatsAppAccountService,
     private readonly whatsAppTemplatesService: WhatsAppTemplatesService,
+    private readonly contactsService: ContactsService,
   ) {}
 
   async getCampaigns(userId: string): Promise<WhatsAppCampaign[]> {
@@ -48,7 +50,7 @@ export class WhatsAppCampaignsService {
       name: campaignData.name,
       description: campaignData.description,
       templateId: campaignData.templateId,
-      contactList: campaignData.contactList,
+      contactListId: campaignData.contactListId,
       scheduledAt: campaignData.scheduledAt,
       status: campaignData.scheduledAt ? 'scheduled' : 'draft',
       metrics: {
@@ -127,6 +129,16 @@ export class WhatsAppCampaignsService {
       throw new Error('Template not found or not approved');
     }
 
+    // Get contacts for the selected contact list
+    const contactsResult = await this.contactsService.getContacts(userId, {
+      contactListId: campaign.contactListId,
+    });
+
+    // Extract phone numbers from contacts (filter out contacts without phone numbers)
+    const contactList = contactsResult.data
+      .filter((contact) => contact.phone)
+      .map((contact) => contact.phone);
+
     // Update campaign status to sending
     await this.campaignModel.findByIdAndUpdate(campaignId, {
       status: 'sending',
@@ -136,7 +148,7 @@ export class WhatsAppCampaignsService {
     let sentCount = 0;
     let failedCount = 0;
 
-    for (const contact of campaign.contactList) {
+    for (const contact of contactList) {
       try {
         await this.metaWhatsAppAPI.sendTemplateMessage(
           account.phoneNumberId,
@@ -226,16 +238,8 @@ export class WhatsAppCampaignsService {
       throw new Error('Template is required');
     }
 
-    if (!campaignData.contactList || campaignData.contactList.length === 0) {
-      throw new Error('Campaign must have at least one contact');
-    }
-
-    // Validate phone numbers
-    for (const contact of campaignData.contactList) {
-      const phoneRegex = /^[1-9]\d{7,14}$/;
-      if (!phoneRegex.test(contact.replace(/[\s\-\(\)]/g, ''))) {
-        throw new Error(`Invalid phone number: ${contact}`);
-      }
+    if (!campaignData.contactListId) {
+      throw new Error('Contact list is required');
     }
 
     if (
