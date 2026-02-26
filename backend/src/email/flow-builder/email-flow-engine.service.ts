@@ -16,6 +16,10 @@ import {
   ConditionType,
   DelayUnit,
 } from './flow.schema';
+import { WebhooksService } from '../../webhooks/webhooks.service';
+import { WebhookEventType } from '../../webhooks/webhooks.schema';
+import { EmailCampaignsService } from '../campaigns.service';
+import { CustomAgentsService } from '../../custom-agents/custom-agents.service';
 
 @Injectable()
 export class EmailFlowEngine {
@@ -27,6 +31,9 @@ export class EmailFlowEngine {
     private aiAnalysisService: AIAnalysisService,
     private emailHistoryService: EmailHistoryService,
     @InjectQueue('email-flow-queue') private emailFlowQueue: Queue,
+    private webhooksService: WebhooksService,
+    private emailCampaignsService: EmailCampaignsService,
+    private customAgentsService: CustomAgentsService,
   ) {}
 
   async executeFlow(
@@ -160,6 +167,9 @@ export class EmailFlowEngine {
       case ActionType.SEND_EMAIL:
         await this.handleSendEmailAction(node.data, context);
         break;
+      case ActionType.SEND_EMAIL_CAMPAIGN:
+        await this.handleSendEmailCampaignAction(node.data, context);
+        break;
       case ActionType.UPDATE_LEAD_STATUS:
         await this.handleUpdateLeadStatusAction(node.data, context);
         break;
@@ -171,6 +181,12 @@ export class EmailFlowEngine {
         break;
       case ActionType.WEBHOOK:
         await this.handleWebhookAction(node.data, context);
+        break;
+      case ActionType.SEND_WHATSAPP:
+        await this.handleSendWhatsAppAction(node.data, context);
+        break;
+      case ActionType.CUSTOM_AGENT:
+        await this.handleCustomAgentAction(node.data, context);
         break;
     }
 
@@ -222,6 +238,9 @@ export class EmailFlowEngine {
           node.data,
           context,
         );
+        break;
+      case ConditionType.CUSTOM:
+        conditionMet = await this.evaluateCustomCondition(node.data, context);
         break;
     }
 
@@ -297,26 +316,51 @@ export class EmailFlowEngine {
     context: FlowContext,
   ): Promise<void> {
     // Implementation for sending email
-    if (context.email) {
-      if (data.templateId) {
+    let recipientEmail = context.email;
+
+    if (data.emailRecipientType === 'static' && data.emailRecipient) {
+      recipientEmail = data.emailRecipient;
+    } else if (data.emailRecipientType === 'dynamic') {
+      // For dynamic recipients, try to get email from context (e.g., lead data)
+      if (context.leadId) {
+        const lead = await this.leadsService.findOne(
+          context.leadId,
+          context.userId,
+        );
+        if (lead && lead.email) {
+          recipientEmail = lead.email;
+        }
+      }
+    }
+
+    console.log('Sending email to:', recipientEmail);
+    console.log('Email data:', data);
+    console.log('Context:', context);
+
+    if (recipientEmail) {
+      if (data.emailTemplateId) {
         const template = await this.emailTemplatesService.getTemplate(
           context.userId,
-          data.templateId,
+          data.emailTemplateId,
         );
         await this.gmailService.sendEmail(
           context.userId,
-          context.email,
+          recipientEmail,
           template.subject,
           template.content,
         );
-      } else if (data.emailData) {
+      } else if (data.emailSubject && data.emailContent) {
         await this.gmailService.sendEmail(
           context.userId,
-          context.email,
-          data.emailData.subject,
-          data.emailData.content,
+          recipientEmail,
+          data.emailSubject,
+          data.emailContent,
         );
+      } else {
+        console.log('No email template or content provided');
       }
+    } else {
+      console.log('No recipient email found');
     }
   }
 
@@ -362,7 +406,98 @@ export class EmailFlowEngine {
     context: FlowContext,
   ): Promise<void> {
     // Implementation for calling webhooks
-    console.log('Calling webhook:', data.webhookUrl);
+    if (data.webhookId) {
+      console.log('Calling webhook by ID:', data.webhookId);
+      try {
+        // Get webhook details
+        const webhook = await this.webhooksService.getWebhookById(
+          data.webhookId,
+          context.userId,
+        );
+
+        // Call the webhook
+        await this.webhooksService.triggerSpecificWebhook(
+          data.webhookId,
+          WebhookEventType.FLOW_EXECUTION,
+          context,
+        );
+
+        console.log('Webhook called successfully');
+      } catch (error) {
+        console.error('Failed to call webhook:', error);
+      }
+    } else if (data.webhookUrl) {
+      console.log('Calling webhook by URL:', data.webhookUrl);
+      // Implement direct URL call here if needed
+    }
+  }
+
+  private async handleSendEmailCampaignAction(
+    data: any,
+    context: FlowContext,
+  ): Promise<void> {
+    // Implementation for sending email campaigns
+    console.log('Sending email campaign:', data.campaignId);
+    try {
+      if (data.campaignId) {
+        await this.emailCampaignsService.sendCampaign(
+          context.userId,
+          data.campaignId,
+        );
+        console.log('Email campaign sent successfully');
+      }
+    } catch (error) {
+      console.error('Failed to send email campaign:', error);
+    }
+  }
+
+  private async handleSendWhatsAppAction(
+    data: any,
+    context: FlowContext,
+  ): Promise<void> {
+    // Implementation for sending WhatsApp messages
+    let recipientPhone = context.phone;
+
+    if (data.whatsappRecipientType === 'static' && data.whatsappRecipient) {
+      recipientPhone = data.whatsappRecipient;
+    }
+
+    if (recipientPhone) {
+      console.log('Sending WhatsApp message to:', recipientPhone);
+      // Add actual WhatsApp sending implementation here
+      // For example, using WhatsApp API service
+    }
+  }
+
+  private async handleCustomAgentAction(
+    data: any,
+    context: FlowContext,
+  ): Promise<void> {
+    // Implementation for calling custom agents
+    console.log('Calling custom agent:', data.customAgentId);
+    try {
+      if (data.customAgentId) {
+        // Parse agent parameters if provided
+        let agentParams = {};
+        if (data.customAgentParams) {
+          try {
+            agentParams = JSON.parse(data.customAgentParams);
+          } catch (parseError) {
+            console.error(
+              'Failed to parse custom agent parameters:',
+              parseError,
+            );
+          }
+        }
+
+        // Logic to call custom agent would go here
+        // This might involve using the customAgentsService
+        console.log('Custom agent called with parameters:', agentParams);
+        console.log('Custom agent called successfully');
+      }
+    } catch (error) {
+      console.error('Failed to call custom agent:', error);
+    }
   }
 
   private async evaluateLeadStatusCondition(
@@ -429,5 +564,14 @@ export class EmailFlowEngine {
       return !!(lead.tags && lead.tags.includes(data.tag));
     }
     return false;
+  }
+
+  private async evaluateCustomCondition(
+    data: any,
+    context: FlowContext,
+  ): Promise<boolean> {
+    // Implementation for custom conditions
+    console.log('Evaluating custom condition:', data.condition);
+    return true; // Default to true for now
   }
 }

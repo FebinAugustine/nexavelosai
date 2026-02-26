@@ -13,14 +13,19 @@ export enum TriggerType {
   NEW_LEAD = 'new_lead',
   EMAIL_RESPONSE = 'email_response',
   LEAD_STATUS_CHANGE = 'lead_status_change',
+  WEBHOOK = 'webhook',
+  SCHEDULED = 'scheduled',
 }
 
 export enum ActionType {
   SEND_EMAIL = 'send_email',
+  SEND_EMAIL_CAMPAIGN = 'send_email_campaign',
   UPDATE_LEAD_STATUS = 'update_lead_status',
   ADD_TAG = 'add_tag',
   CREATE_TASK = 'create_task',
   WEBHOOK = 'webhook',
+  SEND_WHATSAPP = 'send_whatsapp',
+  CUSTOM_AGENT = 'custom_agent',
 }
 
 export enum DelayUnit {
@@ -35,6 +40,7 @@ export enum ConditionType {
   EMAIL_RESPONSE_CONTENT = 'email_response_content',
   TIME_ELAPSED = 'time_elapsed',
   TAG_EXISTS = 'tag_exists',
+  CUSTOM = 'custom',
 }
 
 @Schema({ timestamps: true })

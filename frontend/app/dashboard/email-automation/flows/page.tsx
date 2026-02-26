@@ -259,7 +259,11 @@ export default function EmailFlowsPage() {
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    onClick={() => handleEditFlow(flow._id)}
+                    onClick={() =>
+                      router.push(
+                        `/dashboard/email-automation/flows/${flow._id}/edit`,
+                      )
+                    }
                     className="bg-gray-100 hover:bg-gray-200 text-gray-900"
                   >
                     Edit

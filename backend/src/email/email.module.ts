@@ -23,6 +23,8 @@ import { AIAnalysisService } from './flow-builder/ai-analysis.service';
 import { EmailFlowProcessor } from './flow-builder/email-flow.processor';
 import { LeadsModule } from '../leads/leads.module';
 import { AgentsModule } from '../agents/agents.module';
+import { WebhooksModule } from '../webhooks/webhooks.module';
+import { CustomAgentsModule } from '../custom-agents/custom-agents.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { AgentsModule } from '../agents/agents.module';
     ContactsModule,
     LeadsModule,
     AgentsModule,
+    WebhooksModule,
+    CustomAgentsModule,
     MongooseModule.forFeature([
       { name: GoogleAccount.name, schema: GoogleAccountSchema },
       { name: EmailTemplate.name, schema: EmailTemplateSchema },

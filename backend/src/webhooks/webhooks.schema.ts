@@ -12,6 +12,7 @@ export enum WebhookEventType {
   AGENT_CREATED = 'agent_created',
   AGENT_UPDATED = 'agent_updated',
   AGENT_DELETED = 'agent_deleted',
+  FLOW_EXECUTION = 'flow_execution',
 }
 
 @Schema({ timestamps: true })

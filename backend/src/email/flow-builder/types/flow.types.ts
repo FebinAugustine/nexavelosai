@@ -3,6 +3,7 @@ export interface FlowContext {
   flowId?: string;
   leadId?: string;
   email?: string;
+  phone?: string;
   name?: string;
   emailContent?: string;
   emailAnalysis?: EmailAnalysisResult;
@@ -25,6 +26,17 @@ export interface SendEmailJobData {
     subject: string;
     content: string;
     templateId?: string;
+    variables?: Record<string, any>;
+    isHtml?: boolean;
+  };
+  context: FlowContext;
+}
+
+export interface SendWhatsAppJobData {
+  whatsappData: {
+    to: string;
+    templateId?: string;
+    message?: string;
     variables?: Record<string, any>;
   };
   context: FlowContext;
