@@ -1387,25 +1387,29 @@ export default function Dashboard() {
                                     {agent.provider}
                                   </span>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                  <svg
-                                    className="w-4 h-4 text-indigo-600"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3"
-                                    />
-                                  </svg>
-                                  <span className="text-gray-600">Domain:</span>
-                                  <span className="font-medium text-gray-900">
-                                    {agent.domain || "Not set"}
-                                  </span>
-                                </div>
+                                {!agent.isCustom && (
+                                  <div className="flex items-center space-x-2">
+                                    <svg
+                                      className="w-4 h-4 text-indigo-600"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3"
+                                      />
+                                    </svg>
+                                    <span className="text-gray-600">
+                                      Domain:
+                                    </span>
+                                    <span className="font-medium text-gray-900">
+                                      {agent.domain || "Not set"}
+                                    </span>
+                                  </div>
+                                )}
                                 <div className="flex items-center space-x-2 md:ml-10">
                                   <svg
                                     className="w-4 h-4 text-indigo-600"
@@ -1617,25 +1621,27 @@ export default function Dashboard() {
                                   {agent.provider}
                                 </span>
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <svg
-                                  className="w-4 h-4 text-purple-600"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3"
-                                  />
-                                </svg>
-                                <span className="text-gray-600">Domain:</span>
-                                <span className="font-medium text-gray-900">
-                                  {agent.domain || "Not set"}
-                                </span>
-                              </div>
+                              {!agent.isCustom && (
+                                <div className="flex items-center space-x-2">
+                                  <svg
+                                    className="w-4 h-4 text-purple-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-1.343-3-3s1.343-3 3-3m0-3c1.657 0 3 1.343 3 3s-1.343 3-3 3"
+                                    />
+                                  </svg>
+                                  <span className="text-gray-600">Domain:</span>
+                                  <span className="font-medium text-gray-900">
+                                    {agent.domain || "Not set"}
+                                  </span>
+                                </div>
+                              )}
                               <div className="flex items-center space-x-2 md:ml-10">
                                 <svg
                                   className="w-4 h-4 text-purple-600"
